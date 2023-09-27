@@ -99,12 +99,12 @@ all: $(BUILD)
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #-------------------------------------------------------------------------------
 clean:
-	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).wps $(TARGET).elf
+	$(info clean ...)
+	rm -fr $(BUILD) $(TARGET).wps $(TARGET).elf
 
 #-------------------------------------------------------------------------------
 else
@@ -127,8 +127,8 @@ $(OFILES_SRC)	: $(HFILES_BIN)
 #-------------------------------------------------------------------------------
 %.bin.o	%_bin.h :	%.bin
 #-------------------------------------------------------------------------------
-	@echo $(notdir $<)
-	@$(bin2o)
+	$(info $(notdir $<))
+	$(bin2o)
 
 -include $(DEPENDS)
 
