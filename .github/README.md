@@ -31,7 +31,9 @@ Configuration options:
   is 5 seconds.
 * `Hours Offset`: The amount of hours to add to UTC, `0` by default.
 * `Minutes Offset`: The amount of minutes to add to UTC, `0` by default.
-* `Server`: Shows the current list of NTP servers that will be queried. This setting
+* `Tolerance`: Don't alter the clock when the difference is less than this. Default is 200
+  ms.
+* `NTP Servers`: Shows the current list of NTP servers that will be queried. This setting
   cannot be changed through the configuration menu, you must edit the `Time Sync.json`
   configuration file in a text editor to change this. Multiple servers can be provided,
   separated by spaces. The default is `pool.ntp.org`.

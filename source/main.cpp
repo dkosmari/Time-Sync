@@ -40,12 +40,13 @@
 using namespace std::literals;
 
 
-#define CFG_SYNC "sync"
-#define CFG_NOTIFY "notify"
-#define CFG_HOURS "hours"
-#define CFG_MINUTES "minutes"
-#define CFG_SERVER "server"
+#define CFG_HOURS        "hours"
+#define CFG_MINUTES      "minutes"
 #define CFG_MSG_DURATION "msg_duration"
+#define CFG_NOTIFY       "notify"
+#define CFG_SERVER       "server"
+#define CFG_SYNC         "sync"
+#define CFG_TOLERANCE    "tolerance"
 
 
 // Important plugin information.
@@ -62,17 +63,16 @@ WUPS_USE_STORAGE("Time Sync");
 static const char plugin_name[] = "Time Sync";
 
 namespace cfg {
-    bool sync = false;
-    bool notify = true;
-    int msg_duration = 5;
-    int hours = 0;
-    int minutes = 0;
-    OSTime offset = 0; // combines hours and minutes offsets
-    char server[256] = "pool.ntp.org";
+    int  hours        = 0;
+    int  minutes      = 0;
+    int  msg_duration = 5;
+    bool notify       = true;
+    char server[512]  = "pool.ntp.org";
+    bool sync         = false;
+    int  tolerance    = 200;
+
+    OSTime offset = 0;          // combines hours and minutes offsets
 }
-
-
-// From https://github.com/lettier/ntpclient/blob/master/source/c/main.c
 
 // For details, see https://www.ntp.org/reflib/rfc/rfc5905.txt
 
@@ -492,9 +492,9 @@ update_time()
         avg_correction += x;
     avg_correction /= corrections.size();
 
-    if (std::fabs(avg_correction) < 0.1) {
-        report_info("skipping clock adjustment (correction is "
-                    + std::to_string(avg_correction) + " s)");
+    if (std::fabs(avg_correction) * 1000 < cfg::tolerance) {
+        report_info("tolerating clock drift (correction is only "
+                    + std::to_string(1000 * avg_correction) + " ms)");
         return;
     }
 
@@ -541,6 +541,9 @@ INITIALIZE_PLUGIN()
 
         if (WUPS_GetInt(nullptr, CFG_MINUTES, &cfg::minutes) == WUPS_STORAGE_ERROR_NOT_FOUND)
             WUPS_StoreInt(nullptr, CFG_MINUTES, cfg::minutes);
+
+        if (WUPS_GetInt(nullptr, CFG_TOLERANCE, &cfg::tolerance) == WUPS_STORAGE_ERROR_NOT_FOUND)
+            WUPS_StoreInt(nullptr, CFG_TOLERANCE, cfg::tolerance);
 
         if (WUPS_GetString(nullptr, CFG_SERVER, cfg::server, sizeof cfg::server)
             == WUPS_STORAGE_ERROR_NOT_FOUND)
@@ -600,6 +603,15 @@ update_cfg_minutes(ConfigItemIntegerRange*, int32_t offset)
 }
 
 
+static
+void
+update_cfg_tolerance(ConfigItemIntegerRange*, int32_t value)
+{
+    WUPS_StoreInt(nullptr, CFG_TOLERANCE, value);
+    cfg::tolerance = value;
+}
+
+
 WUPS_GET_CONFIG()
 {
     if (WUPS_OpenStorage() != WUPS_STORAGE_ERROR_SUCCESS)
@@ -633,9 +645,13 @@ WUPS_GET_CONFIG()
                                                     "Minutes Offset",
                                                     cfg::minutes, 0, 59,
                                                     &update_cfg_minutes);
+    WUPSConfigItemIntegerRange_AddToCategoryHandled(settings, config, CFG_TOLERANCE,
+                                                    "Tolerance (milliseconds)",
+                                                    cfg::tolerance, 0, 5000,
+                                                    &update_cfg_tolerance);
 
     // show current NTP server address, no way to change it.
-    std::string server = "NTP server: "s + cfg::server;
+    std::string server = "NTP servers: "s + cfg::server;
     WUPSConfigItemStub_AddToCategoryHandled(settings, config, CFG_SERVER, server.c_str());
 
     WUPSConfigItemStub_AddToCategoryHandled(settings, preview, "time",
