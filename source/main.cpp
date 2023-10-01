@@ -56,7 +56,7 @@ WUPS_PLUGIN_AUTHOR("Nightkingale, Daniel K. O.");
 WUPS_PLUGIN_LICENSE("MIT");
 
 WUPS_USE_WUT_DEVOPTAB();
-WUPS_USE_STORAGE("Wii U Time Sync");
+WUPS_USE_STORAGE("Time Sync");
 
 
 static const char plugin_name[] = "Time Sync";
