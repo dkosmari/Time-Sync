@@ -19,7 +19,7 @@ WUT_ROOT := $(DEVKITPRO)/wut
 # DATA is a list of directories containing data files
 # INCLUDES is a list of directories containing header files
 #-------------------------------------------------------------------------------
-TARGET		:=	Wii_U_Time_Sync
+TARGET		:=	Time_Sync
 BUILD		:=	build
 SOURCES		:=	source
 DATA		:=	data
@@ -34,7 +34,7 @@ CFLAGS	:=	-Wall -Wextra -Wundef -Wshadow -Wpointer-arith -Wcast-align \
 
 CFLAGS	+=	$(INCLUDE) -D__WIIU__ -D__WUT__ -D__WUPS__ 
 
-CXXFLAGS	:= $(CFLAGS)
+CXXFLAGS	:= $(CFLAGS) -std=c++23
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map) $(WUPSSPECS) 
@@ -99,7 +99,7 @@ all: $(BUILD)
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	$(MAKE) -C $(BUILD) -f $(CURDIR)/Makefile V=1
 
 #-------------------------------------------------------------------------------
 clean:
