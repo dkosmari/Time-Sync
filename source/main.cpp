@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 // standard headers
+#include <atomic>
 #include <bit>
 #include <cmath>
 #include <cstdint>
@@ -11,12 +12,12 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <stdexcept>
 
 // unix headers
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -30,7 +31,6 @@
 #include <coreinit/time.h>
 #include <nn/pdm.h>
 #include <notifications/notifications.h>
-#include <whb/proc.h>
 #include <wups.h>
 #include <wups/config/WUPSConfigItemBoolean.h>
 #include <wups/config/WUPSConfigItemIntegerRange.h>
@@ -40,6 +40,8 @@
 using namespace std::literals;
 
 
+#define PLUGIN_NAME "Time Sync"
+
 #define CFG_HOURS        "hours"
 #define CFG_MINUTES      "minutes"
 #define CFG_MSG_DURATION "msg_duration"
@@ -48,19 +50,16 @@ using namespace std::literals;
 #define CFG_SYNC         "sync"
 #define CFG_TOLERANCE    "tolerance"
 
-
 // Important plugin information.
-WUPS_PLUGIN_NAME("Time Sync");
+WUPS_PLUGIN_NAME(PLUGIN_NAME);
 WUPS_PLUGIN_DESCRIPTION("A plugin that synchronizes a Wii U's clock to the Internet.");
 WUPS_PLUGIN_VERSION("v1.2.0");
 WUPS_PLUGIN_AUTHOR("Nightkingale, Daniel K. O.");
 WUPS_PLUGIN_LICENSE("MIT");
 
 WUPS_USE_WUT_DEVOPTAB();
-WUPS_USE_STORAGE("Time Sync");
+WUPS_USE_STORAGE(PLUGIN_NAME);
 
-
-static const char plugin_name[] = "Time Sync";
 
 namespace cfg {
     int  hours        = 0;
@@ -74,70 +73,102 @@ namespace cfg {
     OSTime offset = 0;          // combines hours and minutes offsets
 }
 
-// For details, see https://www.ntp.org/reflib/rfc/rfc5905.txt
 
-// This is u32.32 fixed-point format, seconds since 1900-01-01.
-using ntp_timestamp = std::uint64_t;
-
-// This is a u16.16 fixed-point format.
-using ntp_short = std::uint32_t;
+std::atomic<bool> in_progress = false;
 
 
-enum class ntp_leap : std::uint8_t {
-    no_warning      = 0 << 6,
-    one_more_second = 1 << 6,
-    one_less_second = 2 << 6,
-    unknown         = 3 << 6
+// RAII type that handles the in_progress flag.
+
+struct progress_error : std::runtime_error {
+    progress_error() :
+        std::runtime_error{"progress_error"}
+    {}
+};
+
+struct progress_guard {
+    progress_guard()
+    {
+        bool expected_progress = false;
+        if (!in_progress.compare_exchange_strong(expected_progress, true))
+            throw progress_error{};
+    }
+
+    ~progress_guard()
+    {
+        in_progress = false;
+    }
 };
 
 
-enum class ntp_mode : std::uint8_t {
-    reserved         = 0,
-    active           = 1,
-    passive          = 2,
-    client           = 3,
-    server           = 4,
-    broadcast        = 5,
-    control          = 6,
-    reserved_private = 7
-};
+
+namespace ntp {
+    // For details, see https://www.ntp.org/reflib/rfc/rfc5905.txt
+
+    // This is u32.32 fixed-point format, seconds since 1900-01-01.
+    using timestamp = std::uint64_t;
+
+    // This is a u16.16 fixed-point format.
+    using short_timestamp = std::uint32_t;
 
 
-// Note: all fields are big-endian
-struct ntp_packet
-{
-    std::uint8_t lvm;
+    // Note: all fields are big-endian
+    struct packet {
 
-    void leap(ntp_leap x)
-    {
-        lvm = static_cast<std::uint8_t>(x) | (lvm & 0b0011'1111);
-    }
+        enum class leap : std::uint8_t {
+            no_warning      = 0 << 6,
+            one_more_second = 1 << 6,
+            one_less_second = 2 << 6,
+            unknown         = 3 << 6
+        };
 
-    void version(unsigned v)
-    {
-        lvm = ((v << 3) & 0b0011'1000) | (lvm & 0b1100'0111);
-    }
+        enum class mode : std::uint8_t {
+            reserved         = 0,
+            active           = 1,
+            passive          = 2,
+            client           = 3,
+            server           = 4,
+            broadcast        = 5,
+            control          = 6,
+            reserved_private = 7
+        };
 
-    void mode(ntp_mode m)
-    {
-        lvm = static_cast<std::uint8_t>(m) | (lvm & 0b1111'1000);
-    }
+
+        // Note: all fields are zero-initialized by default constructor.
+        std::uint8_t lvm           = 0; // leap, version and mode
+        std::uint8_t stratum       = 0; // Stratum level of the local clock.
+        std::int8_t  poll_exp      = 0; // Maximum interval between successive messages.
+        std::int8_t  precision_exp = 0; // Precision of the local clock.
+
+        short_timestamp root_delay      = 0; // Total round trip delay time to the reference clock.
+        short_timestamp root_dispersion = 0; // Total dispersion to the reference clock.
+        char            reference_id[4] = {0, 0, 0, 0}; // Reference clock identifier.
+
+        timestamp reference_time = 0; // Reference timestamp.
+        timestamp origin_time    = 0; // Origin timestamp, aka T1.
+        timestamp receive_time   = 0; // Receive timestamp, aka T2.
+        timestamp transmit_time  = 0; // Transmit timestamp, aka T3.
 
 
-    std::uint8_t stratum;       // Stratum level of the local clock.
-    std::int8_t  poll_exp;      // Maximum interval between successive messages.
-    std::int8_t  precision_exp; // Precision of the local clock.
+        void leap(leap x)
+        {
+            lvm = static_cast<std::uint8_t>(x) | (lvm & 0b0011'1111);
+        }
 
-    ntp_short root_delay;       // Total round trip delay time to the reference clock.
-    ntp_short root_dispersion;  // Total dispersion to the reference clock.
-    char      reference_id[4];  // Reference clock identifier. Meaning depends on stratum.
+        void version(unsigned v)
+        {
+            lvm = ((v << 3) & 0b0011'1000) | (lvm & 0b1100'0111);
+        }
 
-    ntp_timestamp reference_time; // Reference timestamp.
-    ntp_timestamp origin_time;  // Origin timestamp, aka T1.
-    ntp_timestamp receive_time; // Receive timestamp, aka T2.
-    ntp_timestamp transmit_time; // Transmit timestamp, aka T3.
-};
-static_assert(sizeof(ntp_packet) == 48);
+        void mode(mode m)
+        {
+            lvm = static_cast<std::uint8_t>(m) | (lvm & 0b1111'1000);
+        }
+
+    };
+
+    static_assert(sizeof(packet) == 48);
+
+} // namespace ntp
 
 
 #ifdef __WIIU__
@@ -160,11 +191,10 @@ be64toh(std::uint64_t x)
 #endif
 
 
-static
 void
 report_error(const std::string& arg)
 {
-    std::string msg = "["s + plugin_name + "] "s + arg;
+    std::string msg = "[" PLUGIN_NAME "] " + arg;
     NotificationModule_AddErrorNotificationEx(msg.c_str(),
                                               cfg::msg_duration,
                                               1,
@@ -175,14 +205,13 @@ report_error(const std::string& arg)
 }
 
 
-static
 void
 report_info(const std::string& arg)
 {
     if (!cfg::notify)
         return;
 
-    std::string msg = "["s + plugin_name + "] "s + arg;
+    std::string msg = "[" PLUGIN_NAME "] " + arg;
     NotificationModule_AddInfoNotificationEx(msg.c_str(),
                                              cfg::msg_duration,
                                              {255, 255, 255, 255},
@@ -202,13 +231,13 @@ get_utc_time()
 
 static
 double
-ntp_to_double(ntp_timestamp t)
+ntp_to_double(ntp::timestamp t)
 {
     return std::ldexp(static_cast<double>(t), -32);
 }
 
 
-ntp_timestamp
+ntp::timestamp
 double_to_ntp(double t)
 {
     return std::ldexp(t, 32);
@@ -218,7 +247,7 @@ double_to_ntp(double t)
 #if 0
 static
 OSTime
-ntp_to_wiiu(ntp_timestamp t)
+ntp_to_wiiu(ntp::timestamp t)
 {
     // Change t from NTP epoch (1900) to Wii U epoch (2000).
     // There are 24 leap years in this period.
@@ -238,13 +267,13 @@ ntp_to_wiiu(ntp_timestamp t)
 
 
 static
-ntp_timestamp
+ntp::timestamp
 wiiu_to_ntp(OSTime t)
 {
     // Convert from Wii U ticks to seconds.
     // Note: do the conversion in floating point to avoid overflows.
     double dt = double(t) / OSTimerClockSpeed;
-    ntp_timestamp r = double_to_ntp(dt);
+    ntp::timestamp r = double_to_ntp(dt);
 
     // Change r from Wii U epoch (2000) to NTP epoch (1900).
     constexpr std::uint64_t seconds_per_day = 24 * 60 * 60;
@@ -281,7 +310,7 @@ format_wiiu_time(OSTime wt)
 #if 0
 static
 std::string
-format_ntp(ntp_timestamp t)
+format_ntp(ntp::timestamp t)
 {
     OSTime wt = ntp_to_wiiu(t);
     return format_wiiu_time(wt);
@@ -366,7 +395,7 @@ ntp_query(struct in_addr ip_address)
     struct sockaddr_in addr;
     std::memset(&addr, 0, sizeof addr);
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = ip_address.s_addr;
+    addr.sin_addr = ip_address;
     addr.sin_port = htons(123); // NTP port
 
     int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -375,12 +404,11 @@ ntp_query(struct in_addr ip_address)
 
     connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof addr);
 
-    ntp_packet packet;
-    std::memset(&packet, 0, sizeof packet);
+    ntp::packet packet;
     packet.version(4);
-    packet.mode(ntp_mode::client);
+    packet.mode(ntp::packet::mode::client);
 
-    ntp_timestamp t1 = wiiu_to_ntp(get_utc_time());
+    ntp::timestamp t1 = wiiu_to_ntp(get_utc_time());
     packet.transmit_time = htobe64(t1);
 
     if (send(fd, &packet, sizeof packet, 0) == -1) {
@@ -410,7 +438,7 @@ ntp_query(struct in_addr ip_address)
         throw std::string{"invalid NTP response"s};
     }
 
-    ntp_timestamp t4 = wiiu_to_ntp(get_utc_time());
+    ntp::timestamp t4 = wiiu_to_ntp(get_utc_time());
 
     close(fd);
 
@@ -420,11 +448,11 @@ ntp_query(struct in_addr ip_address)
                           + std::to_string(be64toh(packet.origin_time))};
 
     // when our request arrived at the server
-    ntp_timestamp t2 = be64toh(packet.receive_time);
+    ntp::timestamp t2 = be64toh(packet.receive_time);
     // when the server sent out a response
-    ntp_timestamp t3 = be64toh(packet.transmit_time);
+    ntp::timestamp t3 = be64toh(packet.transmit_time);
 
-    ntp_timestamp roundtrip = (t4 - t1) - (t3 - t2);
+    ntp::timestamp roundtrip = (t4 - t1) - (t3 - t2);
 
     double delay = ntp_to_double(roundtrip) / 2;
 
@@ -438,7 +466,10 @@ ntp_query(struct in_addr ip_address)
 static
 void
 update_time()
+try
 {
+    progress_guard guard;
+
     cfg::offset = OSSecondsToTicks(cfg::minutes * 60);
     if (cfg::hours < 0)
         cfg::offset -= OSSecondsToTicks(-cfg::hours * 60 * 60);
@@ -519,6 +550,9 @@ update_time()
         std::string msg = "NTP correction from '"s + cfg::server + "': "s + timeStr;
         report_info(msg);
     }
+}
+catch (progress_error&) {
+    report_info("skipping NTP task: already in progress");
 }
 
 
@@ -618,7 +652,7 @@ WUPS_GET_CONFIG()
         return 0;
 
     WUPSConfigHandle settings;
-    WUPSConfig_CreateHandled(&settings, plugin_name);
+    WUPSConfig_CreateHandled(&settings, PLUGIN_NAME);
 
     WUPSConfigCategoryHandle config;
     WUPSConfig_AddCategoryByNameHandled(settings, "Configuration", &config);

@@ -28,9 +28,10 @@ INCLUDES	:=	source
 #-------------------------------------------------------------------------------
 # options for code generation
 #-------------------------------------------------------------------------------
-CFLAGS	:=	-Wall -Wextra -Wundef -Wshadow -Wpointer-arith -Wcast-align \
-			-O2 -fipa-pta -pipe -ffunction-sections \
-			$(MACHDEP)
+WARN_FLAGS	:= -Wall -Wextra -Wundef -Wshadow -Wpointer-arith -Wcast-align
+CFLAGS	:=	$(WARN_FLAGS) \
+		-O2 -fipa-pta -ffunction-sections \
+		$(MACHDEP)
 
 CFLAGS	+=	$(INCLUDE) -D__WIIU__ -D__WUT__ -D__WUPS__ 
 
