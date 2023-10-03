@@ -8,11 +8,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <mutex>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
-#include <stdexcept>
+#include <expected>
 
 // unix headers
 #include <arpa/inet.h>
@@ -261,23 +263,7 @@ format_ntp(ntp::timestamp t)
 }
 
 
-std::string
-h_errno_to_string()
-{
-    int e = h_errno;
-    switch (e) {
-    case HOST_NOT_FOUND:
-        return "host not found";
-    case TRY_AGAIN:
-        return "could not contact name server";
-    case NO_RECOVERY:
-        return "fatal error";
-    case NO_ADDRESS:
-        return "host name without address";
-    default:
-        return "unknown ("s + std::to_string(e) + ")"s;
-    }
-}
+
 
 
 std::vector<std::string>
@@ -362,7 +348,7 @@ ntp_query(struct in_addr ip_address)
 
     socket_guard s{PF_INET, SOCK_DGRAM, IPPROTO_UDP};
     if (s.fd == -1)
-        throw std::string{"unable to create socket"};
+        throw std::runtime_error{"unable to create socket"};
 
     connect(s.fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof addr);
 
@@ -375,7 +361,7 @@ ntp_query(struct in_addr ip_address)
 
     if (send(s.fd, &packet, sizeof packet, 0) == -1) {
         int e = errno;
-        throw std::string{"unable to send NTP request: "s + std::to_string(e)};
+        throw std::runtime_error{"unable to send NTP request: "s + std::to_string(e)};
     }
 
     fd_set read_set;
@@ -385,22 +371,22 @@ ntp_query(struct in_addr ip_address)
 
     if (select(s.fd + 1, &read_set, nullptr, nullptr, &timeout) == -1) {
         int e = errno;
-        throw std::string{"select() failed: "s + std::to_string(e)};
+        throw std::runtime_error{"select() failed: "s + std::to_string(e)};
     }
 
     if (!FD_ISSET(s.fd, &read_set))
-        throw std::string{"timeout reached"};
+        throw std::runtime_error{"timeout reached"};
 
     if (recv(s.fd, &packet, sizeof packet, 0) < 48)
-        throw std::string{"invalid NTP response"s};
+        throw std::runtime_error{"invalid NTP response"};
 
     ntp::timestamp t4 = wiiu_to_ntp(get_utc_time());
 
     ntp::timestamp t1_copy = be64toh(packet.origin_time);
     if (t1 != t1_copy)
-        throw std::string{"NTP response does not match request: ["s
-                          + format_ntp(t1) + "] vs ["s
-                          + format_ntp(t1_copy) + "]"s};
+        throw std::runtime_error{"NTP response does not match request: ["s
+                                 + format_ntp(t1) + "] vs ["s
+                                 + format_ntp(t1_copy) + "]"s};
 
     // when our request arrived at the server
     ntp::timestamp t2 = be64toh(packet.receive_time);
@@ -415,6 +401,77 @@ ntp_query(struct in_addr ip_address)
     double correction = ntp_to_double(t3) + delay - ntp_to_double(t4);
 
     return { correction, delay };
+}
+
+
+struct host_lookup_error : std::runtime_error {
+    host_lookup_error(const std::string& name, int e) :
+        runtime_error{"error resolving \""s + name + "\": "s + h_errno_to_string(e)}
+    {}
+
+private:
+
+    std::string
+    h_errno_to_string(int e)
+    {
+        switch (e) {
+        case HOST_NOT_FOUND:
+            return "host not found";
+        case TRY_AGAIN:
+            return "could not contact name server";
+        case NO_RECOVERY:
+            return "fatal error";
+        case NO_ADDRESS:
+            return "host name without address";
+        default:
+            return "unknown ("s + std::to_string(e) + ")"s;
+        }
+    }
+};
+
+
+// Safe version of struct hostent, all data is copied over.
+// Note: this is hardcoded for IPv4.
+
+struct host_entry {
+    int type;
+    int length;
+    std::string name;
+    std::vector<std::string> aliases;
+    std::vector<struct in_addr> addresses;
+
+    host_entry(struct hostent* host)
+    {
+        type = host->h_addrtype;
+        length = host->h_length;
+
+        if (type != AF_INET || length != 4)
+            throw std::logic_error{"invalid address type/length (not IPv4)"};
+
+        name = host->h_name;
+
+        for (unsigned i = 0; host->h_aliases[i]; ++i)
+            aliases.push_back(host->h_aliases[i]);
+
+        for (unsigned i = 0; host->h_addr_list[i]; ++i) {
+            struct in_addr a;
+            std::memcpy(&a, host->h_addr_list[i], sizeof a);
+            addresses.push_back(a);
+        }
+    }
+};
+
+
+// Note: gethostbyname() isn't thread-safe. This wrapper is.
+std::expected<host_entry, host_lookup_error>
+resolve_host(const std::string& name)
+{
+    static std::mutex m;
+    std::lock_guard guard{m}; // only one thread can pass this point at a time
+    struct hostent* host = gethostbyname(name.c_str());
+    if (!host)
+        return std::unexpected{host_lookup_error{name, h_errno}};
+    return host;
 }
 
 
@@ -435,34 +492,25 @@ try
     std::vector<std::string> servers = split(cfg::server);
 
     for (const auto& server : servers) {
-        struct hostent* host = gethostbyname(server.c_str());
+
+        auto host = resolve_host(server);
         if (!host) {
-            report_error("unable to resolve host '"s + cfg::server + "': "s +
-                         h_errno_to_string());
+            report_error(host.error().what());
             continue;
         }
 
-        // sanity check
-        if (host->h_addrtype != AF_INET || host->h_length != 4) {
-            report_error("no IPv4 address found for '"s + cfg::server + "'"s);
-            continue;
-        }
-
-        for (int i = 0; host->h_addr_list[i]; ++i) {
-            struct in_addr addr;
-            std::memcpy(&addr, host->h_addr_list[i], 4);
-
+        for (const auto& address : host->addresses) {
             try {
-                auto [correction, delay] = ntp_query(addr);
+                auto [correction, delay] = ntp_query(address);
 
                 corrections.push_back(correction);
 
-                report_info(server + "("s + to_string(addr)
+                report_info(server + "("s + to_string(address)
                             + "): correction="s + seconds_to_human(correction)
                             + ", delay=" + seconds_to_human(delay));
             }
-            catch (std::string msg) {
-                report_error("'"s + to_string(addr) + "' failed: "s + msg);
+            catch (std::exception& e) {
+                report_error("'"s + to_string(address) + "' failed: "s + e.what());
             }
         }
     }
