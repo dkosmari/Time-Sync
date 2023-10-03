@@ -93,7 +93,7 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
-.PHONY: $(BUILD) clean all
+.PHONY: $(BUILD) clean all upload
 
 #-------------------------------------------------------------------------------
 all: $(BUILD)
@@ -105,7 +105,7 @@ $(BUILD):
 #-------------------------------------------------------------------------------
 clean:
 	$(info clean ...)
-	rm -fr $(BUILD) $(TARGET).wps $(TARGET).elf
+	$(RM) -r $(BUILD) $(TARGET).wps $(TARGET).elf
 
 #-------------------------------------------------------------------------------
 else
@@ -136,3 +136,7 @@ $(OFILES_SRC)	: $(HFILES_BIN)
 #-------------------------------------------------------------------------------
 endif
 #-------------------------------------------------------------------------------
+
+
+upload: all
+	ncftpput wiiu /fs/vol/external01/wiiu/environments/aroma/plugins/ $(TARGET).wps
