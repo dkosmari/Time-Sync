@@ -328,14 +328,14 @@ apply_clock_correction(double correction)
 
 
 // RAII class to close down a socket
-struct Socket {
+struct socket_guard {
     int fd;
 
-    Socket(int fd) :
-        fd{fd}
+    socket_guard(int ns, int st, int pr) :
+        fd{socket(ns, st, pr)}
     {}
 
-    ~Socket()
+    ~socket_guard()
     {
         if (fd != -1)
             close();
@@ -360,7 +360,7 @@ ntp_query(struct in_addr ip_address)
     addr.sin_addr = ip_address;
     addr.sin_port = htons(123); // NTP port
 
-    Socket s{socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)};
+    socket_guard s{PF_INET, SOCK_DGRAM, IPPROTO_UDP};
     if (s.fd == -1)
         throw std::string{"unable to create socket"};
 
