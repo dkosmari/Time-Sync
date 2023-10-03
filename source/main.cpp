@@ -244,8 +244,6 @@ double_to_ntp(double t)
 }
 
 
-#if 0
-static
 OSTime
 ntp_to_wiiu(ntp::timestamp t)
 {
@@ -263,10 +261,8 @@ ntp_to_wiiu(ntp::timestamp t)
 
     return r;
 }
-#endif
 
 
-static
 ntp::timestamp
 wiiu_to_ntp(OSTime t)
 {
@@ -284,7 +280,6 @@ wiiu_to_ntp(OSTime t)
 }
 
 
-static
 std::string
 to_string(struct in_addr addr)
 {
@@ -292,7 +287,26 @@ to_string(struct in_addr addr)
 }
 
 
-static
+std::string
+seconds_to_human(double s)
+{
+    char buf[64];
+
+    if (std::fabs(s) < 2) // less than 2 seconds
+        std::snprintf(buf, sizeof buf, "%.3f ms", 1000 * s);
+    else if (std::fabs(s) < 2 * 60) // less than 2 minutes
+        std::snprintf(buf, sizeof buf, "%.1f s", s);
+    else if (std::fabs(s) < 2 * 60 * 60) // less than 2 hours
+        std::snprintf(buf, sizeof buf, "%.1f min", s / 60);
+    else if (std::fabs(s) < 2 * 24 * 60 * 60) // less than 2 days
+        std::snprintf(buf, sizeof buf, "%.1f hrs", s / (60 * 60));
+    else
+        std::snprintf(buf, sizeof buf, "%.1f days", s / (24 * 60 * 60));
+
+    return buf;
+}
+
+
 std::string
 format_wiiu_time(OSTime wt)
 {
@@ -307,18 +321,14 @@ format_wiiu_time(OSTime wt)
 }
 
 
-#if 0
-static
 std::string
 format_ntp(ntp::timestamp t)
 {
     OSTime wt = ntp_to_wiiu(t);
     return format_wiiu_time(wt);
 }
-#endif
 
 
-static
 std::string
 h_errno_to_string()
 {
@@ -338,7 +348,6 @@ h_errno_to_string()
 }
 
 
-static
 std::vector<std::string>
 split(const std::string& s)
 {
@@ -363,7 +372,6 @@ extern "C" int32_t CCRSysSetSystemTime(OSTime time);
 extern "C" BOOL __OSSetAbsoluteSystemTime(OSTime time);
 
 
-static
 bool
 apply_clock_correction(double correction)
 {
@@ -388,7 +396,6 @@ apply_clock_correction(double correction)
 
 
 // Note: hardcoded for IPv4, the Wii U doesn't have IPv6.
-static
 std::pair<double, double>
 ntp_query(struct in_addr ip_address)
 {
@@ -442,10 +449,11 @@ ntp_query(struct in_addr ip_address)
 
     close(fd);
 
-    if (be64toh(packet.origin_time) != t1)
-        throw std::string{"NTP response does not match request: "s
-                          + std::to_string(t1) + " vs "
-                          + std::to_string(be64toh(packet.origin_time))};
+    ntp::timestamp t1_copy = be64toh(packet.origin_time);
+    if (t1 != t1_copy)
+        throw std::string{"NTP response does not match request: ["s
+                          + format_ntp(t1) + "] vs ["s
+                          + format_ntp(t1_copy) + "]"s};
 
     // when our request arrived at the server
     ntp::timestamp t2 = be64toh(packet.receive_time);
@@ -463,7 +471,6 @@ ntp_query(struct in_addr ip_address)
 }
 
 
-static
 void
 update_time()
 try
@@ -504,8 +511,8 @@ try
                 corrections.push_back(correction);
 
                 report_info(server + "("s + to_string(addr)
-                            + "): correction="s + std::to_string(correction)
-                            + " delay=" + std::to_string(delay));
+                            + "): correction="s + seconds_to_human(correction)
+                            + ", delay=" + seconds_to_human(delay));
             }
             catch (std::string msg) {
                 report_error("'"s + to_string(addr) + "' failed: "s + msg);
@@ -523,9 +530,9 @@ try
         avg_correction += x;
     avg_correction /= corrections.size();
 
-    if (std::fabs(avg_correction) * 1000 < cfg::tolerance) {
+    if (std::fabs(avg_correction) * 1000 <= cfg::tolerance) {
         report_info("tolerating clock drift (correction is only "
-                    + std::to_string(1000 * avg_correction) + " ms)");
+                    + seconds_to_human(avg_correction) + ")"s);
         return;
     }
 
@@ -536,20 +543,8 @@ try
         }
     }
 
-    if (cfg::notify) {
-        double ms = avg_correction * 1000;
-        char timeStr[64];
-        if (std::fabs(ms) < 10'000) // correcting less than 10 seconds
-            snprintf(timeStr, sizeof timeStr, "%.3f ms", ms);
-        else if (std::fabs(ms) < 120'000) // correcting less than 2 minutes
-            snprintf(timeStr, sizeof timeStr, "%.1f s", ms / 1000);
-        else if (std::fabs(ms) < 7'200'000) // correcting less than 2 hours
-            snprintf(timeStr, sizeof timeStr, "%.1f min", ms / 60'000);
-        else
-            snprintf(timeStr, sizeof timeStr, "%.1f hrs", ms / 3'600'000);
-        std::string msg = "NTP correction from '"s + cfg::server + "': "s + timeStr;
-        report_info(msg);
-    }
+    if (cfg::notify)
+        report_info("clock corrected by " + seconds_to_human(avg_correction));
 }
 catch (progress_error&) {
     report_info("skipping NTP task: already in progress");
@@ -592,60 +587,6 @@ INITIALIZE_PLUGIN()
 }
 
 
-static
-void
-update_cfg_sync(ConfigItemBoolean*, bool value)
-{
-    WUPS_StoreBool(nullptr, CFG_SYNC, value);
-    cfg::sync = value;
-}
-
-
-static
-void
-update_cfg_notify(ConfigItemBoolean*, bool value)
-{
-    WUPS_StoreBool(nullptr, CFG_NOTIFY, value);
-    cfg::notify = value;
-}
-
-
-static
-void
-update_cfg_msg_duration(ConfigItemIntegerRange*, int32_t value)
-{
-    WUPS_StoreInt(nullptr, CFG_MSG_DURATION, value);
-    cfg::msg_duration = value;
-}
-
-
-static
-void
-update_cfg_hours(ConfigItemIntegerRange*, int32_t offset)
-{
-    WUPS_StoreInt(nullptr, CFG_HOURS, offset);
-    cfg::hours = offset;
-}
-
-
-static
-void
-update_cfg_minutes(ConfigItemIntegerRange*, int32_t offset)
-{
-    WUPS_StoreInt(nullptr, CFG_MINUTES, offset);
-    cfg::minutes = offset;
-}
-
-
-static
-void
-update_cfg_tolerance(ConfigItemIntegerRange*, int32_t value)
-{
-    WUPS_StoreInt(nullptr, CFG_TOLERANCE, value);
-    cfg::tolerance = value;
-}
-
-
 WUPS_GET_CONFIG()
 {
     if (WUPS_OpenStorage() != WUPS_STORAGE_ERROR_SUCCESS)
@@ -662,27 +603,54 @@ WUPS_GET_CONFIG()
     WUPSConfigItemBoolean_AddToCategoryHandled(settings, config, CFG_SYNC,
                                                "Syncing Enabled",
                                                cfg::sync,
-                                               &update_cfg_sync);
+                                               [](ConfigItemBoolean*, bool value)
+                                               {
+                                                   WUPS_StoreBool(nullptr, CFG_NOTIFY, value);
+                                                   cfg::notify = value;
+                                               });
     WUPSConfigItemBoolean_AddToCategoryHandled(settings, config, CFG_NOTIFY,
                                                "Show Notifications",
                                                cfg::notify,
-                                               &update_cfg_notify);
+                                               [](ConfigItemBoolean*, bool value)
+                                               {
+                                                   WUPS_StoreBool(nullptr, CFG_NOTIFY, value);
+                                                   cfg::notify = value;
+                                               });
     WUPSConfigItemIntegerRange_AddToCategoryHandled(settings, config, CFG_MSG_DURATION,
                                                     "Messages Duration (seconds)",
                                                     cfg::msg_duration, 0, 30,
-                                                    &update_cfg_msg_duration);
+                                                    [](ConfigItemIntegerRange*, int32_t value)
+                                                    {
+                                                        WUPS_StoreInt(nullptr, CFG_MSG_DURATION,
+                                                                      value);
+                                                        cfg::msg_duration = value;
+                                                    });
     WUPSConfigItemIntegerRange_AddToCategoryHandled(settings, config, CFG_HOURS,
                                                     "Hours Offset",
                                                     cfg::hours, -12, 14,
-                                                    &update_cfg_hours);
+                                                    [](ConfigItemIntegerRange*, int32_t value)
+                                                    {
+                                                        WUPS_StoreInt(nullptr, CFG_HOURS, value);
+                                                        cfg::hours = value;
+                                                    });
     WUPSConfigItemIntegerRange_AddToCategoryHandled(settings, config, CFG_MINUTES,
                                                     "Minutes Offset",
                                                     cfg::minutes, 0, 59,
-                                                    &update_cfg_minutes);
+                                                    [](ConfigItemIntegerRange*, int32_t value)
+                                                    {
+                                                        WUPS_StoreInt(nullptr, CFG_MINUTES,
+                                                                      value);
+                                                        cfg::minutes = value;
+                                                    });
     WUPSConfigItemIntegerRange_AddToCategoryHandled(settings, config, CFG_TOLERANCE,
                                                     "Tolerance (milliseconds)",
                                                     cfg::tolerance, 0, 5000,
-                                                    &update_cfg_tolerance);
+                                                    [](ConfigItemIntegerRange*, int32_t value)
+                                                    {
+                                                        WUPS_StoreInt(nullptr, CFG_TOLERANCE,
+                                                                      value);
+                                                        cfg::tolerance = value;
+                                                    });
 
     // show current NTP server address, no way to change it.
     std::string server = "NTP servers: "s + cfg::server;
