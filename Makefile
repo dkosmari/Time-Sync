@@ -28,7 +28,7 @@ INCLUDES	:=	source
 #-------------------------------------------------------------------------------
 # options for code generation
 #-------------------------------------------------------------------------------
-WARN_FLAGS	:= -Wall -Wextra -Wundef -Wshadow -Wpointer-arith -Wcast-align
+WARN_FLAGS	:= -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align
 CFLAGS	:=	$(WARN_FLAGS) \
 		-O2 -fipa-pta -ffunction-sections \
 		$(MACHDEP)

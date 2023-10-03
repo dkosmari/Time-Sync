@@ -327,6 +327,29 @@ apply_clock_correction(double correction)
 }
 
 
+// RAII class to close down a socket
+struct Socket {
+    int fd;
+
+    Socket(int fd) :
+        fd{fd}
+    {}
+
+    ~Socket()
+    {
+        if (fd != -1)
+            close();
+    }
+
+    void
+    close()
+    {
+        ::close(fd);
+        fd = -1;
+    }
+};
+
+
 // Note: hardcoded for IPv4, the Wii U doesn't have IPv6.
 std::pair<double, double>
 ntp_query(struct in_addr ip_address)
@@ -337,11 +360,11 @@ ntp_query(struct in_addr ip_address)
     addr.sin_addr = ip_address;
     addr.sin_port = htons(123); // NTP port
 
-    int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (fd == -1)
+    Socket s{socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)};
+    if (s.fd == -1)
         throw std::string{"unable to create socket"};
 
-    connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof addr);
+    connect(s.fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof addr);
 
     ntp::packet packet;
     packet.version(4);
@@ -350,36 +373,28 @@ ntp_query(struct in_addr ip_address)
     ntp::timestamp t1 = wiiu_to_ntp(get_utc_time());
     packet.transmit_time = htobe64(t1);
 
-    if (send(fd, &packet, sizeof packet, 0) == -1) {
+    if (send(s.fd, &packet, sizeof packet, 0) == -1) {
         int e = errno;
-        close(fd);
         throw std::string{"unable to send NTP request: "s + std::to_string(e)};
     }
 
     fd_set read_set;
     FD_ZERO(&read_set);
-    FD_SET(fd, &read_set);
+    FD_SET(s.fd, &read_set);
     struct timeval timeout = { 4, 0 };
 
-    if (select(fd + 1, &read_set, nullptr, nullptr, &timeout) == -1) {
+    if (select(s.fd + 1, &read_set, nullptr, nullptr, &timeout) == -1) {
         int e = errno;
-        close(fd);
         throw std::string{"select() failed: "s + std::to_string(e)};
     }
 
-    if (!FD_ISSET(fd, &read_set)) {
-        close(fd);
+    if (!FD_ISSET(s.fd, &read_set))
         throw std::string{"timeout reached"};
-    }
 
-    if (recv(fd, &packet, sizeof packet, 0) < 48) {
-        close(fd);
+    if (recv(s.fd, &packet, sizeof packet, 0) < 48)
         throw std::string{"invalid NTP response"s};
-    }
 
     ntp::timestamp t4 = wiiu_to_ntp(get_utc_time());
-
-    close(fd);
 
     ntp::timestamp t1_copy = be64toh(packet.origin_time);
     if (t1 != t1_copy)
