@@ -8,13 +8,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <mutex>
+#include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
-#include <expected>
 
 // unix headers
 #include <arpa/inet.h>
@@ -215,9 +215,11 @@ wiiu_to_ntp(OSTime t)
 
 
 std::string
-to_string(struct in_addr addr)
+to_string(const struct sockaddr_in& addr)
 {
-    return inet_ntoa(addr);
+    char buf[32];
+    return inet_ntop(addr.sin_family, &addr.sin_addr,
+                     buf, sizeof buf);
 }
 
 
@@ -338,19 +340,14 @@ struct socket_guard {
 
 // Note: hardcoded for IPv4, the Wii U doesn't have IPv6.
 std::pair<double, double>
-ntp_query(struct in_addr ip_address)
+ntp_query(struct sockaddr_in address)
 {
-    struct sockaddr_in addr;
-    std::memset(&addr, 0, sizeof addr);
-    addr.sin_family = AF_INET;
-    addr.sin_addr = ip_address;
-    addr.sin_port = htons(123); // NTP port
-
     socket_guard s{PF_INET, SOCK_DGRAM, IPPROTO_UDP};
     if (s.fd == -1)
         throw std::runtime_error{"unable to create socket"};
 
-    connect(s.fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof addr);
+    address.sin_port = htons(123); // NTP port
+    connect(s.fd, reinterpret_cast<struct sockaddr*>(&address), sizeof address);
 
     ntp::packet packet;
     packet.version(4);
@@ -404,75 +401,85 @@ ntp_query(struct in_addr ip_address)
 }
 
 
-struct host_lookup_error : std::runtime_error {
-    host_lookup_error(const std::string& name, int e) :
-        runtime_error{"error resolving \""s + name + "\": "s + h_errno_to_string(e)}
-    {}
 
-private:
+// Wrapper for getaddrinfo(), hardcoded for IPv4
 
-    std::string
-    h_errno_to_string(int e)
-    {
-        switch (e) {
-        case HOST_NOT_FOUND:
-            return "host not found";
-        case TRY_AGAIN:
-            return "could not contact name server";
-        case NO_RECOVERY:
-            return "fatal error";
-        case NO_ADDRESS:
-            return "host name without address";
-        default:
-            return "unknown ("s + std::to_string(e) + ")"s;
-        }
-    }
+struct addrinfo_query {
+    int flags    = 0;
+    int family   = AF_UNSPEC;
+    int socktype = 0;
+    int protocol = 0;
 };
 
 
-// Safe version of struct hostent, all data is copied over.
-// Note: this is hardcoded for IPv4.
-
-struct host_entry {
-    int type;
-    int length;
-    std::string name;
-    std::vector<std::string> aliases;
-    std::vector<struct in_addr> addresses;
-
-    host_entry(struct hostent* host)
-    {
-        type = host->h_addrtype;
-        length = host->h_length;
-
-        if (type != AF_INET || length != 4)
-            throw std::logic_error{"invalid address type/length (not IPv4)"};
-
-        name = host->h_name;
-
-        for (unsigned i = 0; host->h_aliases[i]; ++i)
-            aliases.push_back(host->h_aliases[i]);
-
-        for (unsigned i = 0; host->h_addr_list[i]; ++i) {
-            struct in_addr a;
-            std::memcpy(&a, host->h_addr_list[i], sizeof a);
-            addresses.push_back(a);
-        }
-    }
+struct addrinfo_result {
+    int                        family;
+    int                        socktype;
+    int                        protocol;
+    struct sockaddr_in         address;
+    std::optional<std::string> canonname;
 };
 
 
-// Note: gethostbyname() isn't thread-safe. This wrapper is.
-std::expected<host_entry, host_lookup_error>
-resolve_host(const std::string& name)
+std::vector<addrinfo_result>
+get_address_info(const std::optional<std::string>& name,
+                 const std::optional<std::string>& port = {},
+                 std::optional<addrinfo_query> query = {})
 {
-    static std::mutex m;
-    std::lock_guard guard{m}; // only one thread can pass this point at a time
-    struct hostent* host = gethostbyname(name.c_str());
-    if (!host)
-        return std::unexpected{host_lookup_error{name, h_errno}};
-    return host;
+    // RAII: unique_ptr is used to invoke freeaddrinfo() on function exit
+    std::unique_ptr<struct addrinfo,
+                    decltype([](struct addrinfo* p) { freeaddrinfo(p); })>
+        info;
+
+
+    {
+        struct addrinfo hints;
+        const struct addrinfo *hints_ptr = nullptr;
+
+        if (query) {
+            hints_ptr = &hints;
+            std::memset(&hints, 0, sizeof hints);
+            hints.ai_flags = query->flags;
+            hints.ai_family = query->family;
+            hints.ai_socktype = query->socktype;
+            hints.ai_protocol = query->protocol;
+        }
+
+        struct addrinfo* raw_info = nullptr;
+        int err = getaddrinfo(name ? name->c_str() : nullptr,
+                              port ? port->c_str() : nullptr,
+                              hints_ptr,
+                              &raw_info);
+        if (err)
+            throw std::runtime_error{gai_strerror(err)};
+
+        info.reset(raw_info); // put it in the smart pointer
+    }
+
+
+    std::vector<addrinfo_result> result;
+
+    // walk through the linked list
+    for (auto a = info.get(); a; a = a->ai_next) {
+
+        // sanity check: Wii U only supports IPv4
+        if (a->ai_addrlen != sizeof(struct sockaddr_in))
+            throw std::logic_error{"getaddrinfo() returned invalid result"};
+
+        addrinfo_result item;
+        item.family = a->ai_family;
+        item.socktype = a->ai_socktype;
+        item.protocol = a->ai_protocol,
+        std::memcpy(&item.address, a->ai_addr, sizeof item.address);
+        if (a->ai_canonname)
+            item.canonname = a->ai_canonname;
+
+        result.push_back(std::move(item));
+    }
+
+    return result;
 }
+
 
 
 void
@@ -491,28 +498,31 @@ try
 
     std::vector<std::string> servers = split(cfg::server);
 
+    addrinfo_query query = {
+        .family = AF_INET,
+        .socktype = SOCK_DGRAM,
+        .protocol = IPPROTO_UDP
+    };
+
     for (const auto& server : servers) {
 
-        auto host = resolve_host(server);
-        if (!host) {
-            report_error(host.error().what());
-            continue;
-        }
-
-        for (const auto& address : host->addresses) {
-            try {
-                auto [correction, delay] = ntp_query(address);
+        try {
+            auto addresses = get_address_info(server, {}, query);
+            for (const auto& host : addresses) {
+                auto [correction, delay] = ntp_query(host.address);
 
                 corrections.push_back(correction);
 
-                report_info(server + "("s + to_string(address)
+                report_info(server + "("s + to_string(host.address)
                             + "): correction="s + seconds_to_human(correction)
                             + ", delay=" + seconds_to_human(delay));
             }
-            catch (std::exception& e) {
-                report_error("'"s + to_string(address) + "' failed: "s + e.what());
-            }
+
         }
+        catch (std::exception& e) {
+            report_error(server + " failed: "s + e.what());
+        }
+
     }
 
     if (corrections.empty()) {
