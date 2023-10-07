@@ -59,7 +59,7 @@ using namespace std::literals;
 // Important plugin information.
 WUPS_PLUGIN_NAME(PLUGIN_NAME);
 WUPS_PLUGIN_DESCRIPTION("A plugin that synchronizes a Wii U's clock to the Internet.");
-WUPS_PLUGIN_VERSION("v1.2.1");
+WUPS_PLUGIN_VERSION("v1.2.2");
 WUPS_PLUGIN_AUTHOR("Nightkingale, Daniel K. O.");
 WUPS_PLUGIN_LICENSE("MIT");
 
@@ -727,8 +727,8 @@ WUPS_GET_CONFIG()
                                                cfg::sync,
                                                [](ConfigItemBoolean*, bool value)
                                                {
-                                                   WUPS_StoreBool(nullptr, CFG_NOTIFY, value);
-                                                   cfg::notify = value;
+                                                   WUPS_StoreBool(nullptr, CFG_SYNC, value);
+                                                   cfg::sync = value;
                                                });
     WUPSConfigItemBoolean_AddToCategoryHandled(settings, config, CFG_NOTIFY,
                                                "Show Notifications",
