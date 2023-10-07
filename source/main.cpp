@@ -13,7 +13,7 @@
 #include <memory>               // unique_ptr<>
 #include <numeric>              // accumulate()
 #include <optional>
-#include <ranges>               // std::ranges::zip()
+#include <ranges>               // ranges::zip()
 #include <semaphore>
 #include <set>
 #include <stdexcept>
@@ -39,7 +39,6 @@
 #include <wups/config/WUPSConfigItemBoolean.h>
 #include <wups/config/WUPSConfigItemIntegerRange.h>
 #include <wups/config/WUPSConfigItemStub.h>
-
 
 #include "ntp.hpp"
 
@@ -154,8 +153,6 @@ limited_async(Func&& func,
 }
 
 
-
-
 #ifdef __WUT__
 // These can usually be found in <endian.h>, but WUT does not provide them.
 
@@ -224,7 +221,6 @@ report_success(const std::string& arg)
                                              nullptr,
                                              nullptr);
 }
-
 
 
 // Wrapper for strerror_r()
