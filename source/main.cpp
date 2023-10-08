@@ -108,20 +108,32 @@ struct progress_guard {
 
 // The code below implements a wrapper for std::async() that respects a thread limit.
 
-std::counting_semaphore async_limit{6};
-
+enum class guard_type {
+    acquire_and_release,
+    only_acquire,
+    only_release
+};
 
 template<typename Sem>
-struct semaphore_releaser {
-    Sem& s;
+struct semaphore_guard {
+    Sem& sem;
+    guard_type type;
 
-    semaphore_releaser(Sem& s) :
-        s(s)
-    {}
-
-    ~semaphore_releaser()
+    semaphore_guard(Sem& s,
+                    guard_type t = guard_type::acquire_and_release) :
+        sem(s),
+        type{t}
     {
-        s.release();
+        if (type == guard_type::acquire_and_release ||
+            type == guard_type::only_acquire)
+            sem.acquire();
+    }
+
+    ~semaphore_guard()
+    {
+        if (type == guard_type::acquire_and_release ||
+            type == guard_type::only_release)
+            sem.release();
     }
 };
 
@@ -133,23 +145,25 @@ std::future<typename std::invoke_result_t<std::decay_t<Func>, std::decay_t<Args>
 limited_async(Func&& func,
               Args&&... args)
 {
-    async_limit.acquire();
+    static std::counting_semaphore async_limit{6};
 
-    try {
-        return std::async(std::launch::async,
-                          [](auto&& f, auto&&... a) -> auto
-                          {
-                              semaphore_releaser guard{async_limit};
-                              return std::invoke(std::forward<decltype(f)>(f),
-                                                 std::forward<decltype(a)>(a)...);
-                          },
-                          std::forward<Func>(func),
-                          std::forward<Args>(args)...);
-    }
-    catch (...) {
-        async_limit.release();
-        throw;
-    }
+    semaphore_guard caller_guard{async_limit};
+
+    auto result = std::async(std::launch::async,
+                             [](auto&& f, auto&&... a) -> auto
+                             {
+                                 semaphore_guard callee_guard{async_limit,
+                                                              guard_type::only_release};
+                                 return std::invoke(std::forward<decltype(f)>(f),
+                                                    std::forward<decltype(a)>(a)...);
+                             },
+                             std::forward<Func>(func),
+                             std::forward<Args>(args)...);
+
+    // If async() didn't fail, let the async thread handle the semaphore release.
+    caller_guard.type = guard_type::only_acquire;
+
+    return result;
 }
 
 
