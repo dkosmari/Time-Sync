@@ -56,6 +56,8 @@ dkms.conf
 *.lst
 *.rpx
 *.wps
+*.json
+*.zip
 
 # Temporary files
 *~
