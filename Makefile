@@ -140,3 +140,4 @@ endif
 
 upload: all
 	ncftpput wiiu /fs/vol/external01/wiiu/environments/aroma/plugins/ $(TARGET).wps
+	[ -f "Time Sync.json" ] && ncftpput wiiu /fs/vol/external01/wiiu/environments/aroma/plugins/config/ "Time Sync.json"

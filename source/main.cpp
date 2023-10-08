@@ -80,32 +80,6 @@ namespace cfg {
 }
 
 
-std::atomic<bool> in_progress = false;
-
-
-// RAII type that handles the in_progress flag.
-
-struct progress_error : std::runtime_error {
-    progress_error() :
-        std::runtime_error{"progress_error"}
-    {}
-};
-
-struct progress_guard {
-    progress_guard()
-    {
-        bool expected_progress = false;
-        if (!in_progress.compare_exchange_strong(expected_progress, true))
-            throw progress_error{};
-    }
-
-    ~progress_guard()
-    {
-        in_progress = false;
-    }
-};
-
-
 // The code below implements a wrapper for std::async() that respects a thread limit.
 
 enum class guard_type {
@@ -597,11 +571,39 @@ operator <(const struct sockaddr_in& a,
 }
 
 
+// RAII type to ensure a function is never executed in parallel.
+
+struct exec_guard {
+    std::atomic<bool>& flag;
+    bool guarded = false;
+
+    exec_guard(std::atomic<bool>& f) :
+        flag(f)
+    {
+        bool expected_flag = false;
+        if (flag.compare_exchange_strong(expected_flag, true))
+            guarded = true; // Exactly one thread can have the "guarded" flag as true.
+    }
+
+    ~exec_guard()
+    {
+        if (guarded)
+            flag = false;
+    }
+};
+
+
 void
 update_time()
-try
 {
-    progress_guard guard;
+    static std::atomic<bool> executing = false;
+
+    exec_guard guard{executing};
+    if (!guard.guarded) {
+        // Another thread is already executing this function.
+        report_info("skipping NTP task: already in progress");
+        return;
+    }
 
     cfg::offset = OSSecondsToTicks(cfg::minutes * 60);
     if (cfg::hours < 0)
@@ -681,9 +683,7 @@ try
     if (cfg::notify)
         report_success("clock corrected by " + seconds_to_human(avg_correction));
 }
-catch (progress_error&) {
-    report_info("skipping NTP task: already in progress");
-}
+
 
 
 INITIALIZE_PLUGIN()
