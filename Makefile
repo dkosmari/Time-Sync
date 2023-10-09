@@ -25,19 +25,24 @@ SOURCES		:=	source
 DATA		:=	data
 INCLUDES	:=	source
 
+# Be verbose by default.
+V ?= 1
+
 #-------------------------------------------------------------------------------
 # options for code generation
 #-------------------------------------------------------------------------------
 WARN_FLAGS	:= -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align
-CFLAGS	:=	$(WARN_FLAGS) \
-		-O2 -fipa-pta -ffunction-sections \
-		$(MACHDEP)
 
-CFLAGS	+=	$(INCLUDE) -D__WIIU__ -D__WUT__ -D__WUPS__ 
+OPTFLAGS	:= -O2 -fipa-pta -ffunction-sections
+
+CFLAGS	:=	$(WARN_FLAGS) $(OPTFLAGS) $(MACHDEP)
+
+CPPFLAGS	:= $(INCLUDE) -D__WIIU__ -D__WUT__ -D__WUPS__ 
 
 CXXFLAGS	:= $(CFLAGS) -std=c++23
 
 ASFLAGS	:=	-g $(ARCH)
+
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map) $(WUPSSPECS) 
 
 LIBS	:= -lnotifications -lwups -lwut
@@ -100,7 +105,7 @@ all: $(BUILD)
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	$(MAKE) -C $(BUILD) -f $(CURDIR)/Makefile V=1
+	$(MAKE) -C $(BUILD) -f $(CURDIR)/Makefile V=$(V)
 
 #-------------------------------------------------------------------------------
 clean:

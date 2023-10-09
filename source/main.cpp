@@ -3,6 +3,7 @@
 // standard headers
 #include <atomic>
 #include <bit>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -41,6 +42,7 @@
 #include <wups/config/WUPSConfigItemStub.h>
 
 #include "ntp.hpp"
+#include "text_item.hpp"
 
 
 using namespace std::literals;
@@ -68,13 +70,13 @@ WUPS_USE_STORAGE(PLUGIN_NAME);
 
 
 namespace cfg {
-    int  hours        = 0;
-    int  minutes      = 0;
-    int  msg_duration = 5;
-    bool notify       = true;
-    char server[512]  = "pool.ntp.org";
-    bool sync         = false;
-    int  tolerance    = 200;
+    int         hours        = 0;
+    int         minutes      = 0;
+    int         msg_duration = 5;
+    bool        notify       = true;
+    std::string server       = "pool.ntp.org";
+    bool        sync         = false;
+    int         tolerance    = 200;
 
     OSTime offset = 0;          // combines hours and minutes offsets
 }
@@ -594,6 +596,17 @@ struct exec_guard {
 
 
 void
+update_offset()
+{
+    cfg::offset = OSSecondsToTicks(cfg::minutes * 60);
+    if (cfg::hours < 0)
+        cfg::offset -= OSSecondsToTicks(-cfg::hours * 60 * 60);
+    else
+        cfg::offset += OSSecondsToTicks(cfg::hours * 60 * 60);
+}
+
+
+void
 update_time()
 {
     static std::atomic<bool> executing = false;
@@ -604,12 +617,6 @@ update_time()
         report_info("skipping NTP task: already in progress");
         return;
     }
-
-    cfg::offset = OSSecondsToTicks(cfg::minutes * 60);
-    if (cfg::hours < 0)
-        cfg::offset -= OSSecondsToTicks(-cfg::hours * 60 * 60);
-    else
-        cfg::offset += OSSecondsToTicks(cfg::hours * 60 * 60);
 
     std::vector<std::string> servers = split(cfg::server, " \t,;");
 
@@ -685,7 +692,6 @@ update_time()
 }
 
 
-
 INITIALIZE_PLUGIN()
 {
     WUPSStorageError storageRes = WUPS_OpenStorage();
@@ -709,9 +715,14 @@ INITIALIZE_PLUGIN()
         if (WUPS_GetInt(nullptr, CFG_TOLERANCE, &cfg::tolerance) == WUPS_STORAGE_ERROR_NOT_FOUND)
             WUPS_StoreInt(nullptr, CFG_TOLERANCE, cfg::tolerance);
 
-        if (WUPS_GetString(nullptr, CFG_SERVER, cfg::server, sizeof cfg::server)
+        char server_buf[1024];
+        if (WUPS_GetString(nullptr, CFG_SERVER, server_buf, sizeof server_buf)
             == WUPS_STORAGE_ERROR_NOT_FOUND)
-            WUPS_StoreString(nullptr, CFG_SERVER, cfg::server);
+            WUPS_StoreString(nullptr, CFG_SERVER, cfg::server.c_str());
+        else
+            cfg::server = server_buf;
+
+        update_offset();
 
         WUPS_CloseStorage();
     }
@@ -723,20 +734,72 @@ INITIALIZE_PLUGIN()
 }
 
 
+
+struct PreviewItem : TextItem {
+
+    using TextItem::TextItem;
+
+    void onButtonPressed(WUPSConfigButtons button) override
+    {
+        switch (button) {
+        case WUPS_CONFIG_BUTTON_A:
+            try {
+                std::vector<std::string> servers = split(cfg::server, " \t,;");
+
+                addrinfo_query query = {
+                    .family = AF_INET,
+                    .socktype = SOCK_DGRAM,
+                    .protocol = IPPROTO_UDP
+                };
+
+                std::set<struct sockaddr_in> addresses;
+                for (const auto& server : servers)
+                    for (auto addr : get_address_info(server, "123", query))
+                        addresses.insert(addr.address);
+
+                std::vector<double> corrections;
+                for (auto addr : addresses)
+                    corrections.push_back(ntp_query(addr).first);
+
+                text = format_wiiu_time(OSGetTime());
+
+                if (corrections.empty())
+                    text += " : no NTP server could be used";
+                else {
+                    double avg_correction = std::accumulate(corrections.begin(),
+                                                            corrections.end(),
+                                                            0.0)
+                        / corrections.size();
+                    text += " is off by "s + seconds_to_human(avg_correction);
+                }
+            }
+            catch (std::exception& e) {
+                text = "Error: "s + e.what();
+            }
+
+            break;
+        default:
+            TextItem::onButtonPressed(button);
+        }
+    }
+
+};
+
+
 WUPS_GET_CONFIG()
 {
     if (WUPS_OpenStorage() != WUPS_STORAGE_ERROR_SUCCESS)
         return 0;
 
-    WUPSConfigHandle settings;
-    WUPSConfig_CreateHandled(&settings, PLUGIN_NAME);
+    WUPSConfigHandle root;
+    WUPSConfig_CreateHandled(&root, PLUGIN_NAME);
 
     WUPSConfigCategoryHandle config;
-    WUPSConfig_AddCategoryByNameHandled(settings, "Configuration", &config);
+    WUPSConfig_AddCategoryByNameHandled(root, "Configuration", &config);
     WUPSConfigCategoryHandle preview;
-    WUPSConfig_AddCategoryByNameHandled(settings, "Preview Time", &preview);
+    WUPSConfig_AddCategoryByNameHandled(root, "Preview Time", &preview);
 
-    WUPSConfigItemBoolean_AddToCategoryHandled(settings, config, CFG_SYNC,
+    WUPSConfigItemBoolean_AddToCategoryHandled(root, config, CFG_SYNC,
                                                "Syncing Enabled",
                                                cfg::sync,
                                                [](ConfigItemBoolean*, bool value)
@@ -744,7 +807,7 @@ WUPS_GET_CONFIG()
                                                    WUPS_StoreBool(nullptr, CFG_SYNC, value);
                                                    cfg::sync = value;
                                                });
-    WUPSConfigItemBoolean_AddToCategoryHandled(settings, config, CFG_NOTIFY,
+    WUPSConfigItemBoolean_AddToCategoryHandled(root, config, CFG_NOTIFY,
                                                "Show Notifications",
                                                cfg::notify,
                                                [](ConfigItemBoolean*, bool value)
@@ -752,7 +815,7 @@ WUPS_GET_CONFIG()
                                                    WUPS_StoreBool(nullptr, CFG_NOTIFY, value);
                                                    cfg::notify = value;
                                                });
-    WUPSConfigItemIntegerRange_AddToCategoryHandled(settings, config, CFG_MSG_DURATION,
+    WUPSConfigItemIntegerRange_AddToCategoryHandled(root, config, CFG_MSG_DURATION,
                                                     "Messages Duration (seconds)",
                                                     cfg::msg_duration, 0, 30,
                                                     [](ConfigItemIntegerRange*, int32_t value)
@@ -761,15 +824,16 @@ WUPS_GET_CONFIG()
                                                                       value);
                                                         cfg::msg_duration = value;
                                                     });
-    WUPSConfigItemIntegerRange_AddToCategoryHandled(settings, config, CFG_HOURS,
+    WUPSConfigItemIntegerRange_AddToCategoryHandled(root, config, CFG_HOURS,
                                                     "Hours Offset",
                                                     cfg::hours, -12, 14,
                                                     [](ConfigItemIntegerRange*, int32_t value)
                                                     {
                                                         WUPS_StoreInt(nullptr, CFG_HOURS, value);
                                                         cfg::hours = value;
+                                                        update_offset();
                                                     });
-    WUPSConfigItemIntegerRange_AddToCategoryHandled(settings, config, CFG_MINUTES,
+    WUPSConfigItemIntegerRange_AddToCategoryHandled(root, config, CFG_MINUTES,
                                                     "Minutes Offset",
                                                     cfg::minutes, 0, 59,
                                                     [](ConfigItemIntegerRange*, int32_t value)
@@ -777,8 +841,9 @@ WUPS_GET_CONFIG()
                                                         WUPS_StoreInt(nullptr, CFG_MINUTES,
                                                                       value);
                                                         cfg::minutes = value;
+                                                        update_offset();
                                                     });
-    WUPSConfigItemIntegerRange_AddToCategoryHandled(settings, config, CFG_TOLERANCE,
+    WUPSConfigItemIntegerRange_AddToCategoryHandled(root, config, CFG_TOLERANCE,
                                                     "Tolerance (milliseconds)",
                                                     cfg::tolerance, 0, 5000,
                                                     [](ConfigItemIntegerRange*, int32_t value)
@@ -789,13 +854,21 @@ WUPS_GET_CONFIG()
                                                     });
 
     // show current NTP server address, no way to change it.
-    std::string server = "NTP servers: "s + cfg::server;
-    WUPSConfigItemStub_AddToCategoryHandled(settings, config, CFG_SERVER, server.c_str());
+    auto server_item = std::make_unique<TextItem>(CFG_SERVER, "NTP servers", cfg::server);
+    if (WUPSConfigCategory_AddItem(config, server_item->handle) < 0) {
+        WUPSConfig_Destroy(root);
+        return 0;
+    }
+    server_item.release();
 
-    WUPSConfigItemStub_AddToCategoryHandled(settings, preview, "time",
-                                            format_wiiu_time(OSGetTime()).c_str());
+    auto preview_item = std::make_unique<PreviewItem>("preview", "Clock", "Press A");
+    if (WUPSConfigCategory_AddItem(preview, preview_item->handle) < 0) {
+        WUPSConfig_Destroy(root);
+        return 0;
+    }
+    preview_item.release();
 
-    return settings;
+    return root;
 }
 
 
