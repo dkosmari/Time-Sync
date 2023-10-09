@@ -11,6 +11,7 @@
 #include <cstring>
 #include <functional>           // invoke()
 #include <future>
+#include <map>
 #include <memory>               // unique_ptr<>
 #include <numeric>              // accumulate()
 #include <optional>
@@ -737,14 +738,44 @@ INITIALIZE_PLUGIN()
 
 struct PreviewItem : TextItem {
 
-    using TextItem::TextItem;
+    WUPSConfigCategoryHandle category;
+
+    std::map<std::string, TextItem*> server_items;
+    std::map<struct sockaddr_in, TextItem*> address_items;
+
+
+    PreviewItem(WUPSConfigCategoryHandle cat,
+                const std::string& key,
+                const std::string& name,
+                const std::string& text) :
+        TextItem{key, name, text},
+        category{cat}
+    {}
+
 
     void onButtonPressed(WUPSConfigButtons button) override
     {
         switch (button) {
         case WUPS_CONFIG_BUTTON_A:
             try {
+
+                for (auto& [key, value] : server_items)
+                    value->text.clear();
+
+                for (auto& [key, value] : address_items)
+                    value->text.clear();
+
                 std::vector<std::string> servers = split(cfg::server, " \t,;");
+
+                // first, ensure each server has a TextItem
+                for (const auto& server : servers)
+                    if (!server_items[server]) {
+                        auto item = std::make_unique<TextItem>("server",
+                                                               server);
+                        if (WUPSConfigCategory_AddItem(category, item->handle) < 0)
+                            throw std::runtime_error{"could not add item"};
+                        server_items[server] = item.release();
+                    }
 
                 addrinfo_query query = {
                     .family = AF_INET,
@@ -753,13 +784,45 @@ struct PreviewItem : TextItem {
                 };
 
                 std::set<struct sockaddr_in> addresses;
-                for (const auto& server : servers)
-                    for (auto addr : get_address_info(server, "123", query))
-                        addresses.insert(addr.address);
+                for (const auto& server : servers) {
+                    auto item = server_items.at(server);
+                    try {
+                        auto infos = get_address_info(server, "123", query);
+
+                        item->text = std::to_string(infos.size()) + " IP "
+                            + (infos.size() > 1 ? "addresses" : "address");
+
+                        for (auto info : infos)
+                            addresses.insert(info.address);
+                    }
+                    catch (std::exception& e) {
+                        item->text = e.what();
+                    }
+                }
 
                 std::vector<double> corrections;
-                for (auto addr : addresses)
-                    corrections.push_back(ntp_query(addr).first);
+                for (auto addr : addresses) {
+                    // ensure each address has a TextItem
+                    if (!address_items[addr]) {
+                        auto item = std::make_unique<TextItem>("address",
+                                                               to_string(addr));
+                        if (WUPSConfigCategory_AddItem(category, item->handle) < 0)
+                            throw std::runtime_error{"could not add item"};
+                        address_items[addr] = item.release();
+                    }
+                    auto item = address_items.at(addr);
+
+                    try {
+                        auto [correction, latency] = ntp_query(addr);
+                        item->text += "correction = " + seconds_to_human(correction)
+                            + ", latency = " + seconds_to_human(latency);
+
+                        corrections.push_back(correction);
+                    }
+                    catch (std::exception& e) {
+                        item->text = e.what();
+                    }
+                }
 
                 text = format_wiiu_time(OSGetTime());
 
@@ -772,6 +835,7 @@ struct PreviewItem : TextItem {
                         / corrections.size();
                     text += " is off by "s + seconds_to_human(avg_correction);
                 }
+
             }
             catch (std::exception& e) {
                 text = "Error: "s + e.what();
@@ -861,7 +925,7 @@ WUPS_GET_CONFIG()
     }
     server_item.release();
 
-    auto preview_item = std::make_unique<PreviewItem>("preview", "Clock", "Press A");
+    auto preview_item = std::make_unique<PreviewItem>(preview, "preview", "Clock", "Press A");
     if (WUPSConfigCategory_AddItem(preview, preview_item->handle) < 0) {
         WUPSConfig_Destroy(root);
         return 0;

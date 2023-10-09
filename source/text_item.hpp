@@ -16,7 +16,7 @@ struct TextItem {
 
     TextItem(const std::string& key,
              const std::string& name,
-             const std::string& text);
+             const std::string& text = "");
 
     // disallow moving, since the callbacks store the `this` pointer.
     TextItem(TextItem&&) = delete;
