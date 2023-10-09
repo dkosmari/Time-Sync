@@ -735,7 +735,6 @@ INITIALIZE_PLUGIN()
 }
 
 
-
 struct PreviewItem : TextItem {
 
     WUPSConfigCategoryHandle category;
@@ -908,7 +907,7 @@ WUPS_GET_CONFIG()
                                                         update_offset();
                                                     });
     WUPSConfigItemIntegerRange_AddToCategoryHandled(root, config, CFG_TOLERANCE,
-                                                    "Tolerance (milliseconds)",
+                                                    "Tolerance (milliseconds, L/R for +/- 50)",
                                                     cfg::tolerance, 0, 5000,
                                                     [](ConfigItemIntegerRange*, int32_t value)
                                                     {
