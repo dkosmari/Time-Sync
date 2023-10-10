@@ -43,7 +43,13 @@
 #include <wups/config/WUPSConfigItemStub.h>
 
 #include "ntp.hpp"
-#include "text_item.hpp"
+
+#include "wupsxx/bool_item.hpp"
+#include "wupsxx/category.hpp"
+#include "wupsxx/config.hpp"
+#include "wupsxx/int_item.hpp"
+#include "wupsxx/storage.hpp"
+#include "wupsxx/text_item.hpp"
 
 
 using namespace std::literals;
@@ -619,6 +625,8 @@ update_time()
         return;
     }
 
+    update_offset();
+
     std::vector<std::string> servers = split(cfg::server, " \t,;");
 
     addrinfo_query query = {
@@ -693,37 +701,32 @@ update_time()
 }
 
 
+template<typename T>
+void
+load_or_init(const std::string& key,
+                T& variable)
+{
+    auto val = wups::load<T>(key);
+    if (!val)
+        wups::store(key, variable);
+    else
+        variable = *val;
+}
+
+
 INITIALIZE_PLUGIN()
 {
     WUPSStorageError storageRes = WUPS_OpenStorage();
     // Check if the plugin's settings have been saved before.
     if (storageRes == WUPS_STORAGE_ERROR_SUCCESS) {
-        if (WUPS_GetBool(nullptr, CFG_SYNC, &cfg::sync) == WUPS_STORAGE_ERROR_NOT_FOUND)
-            WUPS_StoreBool(nullptr, CFG_SYNC, cfg::sync);
 
-        if (WUPS_GetBool(nullptr, CFG_NOTIFY, &cfg::notify) == WUPS_STORAGE_ERROR_NOT_FOUND)
-            WUPS_StoreBool(nullptr, CFG_NOTIFY, cfg::notify);
-
-        if (WUPS_GetInt(nullptr, CFG_MSG_DURATION, &cfg::msg_duration) == WUPS_STORAGE_ERROR_NOT_FOUND)
-            WUPS_StoreInt(nullptr, CFG_MSG_DURATION, cfg::msg_duration);
-
-        if (WUPS_GetInt(nullptr, CFG_HOURS, &cfg::hours) == WUPS_STORAGE_ERROR_NOT_FOUND)
-            WUPS_StoreInt(nullptr, CFG_HOURS, cfg::hours);
-
-        if (WUPS_GetInt(nullptr, CFG_MINUTES, &cfg::minutes) == WUPS_STORAGE_ERROR_NOT_FOUND)
-            WUPS_StoreInt(nullptr, CFG_MINUTES, cfg::minutes);
-
-        if (WUPS_GetInt(nullptr, CFG_TOLERANCE, &cfg::tolerance) == WUPS_STORAGE_ERROR_NOT_FOUND)
-            WUPS_StoreInt(nullptr, CFG_TOLERANCE, cfg::tolerance);
-
-        char server_buf[1024];
-        if (WUPS_GetString(nullptr, CFG_SERVER, server_buf, sizeof server_buf)
-            == WUPS_STORAGE_ERROR_NOT_FOUND)
-            WUPS_StoreString(nullptr, CFG_SERVER, cfg::server.c_str());
-        else
-            cfg::server = server_buf;
-
-        update_offset();
+        load_or_init(CFG_HOURS,        cfg::hours);
+        load_or_init(CFG_MINUTES,      cfg::minutes);
+        load_or_init(CFG_MSG_DURATION, cfg::msg_duration);
+        load_or_init(CFG_NOTIFY,       cfg::notify);
+        load_or_init(CFG_SERVER,       cfg::server);
+        load_or_init(CFG_SYNC,         cfg::sync);
+        load_or_init(CFG_TOLERANCE,    cfg::tolerance);
 
         WUPS_CloseStorage();
     }
@@ -735,28 +738,29 @@ INITIALIZE_PLUGIN()
 }
 
 
-struct PreviewItem : TextItem {
+struct preview_item : wups::text_item {
 
-    WUPSConfigCategoryHandle category;
+    wups::category* category;
 
-    std::map<std::string, TextItem*> server_items;
-    std::map<struct sockaddr_in, TextItem*> address_items;
+    std::map<std::string, wups::text_item*> server_items;
+    std::map<struct sockaddr_in, wups::text_item*> address_items;
 
 
-    PreviewItem(WUPSConfigCategoryHandle cat,
-                const std::string& key,
-                const std::string& name,
-                const std::string& text) :
-        TextItem{key, name, text},
+    preview_item(wups::category* cat) :
+        wups::text_item{"", "Clock", "Press A"},
         category{cat}
     {}
 
 
-    void onButtonPressed(WUPSConfigButtons button) override
+    void
+    on_button_pressed(WUPSConfigButtons buttons)
+        override
     {
-        switch (button) {
-        case WUPS_CONFIG_BUTTON_A:
+        if (buttons & WUPS_CONFIG_BUTTON_A) {
             try {
+                using std::make_unique;
+
+                update_offset();
 
                 for (auto& [key, value] : server_items)
                     value->text.clear();
@@ -766,14 +770,12 @@ struct PreviewItem : TextItem {
 
                 std::vector<std::string> servers = split(cfg::server, " \t,;");
 
-                // first, ensure each server has a TextItem
+                // first, ensure each server has a text_item
                 for (const auto& server : servers)
                     if (!server_items[server]) {
-                        auto item = std::make_unique<TextItem>("server",
-                                                               server);
-                        if (WUPSConfigCategory_AddItem(category, item->handle) < 0)
-                            throw std::runtime_error{"could not add item"};
-                        server_items[server] = item.release();
+                        auto item = make_unique<wups::text_item>("server", server);
+                        server_items[server] = item.get();
+                        category->add(std::move(item));
                     }
 
                 addrinfo_query query = {
@@ -801,13 +803,11 @@ struct PreviewItem : TextItem {
 
                 std::vector<double> corrections;
                 for (auto addr : addresses) {
-                    // ensure each address has a TextItem
+                    // ensure each address has a text_item
                     if (!address_items[addr]) {
-                        auto item = std::make_unique<TextItem>("address",
-                                                               to_string(addr));
-                        if (WUPSConfigCategory_AddItem(category, item->handle) < 0)
-                            throw std::runtime_error{"could not add item"};
-                        address_items[addr] = item.release();
+                        auto item = make_unique<wups::text_item>("address", to_string(addr));
+                        address_items[addr] = item.get();
+                        category->add(std::move(item));
                     }
                     auto item = address_items.at(addr);
 
@@ -840,10 +840,8 @@ struct PreviewItem : TextItem {
                 text = "Error: "s + e.what();
             }
 
-            break;
-        default:
-            TextItem::onButtonPressed(button);
         }
+
     }
 
 };
@@ -854,84 +852,54 @@ WUPS_GET_CONFIG()
     if (WUPS_OpenStorage() != WUPS_STORAGE_ERROR_SUCCESS)
         return 0;
 
-    WUPSConfigHandle root;
-    WUPSConfig_CreateHandled(&root, PLUGIN_NAME);
+    using std::make_unique;
 
-    WUPSConfigCategoryHandle config;
-    WUPSConfig_AddCategoryByNameHandled(root, "Configuration", &config);
-    WUPSConfigCategoryHandle preview;
-    WUPSConfig_AddCategoryByNameHandled(root, "Preview Time", &preview);
+    try {
 
-    WUPSConfigItemBoolean_AddToCategoryHandled(root, config, CFG_SYNC,
-                                               "Syncing Enabled",
-                                               cfg::sync,
-                                               [](ConfigItemBoolean*, bool value)
-                                               {
-                                                   WUPS_StoreBool(nullptr, CFG_SYNC, value);
-                                                   cfg::sync = value;
-                                               });
-    WUPSConfigItemBoolean_AddToCategoryHandled(root, config, CFG_NOTIFY,
-                                               "Show Notifications",
-                                               cfg::notify,
-                                               [](ConfigItemBoolean*, bool value)
-                                               {
-                                                   WUPS_StoreBool(nullptr, CFG_NOTIFY, value);
-                                                   cfg::notify = value;
-                                               });
-    WUPSConfigItemIntegerRange_AddToCategoryHandled(root, config, CFG_MSG_DURATION,
+        auto config_cat = make_unique<wups::category>("Configuration");
+        auto preview_cat = make_unique<wups::category>("Preview");
+
+        config_cat->add(make_unique<wups::bool_item>(CFG_SYNC,
+                                                    "Syncing Enabled",
+                                                    cfg::sync));
+
+        config_cat->add(make_unique<wups::bool_item>(CFG_NOTIFY,
+                                                    "Show Notifications",
+                                                    cfg::notify));
+
+        config_cat->add(make_unique<wups::int_item>(CFG_MSG_DURATION,
                                                     "Messages Duration (seconds)",
-                                                    cfg::msg_duration, 0, 30,
-                                                    [](ConfigItemIntegerRange*, int32_t value)
-                                                    {
-                                                        WUPS_StoreInt(nullptr, CFG_MSG_DURATION,
-                                                                      value);
-                                                        cfg::msg_duration = value;
-                                                    });
-    WUPSConfigItemIntegerRange_AddToCategoryHandled(root, config, CFG_HOURS,
+                                                    cfg::msg_duration, 0, 30));
+
+        config_cat->add(make_unique<wups::int_item>(CFG_HOURS,
                                                     "Hours Offset",
-                                                    cfg::hours, -12, 14,
-                                                    [](ConfigItemIntegerRange*, int32_t value)
-                                                    {
-                                                        WUPS_StoreInt(nullptr, CFG_HOURS, value);
-                                                        cfg::hours = value;
-                                                        update_offset();
-                                                    });
-    WUPSConfigItemIntegerRange_AddToCategoryHandled(root, config, CFG_MINUTES,
+                                                    cfg::hours, -12, 14));
+
+        config_cat->add(make_unique<wups::int_item>(CFG_MINUTES,
                                                     "Minutes Offset",
-                                                    cfg::minutes, 0, 59,
-                                                    [](ConfigItemIntegerRange*, int32_t value)
-                                                    {
-                                                        WUPS_StoreInt(nullptr, CFG_MINUTES,
-                                                                      value);
-                                                        cfg::minutes = value;
-                                                        update_offset();
-                                                    });
-    WUPSConfigItemIntegerRange_AddToCategoryHandled(root, config, CFG_TOLERANCE,
+                                                    cfg::minutes, 0, 59));
+
+        config_cat->add(make_unique<wups::int_item>(CFG_TOLERANCE,
                                                     "Tolerance (milliseconds, L/R for +/- 50)",
-                                                    cfg::tolerance, 0, 5000,
-                                                    [](ConfigItemIntegerRange*, int32_t value)
-                                                    {
-                                                        WUPS_StoreInt(nullptr, CFG_TOLERANCE,
-                                                                      value);
-                                                        cfg::tolerance = value;
-                                                    });
+                                                    cfg::tolerance, 0, 5000));
 
-    // show current NTP server address, no way to change it.
-    auto server_item = std::make_unique<TextItem>(CFG_SERVER, "NTP servers", cfg::server);
-    if (WUPSConfigCategory_AddItem(config, server_item->handle) < 0) {
-        WUPSConfig_Destroy(root);
+        // show current NTP server address, no way to change it.
+        config_cat->add(make_unique<wups::text_item>(CFG_SERVER,
+                                                     "NTP servers",
+                                                     cfg::server));
+
+        preview_cat->add(make_unique<preview_item>(preview_cat.get()));
+
+        auto root = make_unique<wups::config>(PLUGIN_NAME);
+        root->add(std::move(config_cat));
+        root->add(std::move(preview_cat));
+
+        return root.release()->handle;
+
+    }
+    catch (...) {
         return 0;
     }
-    server_item.release();
-
-    auto preview_item = std::make_unique<PreviewItem>(preview, "preview", "Clock", "Press A");
-    if (WUPSConfigCategory_AddItem(preview, preview_item->handle) < 0) {
-        WUPSConfig_Destroy(root);
-        return 0;
-    }
-    preview_item.release();
-
-    return root;
 }
 
 

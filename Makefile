@@ -21,7 +21,7 @@ WUT_ROOT := $(DEVKITPRO)/wut
 #-------------------------------------------------------------------------------
 TARGET		:=	Time_Sync
 BUILD		:=	build
-SOURCES		:=	source
+SOURCES		:=	source source/wupsxx
 DATA		:=	data
 INCLUDES	:=	source
 
