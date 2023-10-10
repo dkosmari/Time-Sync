@@ -27,11 +27,11 @@ Configuration options:
   `false`.
 * `Show Notifications`: Shows a notification whenever Time Sync checks and/or updates the
   time.
-* `Messages Duration`: Control how long the notification messages stay on screen. Default
+* `Notification Duration`: Control how long the notification messages stay on screen. Default
   is 5 seconds.
 * `Hours Offset`: The amount of hours to add to UTC, `0` by default.
 * `Minutes Offset`: The amount of minutes to add to UTC, `0` by default.
-* `Tolerance`: Don't alter the clock when the difference is less than this. Default is 200
+* `Tolerance`: Don't alter the clock when the difference is less than this. Default is 250
   ms.
 * `NTP Servers`: Shows the current list of NTP servers that will be queried. This setting
   cannot be changed through the configuration menu, you must edit the `Time Sync.json`
