@@ -37,7 +37,7 @@ OPTFLAGS	:= -O2 -fipa-pta -ffunction-sections
 
 CFLAGS	:=	$(WARN_FLAGS) $(OPTFLAGS) $(MACHDEP)
 
-CPPFLAGS	:= $(INCLUDE) -D__WIIU__ -D__WUT__ -D__WUPS__ 
+CPPFLAGS	:= $(INCLUDE) -D__WIIU__ -D__WUT__ -D__WUPS__
 
 CXXFLAGS	:= $(CFLAGS) -std=c++23
 

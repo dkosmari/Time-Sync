@@ -617,6 +617,9 @@ update_offset()
 void
 update_time()
 {
+    if (!cfg::sync)
+        return;
+
     static std::atomic<bool> executing = false;
 
     exec_guard guard{executing};
@@ -757,7 +760,7 @@ struct preview_item : wups::text_item {
     on_button_pressed(WUPSConfigButtons buttons)
         override
     {
-        wups::base_item::on_button_pressed(buttons);
+        wups::text_item::on_button_pressed(buttons);
 
         if (buttons & WUPS_CONFIG_BUTTON_A) {
             try {
