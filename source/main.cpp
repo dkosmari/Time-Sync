@@ -83,7 +83,7 @@ namespace cfg {
     bool        notify       = true;
     std::string server       = "pool.ntp.org";
     bool        sync         = false;
-    int         tolerance    = 200;
+    int         tolerance    = 250;
 
     OSTime offset = 0;          // combines hours and minutes offsets
 }
@@ -96,6 +96,7 @@ enum class guard_type {
     only_acquire,
     only_release
 };
+
 
 template<typename Sem>
 struct semaphore_guard {
@@ -413,7 +414,7 @@ ntp_query(struct sockaddr_in address)
 {
     socket_guard s{PF_INET, SOCK_DGRAM, IPPROTO_UDP};
     if (s.fd == -1)
-        throw std::runtime_error{"unable to create socket"};
+        throw std::runtime_error{"Unable to create socket!"};
 
     connect(s.fd, reinterpret_cast<struct sockaddr*>(&address), sizeof address);
 
@@ -431,12 +432,12 @@ ntp_query(struct sockaddr_in address)
     if (send(s.fd, &packet, sizeof packet, 0) == -1) {
         int e = errno;
         if (e != ENOMEM)
-            throw std::runtime_error{"unable to send NTP request: "s + errno_to_string(e)};
+            throw std::runtime_error{"Unable to send NTP request: "s + errno_to_string(e)};
         if (++num_send_tries < 4) {
             std::this_thread::sleep_for(100ms);
             goto try_again_send;
         } else
-            throw std::runtime_error{"no resources for send(), too many retries"};
+            throw std::runtime_error{"No resources for send(), too many retries!"};
     }
 
     struct timeval timeout = { 4, 0 };
@@ -459,15 +460,15 @@ ntp_query(struct sockaddr_in address)
             std::this_thread::sleep_for(10ms);
             goto try_again_select;
         } else
-            throw std::runtime_error{"no resources for select(), too many retries"};
+            throw std::runtime_error{"No resources for select(), too many retries!"};
     }
 
 
     if (!FD_ISSET(s.fd, &read_set))
-        throw std::runtime_error{"timeout reached"};
+        throw std::runtime_error{"Timeout reached!"};
 
     if (recv(s.fd, &packet, sizeof packet, 0) < 48)
-        throw std::runtime_error{"invalid NTP response"};
+        throw std::runtime_error{"Invalid NTP response!"};
 
     ntp::timestamp t4 = wiiu_to_ntp(get_utc_time());
 
@@ -552,7 +553,7 @@ get_address_info(const std::optional<std::string>& name,
 
         // sanity check: Wii U only supports IPv4
         if (a->ai_addrlen != sizeof(struct sockaddr_in))
-            throw std::logic_error{"getaddrinfo() returned invalid result"};
+            throw std::logic_error{"getaddrinfo() returned invalid result!"};
 
         addrinfo_result item;
         item.family = a->ai_family;
@@ -621,7 +622,7 @@ update_time()
     exec_guard guard{executing};
     if (!guard.guarded) {
         // Another thread is already executing this function.
-        report_info("skipping NTP task: already in progress");
+        report_info("Skipping NTP task: already in progress.");
         return;
     }
 
@@ -666,7 +667,7 @@ update_time()
             corrections.push_back(correction);
             report_info(to_string(address)
                         + ": correction = "s + seconds_to_human(correction)
-                        + ",  latency = "s + seconds_to_human(latency));
+                        + ", latency = "s + seconds_to_human(latency));
         }
         catch (std::exception& e) {
             report_error(to_string(address) + ": "s + e.what());
@@ -674,7 +675,7 @@ update_time()
 
 
     if (corrections.empty()) {
-        report_error("no NTP server could be used");
+        report_error("No NTP server could be used!");
         return;
     }
 
@@ -684,20 +685,20 @@ update_time()
         / corrections.size();
 
     if (std::fabs(avg_correction) * 1000 <= cfg::tolerance) {
-        report_success("tolerating clock drift (correction is only "
-                       + seconds_to_human(avg_correction) + ")"s);
+        report_success("Tolerating clock drift (correction is only "
+                       + seconds_to_human(avg_correction) + ")."s);
         return;
     }
 
     if (cfg::sync) {
         if (!apply_clock_correction(avg_correction)) {
-            report_error("failed to set system clock");
+            report_error("Failed to set system clock!");
             return;
         }
     }
 
     if (cfg::notify)
-        report_success("clock corrected by " + seconds_to_human(avg_correction));
+        report_success("Clock corrected by " + seconds_to_human(avg_correction));
 }
 
 
@@ -756,6 +757,8 @@ struct preview_item : wups::text_item {
     on_button_pressed(WUPSConfigButtons buttons)
         override
     {
+        wups::base_item::on_button_pressed(buttons);
+
         if (buttons & WUPS_CONFIG_BUTTON_A) {
             try {
                 using std::make_unique;
@@ -773,7 +776,7 @@ struct preview_item : wups::text_item {
                 // first, ensure each server has a text_item
                 for (const auto& server : servers)
                     if (!server_items[server]) {
-                        auto item = make_unique<wups::text_item>("server", server);
+                        auto item = make_unique<wups::text_item>("", server);
                         server_items[server] = item.get();
                         category->add(std::move(item));
                     }
@@ -805,7 +808,7 @@ struct preview_item : wups::text_item {
                 for (auto addr : addresses) {
                     // ensure each address has a text_item
                     if (!address_items[addr]) {
-                        auto item = make_unique<wups::text_item>("address", to_string(addr));
+                        auto item = make_unique<wups::text_item>("", to_string(addr));
                         address_items[addr] = item.get();
                         category->add(std::move(item));
                     }
@@ -826,7 +829,7 @@ struct preview_item : wups::text_item {
                 text = format_wiiu_time(OSGetTime());
 
                 if (corrections.empty())
-                    text += " : no NTP server could be used";
+                    text += ": no NTP server could be used.";
                 else {
                     double avg_correction = std::accumulate(corrections.begin(),
                                                             corrections.end(),
@@ -856,43 +859,43 @@ WUPS_GET_CONFIG()
 
     try {
 
-        auto config_cat = make_unique<wups::category>("Configuration");
-        auto preview_cat = make_unique<wups::category>("Preview");
+        auto config = make_unique<wups::category>("Configuration");
+        auto preview = make_unique<wups::category>("Preview");
 
-        config_cat->add(make_unique<wups::bool_item>(CFG_SYNC,
-                                                    "Syncing Enabled",
-                                                    cfg::sync));
+        config->add(make_unique<wups::bool_item>(CFG_SYNC,
+                                                 "Syncing Enabled",
+                                                 cfg::sync));
 
-        config_cat->add(make_unique<wups::bool_item>(CFG_NOTIFY,
-                                                    "Show Notifications",
-                                                    cfg::notify));
+        config->add(make_unique<wups::bool_item>(CFG_NOTIFY,
+                                                 "Show Notifications",
+                                                 cfg::notify));
 
-        config_cat->add(make_unique<wups::int_item>(CFG_MSG_DURATION,
-                                                    "Messages Duration (seconds)",
-                                                    cfg::msg_duration, 0, 30));
+        config->add(make_unique<wups::int_item>(CFG_MSG_DURATION,
+                                                "Messages Duration (seconds)",
+                                                cfg::msg_duration, 0, 30));
 
-        config_cat->add(make_unique<wups::int_item>(CFG_HOURS,
-                                                    "Hours Offset",
-                                                    cfg::hours, -12, 14));
+        config->add(make_unique<wups::int_item>(CFG_HOURS,
+                                                "Hours Offset",
+                                                cfg::hours, -12, 14));
 
-        config_cat->add(make_unique<wups::int_item>(CFG_MINUTES,
-                                                    "Minutes Offset",
-                                                    cfg::minutes, 0, 59));
+        config->add(make_unique<wups::int_item>(CFG_MINUTES,
+                                                "Minutes Offset",
+                                                cfg::minutes, 0, 59));
 
-        config_cat->add(make_unique<wups::int_item>(CFG_TOLERANCE,
-                                                    "Tolerance (milliseconds, L/R for +/- 50)",
-                                                    cfg::tolerance, 0, 5000));
+        config->add(make_unique<wups::int_item>(CFG_TOLERANCE,
+                                                "Tolerance (milliseconds, L/R for +/- 50)",
+                                                cfg::tolerance, 0, 5000));
 
         // show current NTP server address, no way to change it.
-        config_cat->add(make_unique<wups::text_item>(CFG_SERVER,
-                                                     "NTP servers",
-                                                     cfg::server));
+        config->add(make_unique<wups::text_item>(CFG_SERVER,
+                                                 "NTP servers",
+                                                 cfg::server));
 
-        preview_cat->add(make_unique<preview_item>(preview_cat.get()));
+        preview->add(make_unique<preview_item>(preview.get()));
 
         auto root = make_unique<wups::config>(PLUGIN_NAME);
-        root->add(std::move(config_cat));
-        root->add(std::move(preview_cat));
+        root->add(std::move(config));
+        root->add(std::move(preview));
 
         return root.release()->handle;
 
