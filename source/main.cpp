@@ -347,7 +347,7 @@ split(const std::string& input,
 
     std::vector<string> result;
 
-    string::size_type start = 0;
+    string::size_type start = input.find_first_not_of(separators);
     while (start != string::npos) {
         auto finish = input.find_first_of(separators, start);
         result.push_back(input.substr(start, finish - start));
