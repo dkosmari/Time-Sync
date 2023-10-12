@@ -760,7 +760,7 @@ get_statistics(const std::vector<double>& values)
     result.min = result.max = values.front();
     for (auto x : values) {
         result.min = std::fmin(result.min, x);
-        result.max = std::fmin(result.max, x);
+        result.max = std::fmax(result.max, x);
         total += x;
     }
 
