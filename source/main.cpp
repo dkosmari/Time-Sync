@@ -783,7 +783,7 @@ struct preview_item : wups::text_item {
     std::map<std::string, server_info> server_infos;
 
     preview_item(wups::category* cat) :
-        wups::text_item{"", "Clock (press A)"},
+        wups::text_item{"", "Clock (\ue000 to refresh)"},
         category{cat}
     {
         category->add(this);
@@ -939,7 +939,7 @@ WUPS_GET_CONFIG()
                                                 cfg::minutes, 0, 59));
 
         config->add(make_unique<wups::int_item>(CFG_TOLERANCE,
-                                                "Tolerance (milliseconds, L/R for +/- 50)",
+                                                "Tolerance (milliseconds, \ue083/\ue084 for +/- 50)",
                                                 cfg::tolerance, 0, 5000));
 
         // show current NTP server address, no way to change it.
