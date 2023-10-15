@@ -2,7 +2,6 @@
 
 // standard headers
 #include <atomic>
-#include <bit>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -16,7 +15,6 @@
 #include <numeric>              // accumulate()
 #include <optional>
 #include <ranges>               // ranges::zip()
-#include <semaphore>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -26,30 +24,31 @@
 
 // unix headers
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/select.h>
-#include <sys/socket.h>
+#include <netinet/in.h>         // struct sockaddr_in
+#include <sys/select.h>         // select()
+#include <sys/socket.h>         // connect()
 #include <sys/types.h>
-#include <unistd.h>
 
 // WUT/WUPS headers
 #include <coreinit/time.h>
 #include <nn/pdm.h>
 #include <notifications/notifications.h>
 #include <wups.h>
-#include <wups/config/WUPSConfigItemBoolean.h>
-#include <wups/config/WUPSConfigItemIntegerRange.h>
-#include <wups/config/WUPSConfigItemStub.h>
+#include <whb/log.h>
+#include <whb/log_udp.h>
 
-#include "ntp.hpp"
-
+// local headers
 #include "wupsxx/bool_item.hpp"
 #include "wupsxx/category.hpp"
 #include "wupsxx/config.hpp"
 #include "wupsxx/int_item.hpp"
 #include "wupsxx/storage.hpp"
 #include "wupsxx/text_item.hpp"
+
+#include "limited_async.hpp"
+#include "ntp.hpp"
+#include "utc.hpp"
+#include "utils.hpp"
 
 
 using namespace std::literals;
@@ -84,101 +83,26 @@ namespace cfg {
     std::string server       = "pool.ntp.org";
     bool        sync         = false;
     int         tolerance    = 250;
-
-    OSTime offset = 0;          // combines hours and minutes offsets
 }
 
 
-// The code below implements a wrapper for std::async() that respects a thread limit.
-
-enum class guard_type {
-    acquire_and_release,
-    only_acquire,
-    only_release
-};
+std::counting_semaphore<> async_limit{5}; // limit to 5 threads
 
 
-template<typename Sem>
-struct semaphore_guard {
-    Sem& sem;
-    guard_type type;
+#define MSG_PREFIX "[" PLUGIN_NAME "] "
 
-    semaphore_guard(Sem& s,
-                    guard_type t = guard_type::acquire_and_release) :
-        sem(s),
-        type{t}
-    {
-        if (type == guard_type::acquire_and_release ||
-            type == guard_type::only_acquire)
-            sem.acquire();
-    }
-
-    ~semaphore_guard()
-    {
-        if (type == guard_type::acquire_and_release ||
-            type == guard_type::only_release)
-            sem.release();
-    }
-};
-
-
-template<typename Func,
-         typename... Args>
-[[nodiscard]]
-std::future<typename std::invoke_result_t<std::decay_t<Func>, std::decay_t<Args>...>>
-limited_async(Func&& func,
-              Args&&... args)
-{
-    static std::counting_semaphore async_limit{6};
-
-    semaphore_guard caller_guard{async_limit};
-
-    auto result = std::async(std::launch::async,
-                             [](auto&& f, auto&&... a) -> auto
-                             {
-                                 semaphore_guard callee_guard{async_limit,
-                                                              guard_type::only_release};
-                                 return std::invoke(std::forward<decltype(f)>(f),
-                                                    std::forward<decltype(a)>(a)...);
-                             },
-                             std::forward<Func>(func),
-                             std::forward<Args>(args)...);
-
-    // If async() didn't fail, let the async thread handle the semaphore release.
-    caller_guard.type = guard_type::only_acquire;
-
-    return result;
-}
-
-
-#ifdef __WUT__
-// These can usually be found in <endian.h>, but WUT does not provide them.
-
-constexpr
-std::uint64_t
-htobe64(std::uint64_t x)
-{
-    if constexpr (std::endian::native == std::endian::big)
-        return x;
-    else
-        return std::byteswap(x);
-}
-
-
-constexpr
-std::uint64_t
-be64toh(std::uint64_t x)
-{
-    return htobe64(x);
-}
-
-#endif
+#define LOG(FMT, ...)  WHBLogPrintf(MSG_PREFIX FMT, __VA_ARGS__)
 
 
 void
 report_error(const std::string& arg)
 {
-    std::string msg = "[" PLUGIN_NAME "] " + arg;
+    LOG("ERROR: %s", arg.c_str());
+
+    if (!cfg::notify)
+        return;
+
+    std::string msg = MSG_PREFIX + arg;
     NotificationModule_AddErrorNotificationEx(msg.c_str(),
                                               cfg::msg_duration,
                                               1,
@@ -192,10 +116,12 @@ report_error(const std::string& arg)
 void
 report_info(const std::string& arg)
 {
+    LOG("INFO: %s", arg.c_str());
+
     if (!cfg::notify)
         return;
 
-    std::string msg = "[" PLUGIN_NAME "] " + arg;
+    std::string msg = MSG_PREFIX + arg;
     NotificationModule_AddInfoNotificationEx(msg.c_str(),
                                              cfg::msg_duration,
                                              {255, 255, 255, 255},
@@ -208,10 +134,12 @@ report_info(const std::string& arg)
 void
 report_success(const std::string& arg)
 {
+    LOG("SUCCESS: %s", arg.c_str());
+
     if (!cfg::notify)
         return;
 
-    std::string msg = "[" PLUGIN_NAME "] " + arg;
+    std::string msg = MSG_PREFIX + arg;
     NotificationModule_AddInfoNotificationEx(msg.c_str(),
                                              cfg::msg_duration,
                                              {255, 255, 255, 255},
@@ -221,104 +149,30 @@ report_success(const std::string& arg)
 }
 
 
-// Wrapper for strerror_r()
-std::string
-errno_to_string(int e)
-{
-    char buf[100];
-    strerror_r(e, buf, sizeof buf);
-    return buf;
-}
+// Difference from NTP (1900) to Wii U (2000) epochs.
+// There are 24 leap years in this period.
+constexpr double seconds_per_day = 24 * 60 * 60;
+constexpr double epoch_diff = seconds_per_day * (100 * 365 + 24);
 
 
-OSTime
-get_utc_time()
-{
-    return OSGetTime() - cfg::offset;
-}
-
-
-double
-ntp_to_double(ntp::timestamp t)
-{
-    return std::ldexp(static_cast<double>(t), -32);
-}
-
-
+// Wii U -> NTP epoch.
 ntp::timestamp
-double_to_ntp(double t)
+to_ntp(utc::timestamp t)
 {
-    return std::ldexp(t, 32);
+    return ntp::timestamp{t.value + epoch_diff};
 }
 
 
-OSTime
-ntp_to_wiiu(ntp::timestamp t)
+// NTP -> Wii U epoch.
+utc::timestamp
+to_utc(ntp::timestamp t)
 {
-    // Change t from NTP epoch (1900) to Wii U epoch (2000).
-    // There are 24 leap years in this period.
-    constexpr std::uint64_t seconds_per_day = 24 * 60 * 60;
-    constexpr std::uint64_t seconds_offset = seconds_per_day * (100 * 365 + 24);
-    t -= seconds_offset << 32;
-
-    // Convert from u32.32 to Wii U ticks count.
-    double dt = ntp_to_double(t);
-
-    // Note: do the conversion in floating point to avoid overflows.
-    OSTime r = dt * OSTimerClockSpeed;
-
-    return r;
-}
-
-
-ntp::timestamp
-wiiu_to_ntp(OSTime t)
-{
-    // Convert from Wii U ticks to seconds.
-    // Note: do the conversion in floating point to avoid overflows.
-    double dt = static_cast<double>(t) / OSTimerClockSpeed;
-    ntp::timestamp r = double_to_ntp(dt);
-
-    // Change r from Wii U epoch (2000) to NTP epoch (1900).
-    constexpr std::uint64_t seconds_per_day = 24 * 60 * 60;
-    constexpr std::uint64_t seconds_offset = seconds_per_day * (100 * 365 + 24);
-    r += seconds_offset << 32;
-
-    return r;
+    return utc::timestamp{static_cast<double>(t) - epoch_diff};
 }
 
 
 std::string
-to_string(const struct sockaddr_in& addr)
-{
-    char buf[32];
-    return inet_ntop(addr.sin_family, &addr.sin_addr,
-                     buf, sizeof buf);
-}
-
-
-std::string
-seconds_to_human(double s)
-{
-    char buf[64];
-
-    if (std::fabs(s) < 2) // less than 2 seconds
-        std::snprintf(buf, sizeof buf, "%.1f ms", 1000 * s);
-    else if (std::fabs(s) < 2 * 60) // less than 2 minutes
-        std::snprintf(buf, sizeof buf, "%.1f s", s);
-    else if (std::fabs(s) < 2 * 60 * 60) // less than 2 hours
-        std::snprintf(buf, sizeof buf, "%.1f min", s / 60);
-    else if (std::fabs(s) < 2 * 24 * 60 * 60) // less than 2 days
-        std::snprintf(buf, sizeof buf, "%.1f hrs", s / (60 * 60));
-    else
-        std::snprintf(buf, sizeof buf, "%.1f days", s / (24 * 60 * 60));
-
-    return buf;
-}
-
-
-std::string
-format_wiiu_time(OSTime wt)
+ticks_to_string(OSTime wt)
 {
     OSCalendarTime cal;
     OSTicksToCalendarTime(wt, &cal);
@@ -332,29 +186,11 @@ format_wiiu_time(OSTime wt)
 
 
 std::string
-format_ntp(ntp::timestamp t)
+to_string(ntp::timestamp t)
 {
-    OSTime wt = ntp_to_wiiu(t);
-    return format_wiiu_time(wt);
-}
-
-
-std::vector<std::string>
-split(const std::string& input,
-      const std::string& separators)
-{
-    using std::string;
-
-    std::vector<string> result;
-
-    string::size_type start = input.find_first_not_of(separators);
-    while (start != string::npos) {
-        auto finish = input.find_first_of(separators, start);
-        result.push_back(input.substr(start, finish - start));
-        start = input.find_first_not_of(separators, finish);
-    }
-
-    return result;
+    auto ut = to_utc(t);
+    OSTime ticks = ut.value * OSTimerClockSpeed;
+    return ticks_to_string(ticks);
 }
 
 
@@ -385,28 +221,6 @@ apply_clock_correction(double correction)
 }
 
 
-// RAII class to close down a socket
-struct socket_guard {
-    int fd;
-
-    socket_guard(int ns, int st, int pr) :
-        fd{socket(ns, st, pr)}
-    {}
-
-    ~socket_guard()
-    {
-        if (fd != -1)
-            close();
-    }
-
-    void
-    close()
-    {
-        ::close(fd);
-        fd = -1;
-    }
-};
-
 
 // Note: hardcoded for IPv4, the Wii U doesn't have IPv6.
 std::pair<double, double>
@@ -414,9 +228,7 @@ ntp_query(struct sockaddr_in address)
 {
     using std::to_string;
 
-    socket_guard s{PF_INET, SOCK_DGRAM, IPPROTO_UDP};
-    if (s.fd == -1)
-        throw std::runtime_error{"Unable to create socket!"};
+    utils::socket_guard s{PF_INET, SOCK_DGRAM, IPPROTO_UDP};
 
     connect(s.fd, reinterpret_cast<struct sockaddr*>(&address), sizeof address);
 
@@ -427,14 +239,14 @@ ntp_query(struct sockaddr_in address)
 
     unsigned num_send_tries = 0;
  try_again_send:
-
-    ntp::timestamp t1 = wiiu_to_ntp(get_utc_time());
-    packet.transmit_time = htobe64(t1);
+    auto t1 = to_ntp(utc::now());
+    packet.transmit_time = t1;
 
     if (send(s.fd, &packet, sizeof packet, 0) == -1) {
         int e = errno;
         if (e != ENOMEM)
-            throw std::runtime_error{"Unable to send NTP request: "s + errno_to_string(e)};
+            throw std::runtime_error{"send() failed: "s
+                                     + utils::errno_to_string(e)};
         if (++num_send_tries < 4) {
             std::this_thread::sleep_for(100ms);
             goto try_again_send;
@@ -442,13 +254,11 @@ ntp_query(struct sockaddr_in address)
             throw std::runtime_error{"No resources for send(), too many retries!"};
     }
 
+
     struct timeval timeout = { 4, 0 };
     fd_set read_set;
-
-
     unsigned num_select_tries = 0;
  try_again_select:
-
     FD_ZERO(&read_set);
     FD_SET(s.fd, &read_set);
 
@@ -457,7 +267,8 @@ ntp_query(struct sockaddr_in address)
         // so we may need to try again later.
         int e = errno;
         if (e != ENOMEM)
-            throw std::runtime_error{"select() failed: "s + errno_to_string(e)};
+            throw std::runtime_error{"select() failed: "s
+                                     + utils::errno_to_string(e)};
         if (++num_select_tries < 4) {
             std::this_thread::sleep_for(10ms);
             goto try_again_select;
@@ -465,11 +276,11 @@ ntp_query(struct sockaddr_in address)
             throw std::runtime_error{"No resources for select(), too many retries!"};
     }
 
-    // Measure the arrival time as soon as possible.
-    ntp::timestamp t4 = wiiu_to_ntp(get_utc_time());
-
     if (!FD_ISSET(s.fd, &read_set))
         throw std::runtime_error{"Timeout reached!"};
+
+    // Measure the arrival time as soon as possible.
+    auto t4 = to_ntp(utc::now());
 
     if (recv(s.fd, &packet, sizeof packet, 0) < 48)
         throw std::runtime_error{"Invalid NTP response!"};
@@ -486,168 +297,92 @@ ntp_query(struct sockaddr_in address)
     if (l == ntp::packet::leap_flag::unknown)
         throw std::runtime_error{"Unknown value for leap flag."};
 
-    ntp::timestamp t1_received = be64toh(packet.origin_time);
+    ntp::timestamp t1_received = packet.origin_time;
     if (t1 != t1_received)
-        throw std::runtime_error{"NTP response does not match request: ["s
-                                 + format_ntp(t1) + "] vs ["s
-                                 + format_ntp(t1_received) + "]"s};
+        throw std::runtime_error{"NTP response mismatch: ["s
+                                 + ::to_string(t1) + "] vs ["s
+                                 + ::to_string(t1_received) + "]"s};
 
     // when our request arrived at the server
-    ntp::timestamp t2 = be64toh(packet.receive_time);
+    auto t2 = packet.receive_time;
     // when the server sent out a response
-    ntp::timestamp t3 = be64toh(packet.transmit_time);
+    auto t3 = packet.transmit_time;
 
-    double roundtrip = ntp_to_double((t4 - t1) - (t3 - t2));
+    // Zero is not a valid timestamp.
+    if (!t2 || !t3)
+        throw std::runtime_error{"NTP response has invalid timestamps."};
+
+    /*
+     * We do all calculations in double precision to never worry about overflows. Since
+     * double precision has 53 mantissa bits, we're guaranteed to have 53 - 32 = 21
+     * fractional bits in Era 0, and 20 fractional bits in Era 1 (starting in 2036). We
+     * still have sub-microsecond resolution.
+     */
+    double d1 = static_cast<double>(t1);
+    double d2 = static_cast<double>(t2);
+    double d3 = static_cast<double>(t3);
+    double d4 = static_cast<double>(t4);
+
+    // Detect the wraparound that will happen at the end of Era 0.
+    if (d4 < d1)
+        d4 += 0x1.0p32; // d4 += 2^32
+    if (d3 < d2)
+        d3 += 0x1.0p32; // d3 += 2^32
+
+    double roundtrip = (d4 - d1) - (d3 - d2);
     double latency = roundtrip / 2;
 
     // t4 + correction = t3 + latency
-    double correction = ntp_to_double(t3) + latency - ntp_to_double(t4);
+    double correction = d3 + latency - d4;
+
+    /*
+     * If the local clock enters Era 1 ahead of NTP, we get a massive positive correction
+     * because the local clock wrapped back to zero.
+     */
+    if (correction > 0x1.0p31) // if correcting more than 68 years forward
+        correction -= 0x1.0p32;
+
+    /*
+     * If NTP enters Era 1 ahead of the local clock, we get a massive negative correction
+     * because NTP wrapped back to zero.
+     */
+    if (correction < -0x1.0p31) // if correcting more than 68 years backward
+        correction += 0x1.0p32;
 
     return { correction, latency };
 }
 
 
-// Wrapper for getaddrinfo(), hardcoded for IPv4
-
-struct addrinfo_query {
-    int flags    = 0;
-    int family   = AF_UNSPEC;
-    int socktype = 0;
-    int protocol = 0;
-};
-
-
-struct addrinfo_result {
-    int                        family;
-    int                        socktype;
-    int                        protocol;
-    struct sockaddr_in         address;
-    std::optional<std::string> canonname;
-};
-
-
-std::vector<addrinfo_result>
-get_address_info(const std::optional<std::string>& name,
-                 const std::optional<std::string>& port = {},
-                 std::optional<addrinfo_query> query = {})
-{
-    // RAII: unique_ptr is used to invoke freeaddrinfo() on function exit
-    std::unique_ptr<struct addrinfo,
-                    decltype([](struct addrinfo* p) { freeaddrinfo(p); })>
-        info;
-
-    {
-        struct addrinfo hints;
-        const struct addrinfo *hints_ptr = nullptr;
-
-        if (query) {
-            hints_ptr = &hints;
-            std::memset(&hints, 0, sizeof hints);
-            hints.ai_flags = query->flags;
-            hints.ai_family = query->family;
-            hints.ai_socktype = query->socktype;
-            hints.ai_protocol = query->protocol;
-        }
-
-        struct addrinfo* raw_info = nullptr;
-        int err = getaddrinfo(name ? name->c_str() : nullptr,
-                              port ? port->c_str() : nullptr,
-                              hints_ptr,
-                              &raw_info);
-        if (err)
-            throw std::runtime_error{gai_strerror(err)};
-
-        info.reset(raw_info); // put it in the smart pointer
-    }
-
-    std::vector<addrinfo_result> result;
-
-    // walk through the linked list
-    for (auto a = info.get(); a; a = a->ai_next) {
-
-        // sanity check: Wii U only supports IPv4
-        if (a->ai_addrlen != sizeof(struct sockaddr_in))
-            throw std::logic_error{"getaddrinfo() returned invalid result!"};
-
-        addrinfo_result item;
-        item.family = a->ai_family;
-        item.socktype = a->ai_socktype;
-        item.protocol = a->ai_protocol,
-        std::memcpy(&item.address, a->ai_addr, sizeof item.address);
-        if (a->ai_canonname)
-            item.canonname = a->ai_canonname;
-
-        result.push_back(std::move(item));
-    }
-
-    return result;
-}
-
-
-// ordering operator, so we can put sockaddr_in inside a std::set.
-constexpr
-bool
-operator <(const struct sockaddr_in& a,
-           const struct sockaddr_in& b)
-    noexcept
-{
-    return a.sin_addr.s_addr < b.sin_addr.s_addr;
-}
-
-
-// RAII type to ensure a function is never executed in parallel.
-
-struct exec_guard {
-    std::atomic<bool>& flag;
-    bool guarded = false;
-
-    exec_guard(std::atomic<bool>& f) :
-        flag(f)
-    {
-        bool expected_flag = false;
-        if (flag.compare_exchange_strong(expected_flag, true))
-            guarded = true; // Exactly one thread can have the "guarded" flag as true.
-    }
-
-    ~exec_guard()
-    {
-        if (guarded)
-            flag = false;
-    }
-};
-
-
 void
-update_offset()
+update_tz_offset()
 {
-    cfg::offset = OSSecondsToTicks(cfg::minutes * 60);
-    if (cfg::hours < 0)
-        cfg::offset -= OSSecondsToTicks(-cfg::hours * 60 * 60);
-    else
-        cfg::offset += OSSecondsToTicks(cfg::hours * 60 * 60);
+    double offset_seconds = (cfg::hours * 60.0 + cfg::minutes) * 60.0;
+    utc::timezone_offset = offset_seconds;
 }
 
 
 void
 update_time()
 {
+    using utils::seconds_to_human;
+
     if (!cfg::sync)
         return;
 
     static std::atomic<bool> executing = false;
 
-    exec_guard guard{executing};
+    utils::exec_guard guard{executing};
     if (!guard.guarded) {
         // Another thread is already executing this function.
         report_info("Skipping NTP task: already in progress.");
         return;
     }
 
-    update_offset();
+    update_tz_offset();
 
-    std::vector<std::string> servers = split(cfg::server, " \t,;");
+    std::vector<std::string> servers = utils::split(cfg::server, " \t,;");
 
-    addrinfo_query query = {
+    utils::addrinfo_query query = {
         .family = AF_INET,
         .socktype = SOCK_DGRAM,
         .protocol = IPPROTO_UDP
@@ -655,15 +390,20 @@ update_time()
 
     // First, resolve all the names, in parallel.
     // Some IP addresses might be duplicated when we use *.pool.ntp.org.
-    std::set<struct sockaddr_in> addresses;
+    std::set<struct sockaddr_in,
+             utils::less_sockaddr_in> addresses;
     {
-        std::vector<std::future<std::vector<addrinfo_result>>> infos(servers.size());
-        for (auto [info_vec, server] : std::views::zip(infos, servers))
-            info_vec = limited_async(get_address_info, server, "123", query);
+        using info_vec = std::vector<utils::addrinfo_result>;
+        std::vector<std::future<info_vec>> futures(servers.size());
 
-        for (auto& info_vec : infos)
+        // Launch DNS queries asynchronously.
+        for (auto [fut, server] : std::views::zip(futures, servers))
+            fut = limited_async(utils::get_address_info, server, "123", query);
+
+        // Collect all future results.
+        for (auto& fut : futures)
             try {
-                for (auto info : info_vec.get())
+                for (auto info : fut.get())
                     addresses.insert(info.address);
             }
             catch (std::exception& e) {
@@ -671,23 +411,23 @@ update_time()
             }
     }
 
-    // Launch all NTP queries in parallel.
-    std::vector<std::future<std::pair<double, double>>> results(addresses.size());
-    for (auto [address, result] : std::views::zip(addresses, results))
-        result = limited_async(ntp_query, address);
+    // Launch NTP queries asynchronously.
+    std::vector<std::future<std::pair<double, double>>> futures(addresses.size());
+    for (auto [fut, address] : std::views::zip(futures, addresses))
+        fut = limited_async(ntp_query, address);
 
-    // Now collect all results.
+    // Collect all future results.
     std::vector<double> corrections;
-    for (auto [address, result] : std::views::zip(addresses, results))
+    for (auto [address, fut] : std::views::zip(addresses, futures))
         try {
-            auto [correction, latency] = result.get();
+            auto [correction, latency] = fut.get();
             corrections.push_back(correction);
-            report_info(to_string(address)
+            report_info(utils::to_string(address)
                         + ": correction = "s + seconds_to_human(correction)
                         + ", latency = "s + seconds_to_human(latency));
         }
         catch (std::exception& e) {
-            report_error(to_string(address) + ": "s + e.what());
+            report_error(utils::to_string(address) + ": "s + e.what());
         }
 
 
@@ -712,10 +452,9 @@ update_time()
             report_error("Failed to set system clock!");
             return;
         }
+        report_success("Clock corrected by " + seconds_to_human(avg_correction));
     }
 
-    if (cfg::notify)
-        report_success("Clock corrected by " + seconds_to_human(avg_correction));
 }
 
 
@@ -734,6 +473,8 @@ load_or_init(const std::string& key,
 
 INITIALIZE_PLUGIN()
 {
+    WHBLogUdpInit();
+
     // Check if the plugin's settings have been saved before.
     if (WUPS_OpenStorage() == WUPS_STORAGE_ERROR_SUCCESS) {
 
@@ -802,7 +543,7 @@ struct preview_item : wups::text_item {
     {
         category->add(this);
 
-        std::vector<std::string> servers = split(cfg::server, " \t,;");
+        std::vector<std::string> servers = utils::split(cfg::server, " \t,;");
         for (const auto& server : servers) {
             if (!server_infos.contains(server)) {
                 auto& si = server_infos[server];
@@ -839,8 +580,11 @@ struct preview_item : wups::text_item {
     try {
 
         using std::make_unique;
+        using std::to_string;
+        using utils::seconds_to_human;
+        using utils::to_string;
 
-        update_offset();
+        update_tz_offset();
 
         for (auto& [key, value] : server_infos) {
             value.name_item->text.clear();
@@ -848,9 +592,9 @@ struct preview_item : wups::text_item {
             value.late_item->text.clear();
         }
 
-        std::vector<std::string> servers = split(cfg::server, " \t,;");
+        std::vector<std::string> servers = utils::split(cfg::server, " \t,;");
 
-        addrinfo_query query = {
+        utils::addrinfo_query query = {
             .family = AF_INET,
             .socktype = SOCK_DGRAM,
             .protocol = IPPROTO_UDP
@@ -862,9 +606,9 @@ struct preview_item : wups::text_item {
         for (const auto& server : servers) {
             auto& si = server_infos.at(server);
             try {
-                auto infos = get_address_info(server, "123", query);
+                auto infos = utils::get_address_info(server, "123", query);
 
-                si.name_item->text = std::to_string(infos.size())
+                si.name_item->text = to_string(infos.size())
                     + (infos.size() > 1 ? " addresses."s : " address."s);
 
                 std::vector<double> server_corrections;
@@ -878,14 +622,20 @@ struct preview_item : wups::text_item {
                         server_latencies.push_back(latency);
                         total += correction;
                         ++num_values;
+                        LOG("%s (%s): correction = %s, latency = %s",
+                            server.c_str(),
+                            to_string(info.address).c_str(),
+                            seconds_to_human(correction).c_str(),
+                            seconds_to_human(latency).c_str());
                     }
                     catch (std::exception& e) {
                         ++errors;
+                        LOG("Error: %s", e.what());
                     }
                 }
 
                 if (errors)
-                    si.name_item->text += " "s + std::to_string(errors)
+                    si.name_item->text += " "s + to_string(errors)
                         + (errors > 1 ? " errors."s : "error."s);
                 if (!server_corrections.empty()) {
                     auto corr_stats = get_statistics(server_corrections);
@@ -906,7 +656,7 @@ struct preview_item : wups::text_item {
             }
         }
 
-        text = format_wiiu_time(OSGetTime());
+        text = ticks_to_string(OSGetTime());
 
         if (num_values) {
             double avg = total / num_values;

@@ -3,6 +3,7 @@
 #ifndef NTP_HPP
 #define NTP_HPP
 
+#include <compare>
 #include <cstdint>
 #include <string>
 
@@ -10,8 +11,37 @@
 namespace ntp {
     // For details, see https://www.ntp.org/reflib/rfc/rfc5905.txt
 
-    // This is u32.32 fixed-point format, seconds since 1900-01-01.
-    using timestamp = std::uint64_t;
+    // This is u32.32 fixed-point format, seconds since 1900-01-01 00:00:00 UTC
+    class timestamp {
+
+        std::uint64_t stored = 0; // in big-endian format
+
+    public:
+
+        constexpr timestamp() noexcept = default;
+
+        timestamp(std::uint64_t v) = delete;
+
+        // Allow explicit conversions from/to double
+        explicit timestamp(double d) noexcept;
+        explicit operator double() const noexcept;
+
+        // Checks if timestamp is non-zero. Zero has a special meaning.
+        constexpr explicit operator bool() const noexcept { return stored; }
+
+
+        // These will byteswap if necessary.
+        std::uint64_t load() const noexcept;
+        void store(std::uint64_t v) noexcept;
+
+
+        constexpr
+        bool operator ==(const timestamp& other) const noexcept = default;
+
+        std::strong_ordering operator <=>(timestamp other) const noexcept;
+
+    };
+
 
     // This is a u16.16 fixed-point format.
     using short_timestamp = std::uint32_t;
@@ -49,90 +79,28 @@ namespace ntp {
         short_timestamp root_dispersion = 0; // Total dispersion to the reference clock.
         char            reference_id[4] = {0, 0, 0, 0}; // Reference clock identifier.
 
-        timestamp reference_time = 0; // Reference timestamp.
-        timestamp origin_time    = 0; // Origin timestamp, aka T1.
-        timestamp receive_time   = 0; // Receive timestamp, aka T2.
-        timestamp transmit_time  = 0; // Transmit timestamp, aka T3.
+        timestamp reference_time; // Reference timestamp.
+        timestamp origin_time;    // Origin timestamp.
+        timestamp receive_time;   // Receive timestamp.
+        timestamp transmit_time;  // Transmit timestamp.
 
 
-        void
-        leap(leap_flag x)
-            noexcept
-        {
-            lvm = static_cast<std::uint8_t>(x) | (lvm & 0b0011'1111);
-        }
+        void leap(leap_flag x) noexcept;
+        leap_flag leap() const noexcept;
 
 
-        leap_flag
-        leap()
-            const noexcept
-        {
-            return static_cast<leap_flag>((lvm & 0b1100'0000) >> 6);
-        }
+        void version(unsigned v) noexcept;
+        unsigned version() const noexcept;
 
 
-        void
-        version(unsigned v)
-        {
-            lvm = ((v << 3) & 0b0011'1000) | (lvm & 0b1100'0111);
-        }
-
-
-        unsigned
-        version()
-            const noexcept
-        {
-            return (lvm & 0b0011'1000) >> 3;
-        }
-
-
-        void
-        mode(mode_flag m)
-            noexcept
-        {
-            lvm = static_cast<std::uint8_t>(m) | (lvm & 0b1111'1000);
-        }
-
-
-        mode_flag
-        mode()
-            const noexcept
-        {
-            return static_cast<mode_flag>(lvm & 0b000'0111);
-        }
-
+        void mode(mode_flag m) noexcept;
+        mode_flag mode() const noexcept;
 
     };
 
     static_assert(sizeof(packet) == 48);
 
-
-    inline
-    std::string
-    to_string(packet::mode_flag m)
-    {
-        switch (m) {
-        case packet::mode_flag::reserved:
-            return "reserved";
-        case packet::mode_flag::active:
-            return "active";
-        case packet::mode_flag::passive:
-            return "passive";
-        case packet::mode_flag::client:
-            return "client";
-        case packet::mode_flag::server:
-            return "server";
-        case packet::mode_flag::broadcast:
-            return "broadcast";
-        case packet::mode_flag::control:
-            return "control";
-        case packet::mode_flag::reserved_private:
-            return "reserved_private";
-        default:
-            return "error";
-        }
-    }
-
+    std::string to_string(packet::mode_flag m);
 
 } // namespace ntp
 
