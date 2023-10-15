@@ -4,6 +4,7 @@
 #define NTP_HPP
 
 #include <cstdint>
+#include <string>
 
 
 namespace ntp {
@@ -19,14 +20,14 @@ namespace ntp {
     // Note: all fields are big-endian
     struct packet {
 
-        enum class leap : std::uint8_t {
+        enum class leap_flag : std::uint8_t {
             no_warning      = 0 << 6,
             one_more_second = 1 << 6,
             one_less_second = 2 << 6,
             unknown         = 3 << 6
         };
 
-        enum class mode : std::uint8_t {
+        enum class mode_flag : std::uint8_t {
             reserved         = 0,
             active           = 1,
             passive          = 2,
@@ -54,24 +55,84 @@ namespace ntp {
         timestamp transmit_time  = 0; // Transmit timestamp, aka T3.
 
 
-        void leap(leap x)
+        void
+        leap(leap_flag x)
+            noexcept
         {
             lvm = static_cast<std::uint8_t>(x) | (lvm & 0b0011'1111);
         }
 
-        void version(unsigned v)
+
+        leap_flag
+        leap()
+            const noexcept
+        {
+            return static_cast<leap_flag>((lvm & 0b1100'0000) >> 6);
+        }
+
+
+        void
+        version(unsigned v)
         {
             lvm = ((v << 3) & 0b0011'1000) | (lvm & 0b1100'0111);
         }
 
-        void mode(mode m)
+
+        unsigned
+        version()
+            const noexcept
+        {
+            return (lvm & 0b0011'1000) >> 3;
+        }
+
+
+        void
+        mode(mode_flag m)
+            noexcept
         {
             lvm = static_cast<std::uint8_t>(m) | (lvm & 0b1111'1000);
         }
 
+
+        mode_flag
+        mode()
+            const noexcept
+        {
+            return static_cast<mode_flag>(lvm & 0b000'0111);
+        }
+
+
     };
 
     static_assert(sizeof(packet) == 48);
+
+
+    inline
+    std::string
+    to_string(packet::mode_flag m)
+    {
+        switch (m) {
+        case packet::mode_flag::reserved:
+            return "reserved";
+        case packet::mode_flag::active:
+            return "active";
+        case packet::mode_flag::passive:
+            return "passive";
+        case packet::mode_flag::client:
+            return "client";
+        case packet::mode_flag::server:
+            return "server";
+        case packet::mode_flag::broadcast:
+            return "broadcast";
+        case packet::mode_flag::control:
+            return "control";
+        case packet::mode_flag::reserved_private:
+            return "reserved_private";
+        default:
+            return "error";
+        }
+    }
+
 
 } // namespace ntp
 

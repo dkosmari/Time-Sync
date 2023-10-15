@@ -412,6 +412,8 @@ struct socket_guard {
 std::pair<double, double>
 ntp_query(struct sockaddr_in address)
 {
+    using std::to_string;
+
     socket_guard s{PF_INET, SOCK_DGRAM, IPPROTO_UDP};
     if (s.fd == -1)
         throw std::runtime_error{"Unable to create socket!"};
@@ -420,7 +422,7 @@ ntp_query(struct sockaddr_in address)
 
     ntp::packet packet;
     packet.version(4);
-    packet.mode(ntp::packet::mode::client);
+    packet.mode(ntp::packet::mode_flag::client);
 
 
     unsigned num_send_tries = 0;
@@ -463,6 +465,8 @@ ntp_query(struct sockaddr_in address)
             throw std::runtime_error{"No resources for select(), too many retries!"};
     }
 
+    // Measure the arrival time as soon as possible.
+    ntp::timestamp t4 = wiiu_to_ntp(get_utc_time());
 
     if (!FD_ISSET(s.fd, &read_set))
         throw std::runtime_error{"Timeout reached!"};
@@ -470,13 +474,23 @@ ntp_query(struct sockaddr_in address)
     if (recv(s.fd, &packet, sizeof packet, 0) < 48)
         throw std::runtime_error{"Invalid NTP response!"};
 
-    ntp::timestamp t4 = wiiu_to_ntp(get_utc_time());
+    auto v = packet.version();
+    if (v < 3 || v > 4)
+        throw std::runtime_error{"Unsupported NTP version: "s + to_string(v)};
 
-    ntp::timestamp t1_copy = be64toh(packet.origin_time);
-    if (t1 != t1_copy)
+    auto m = packet.mode();
+    if (m != ntp::packet::mode_flag::server)
+        throw std::runtime_error{"Invalid NTP packet mode: "s + to_string(m)};
+
+    auto l = packet.leap();
+    if (l == ntp::packet::leap_flag::unknown)
+        throw std::runtime_error{"Unknown value for leap flag."};
+
+    ntp::timestamp t1_received = be64toh(packet.origin_time);
+    if (t1 != t1_received)
         throw std::runtime_error{"NTP response does not match request: ["s
                                  + format_ntp(t1) + "] vs ["s
-                                 + format_ntp(t1_copy) + "]"s};
+                                 + format_ntp(t1_received) + "]"s};
 
     // when our request arrived at the server
     ntp::timestamp t2 = be64toh(packet.receive_time);
