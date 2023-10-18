@@ -91,7 +91,7 @@ std::counting_semaphore<> async_limit{5}; // limit to 5 threads
 
 #define MSG_PREFIX "[" PLUGIN_NAME "] "
 
-#define LOG(FMT, ...)  WHBLogPrintf(MSG_PREFIX FMT, __VA_ARGS__)
+#define LOG(FMT, ...)  WHBLogPrintf(MSG_PREFIX FMT __VA_OPT__(,) __VA_ARGS__)
 
 
 void
