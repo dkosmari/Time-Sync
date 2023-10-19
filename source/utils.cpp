@@ -51,7 +51,8 @@ namespace utils {
 
     std::vector<std::string>
     split(const std::string& input,
-          const std::string& separators)
+          const std::string& separators,
+          std::size_t max_tokens)
     {
         using std::string;
 
@@ -59,6 +60,14 @@ namespace utils {
 
         string::size_type start = input.find_first_not_of(separators);
         while (start != string::npos) {
+
+            // if we can only include one more token
+            if (max_tokens && result.size() + 1 == max_tokens) {
+                // the last token will be the remaining of the input
+                result.push_back(input.substr(start));
+                break;
+            }
+
             auto finish = input.find_first_of(separators, start);
             result.push_back(input.substr(start, finish - start));
             start = input.find_first_not_of(separators, finish);
@@ -107,6 +116,98 @@ namespace utils {
     {
         ::close(fd);
         fd = -1;
+    }
+
+
+    void
+    send_all(int fd,
+             const std::string& msg,
+             int flags)
+    {
+        ssize_t sent = 0;
+        ssize_t total = msg.size();
+        const char* start = msg.data();
+
+        while (sent < total) {
+            auto r = send(fd, start, total - sent, flags);
+            if (r <= 0) {
+                int e = errno;
+                throw std::runtime_error{"send() failed: "
+                                         + utils::errno_to_string(e)};
+            }
+            sent += r;
+            start = msg.data() + sent;
+        }
+    }
+
+
+    std::string
+    recv_all(int fd,
+             std::size_t size,
+             int flags)
+    {
+        std::string result;
+
+        char buffer[1024];
+
+        while (result.size() < size) {
+            ssize_t r = recv(fd, buffer, sizeof buffer, flags);
+            if (r == -1) {
+                int e = errno;
+                if (result.empty())
+                    throw std::runtime_error{"recv() failed: "
+                                             + utils::errno_to_string(e)};
+                else
+                    break;
+            }
+
+            if (r == 0)
+                break;
+
+            result.append(buffer, r);
+        }
+
+        return result;
+    }
+
+
+    // Not very efficient, read one byte at a time.
+    std::string
+    recv_until(int fd,
+               const std::string& end_token,
+               int flags)
+    {
+        std::string result;
+
+        char buffer[1];
+
+        while (true) {
+
+            ssize_t r = recv(fd, buffer, sizeof buffer, flags);
+            if (r == -1) {
+                int e = errno;
+                if (result.empty())
+                    throw std::runtime_error{"recv() failed: "
+                                             + utils::errno_to_string(e)};
+                else
+                    break;
+            }
+
+            if (r == 0)
+                break;
+
+            result.append(buffer, r);
+
+            // if we found the end token, remove it from the result and break out
+            auto end = result.find(end_token);
+            if (end != std::string::npos) {
+                result.erase(end);
+                break;
+            }
+
+        }
+
+        return result;
     }
 
 

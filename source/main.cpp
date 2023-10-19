@@ -45,10 +45,12 @@
 #include "wupsxx/storage.hpp"
 #include "wupsxx/text_item.hpp"
 
+#include "http_client.hpp"
 #include "limited_async.hpp"
 #include "ntp.hpp"
 #include "utc.hpp"
 #include "utils.hpp"
+#include "nintendo_glyphs.hpp"
 
 
 using namespace std::literals;
@@ -538,7 +540,7 @@ struct preview_item : wups::text_item {
     std::map<std::string, server_info> server_infos;
 
     preview_item(wups::category* cat) :
-        wups::text_item{"", "Clock (\ue000 to refresh)"},
+        wups::text_item{"", "Clock (press " NIN_GLYPH_BTN_A " to refresh)"},
         category{cat}
     {
         category->add(this);
@@ -671,6 +673,53 @@ struct preview_item : wups::text_item {
 };
 
 
+
+struct timezone_item : wups::text_item {
+
+    timezone_item() :
+        wups::text_item{"",
+                        "Detect timezone (press " NIN_GLYPH_BTN_A ")",
+                        "Using http://ip-api.com"}
+    {}
+
+
+    void
+    on_button_pressed(WUPSConfigButtons buttons)
+        override
+    {
+        text_item::on_button_pressed(buttons);
+
+        if (buttons & WUPS_CONFIG_BUTTON_A)
+            query_timezone();
+    }
+
+
+    void
+    query_timezone()
+    try {
+        std::string tz = http::get("http://ip-api.com/line/?fields=timezone,offset");
+        auto tokens = utils::split(tz, " \r\n");
+        if (tokens.size() != 2)
+            throw std::runtime_error{"Could not parse response from \"ip-api.com\"."};
+
+        int tz_offset = std::stoi(tokens[1]);
+        text = tokens[0];
+
+        cfg::hours = tz_offset / (60 * 60);
+        cfg::minutes = tz_offset % (60 * 60) / 60;
+        if (cfg::minutes < 0) {
+            cfg::minutes += 60;
+            --cfg::hours;
+        }
+    }
+    catch (std::exception& e) {
+        text = "Error: "s + e.what();
+    }
+
+};
+
+
+
 WUPS_GET_CONFIG()
 {
     if (WUPS_OpenStorage() != WUPS_STORAGE_ERROR_SUCCESS)
@@ -702,8 +751,14 @@ WUPS_GET_CONFIG()
                                                 "Minutes Offset",
                                                 cfg::minutes, 0, 59));
 
+        config->add(make_unique<timezone_item>());
+
         config->add(make_unique<wups::int_item>(CFG_TOLERANCE,
-                                                "Tolerance (milliseconds, \ue083/\ue084 for +/- 50)",
+                                                "Tolerance (milliseconds, "
+                                                NIN_GLYPH_GAMEPAD_BTN_L
+                                                "/"
+                                                NIN_GLYPH_GAMEPAD_BTN_R
+                                                " for +/- 50)",
                                                 cfg::tolerance, 0, 5000));
 
         // show current NTP server address, no way to change it.

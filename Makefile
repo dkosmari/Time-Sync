@@ -12,6 +12,7 @@ include $(DEVKITPRO)/wups/share/wups_rules
 
 WUMS_ROOT := $(DEVKITPRO)/wums
 WUT_ROOT := $(DEVKITPRO)/wut
+
 #-------------------------------------------------------------------------------
 # TARGET is the name of the output
 # BUILD is the directory where object files & intermediate files will be placed
@@ -37,21 +38,25 @@ OPTFLAGS	:= -O2 -fipa-pta -ffunction-sections
 
 CFLAGS	:=	$(WARN_FLAGS) $(OPTFLAGS) $(MACHDEP)
 
-CPPFLAGS	:= $(INCLUDE) -D__WIIU__ -D__WUT__ -D__WUPS__
-
 CXXFLAGS	:= $(CFLAGS) -std=c++23
+
+# Note: INCLUDE will be defined later, so CPPFLAGS has to be of the recursive flavor.
+CPPFLAGS	= $(INCLUDE) \
+		  -D__WIIU__ \
+		  -D__WUT__ \
+		  -D__WUPS__
 
 ASFLAGS	:=	-g $(ARCH)
 
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map) $(WUPSSPECS) 
 
-LIBS	:= -lnotifications -lwups -lwut
+LIBS	:=	-lnotifications -lwups -lwut
 
 #-------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level
 # containing include and lib
 #-------------------------------------------------------------------------------
-LIBDIRS	:= $(PORTLIBS) $(WUMS_ROOT) $(WUPS_ROOT) $(WUT_ROOT)
+LIBDIRS	:= $(WUMS_ROOT) $(WUPS_ROOT) $(WUT_ROOT)
 
 #-------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
@@ -93,12 +98,11 @@ export OFILES 	:=	$(OFILES_BIN) $(OFILES_SRC)
 export HFILES_BIN	:=	$(addsuffix .h,$(subst .,_,$(BINFILES)))
 
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
-			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
-			-I$(CURDIR)/$(BUILD)
+			$(foreach dir,$(LIBDIRS),-I$(dir)/include)
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
-.PHONY: $(BUILD) clean all upload
+.PHONY: $(BUILD) clean all
 
 #-------------------------------------------------------------------------------
 all: $(BUILD)
@@ -142,7 +146,12 @@ $(OFILES_SRC)	: $(HFILES_BIN)
 endif
 #-------------------------------------------------------------------------------
 
-
+.PHONY: upload
 upload: all
 	ncftpput wiiu /fs/vol/external01/wiiu/environments/aroma/plugins/ $(TARGET).wps
 	[ -f "Time Sync.json" ] && ncftpput wiiu /fs/vol/external01/wiiu/environments/aroma/plugins/config/ "Time Sync.json"
+
+
+.PHONY: company
+company: Makefile
+	echo "$(CPPFLAGS)" | xargs -n1 | sort > source/compile_flags.txt

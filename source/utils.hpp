@@ -22,10 +22,16 @@ namespace utils {
     std::string seconds_to_human(double s);
 
 
-    // Split input string into tokens, according to separators.
+    /**
+     * Split input string into tokens, according to separators.
+     *
+     * If max_tokens is not zero, only up to max_tokens will be generated; the last token
+     * will be the remaining of the string.
+     */
     std::vector<std::string>
     split(const std::string& input,
-          const std::string& separators);
+          const std::string& separators,
+          std::size_t max_tokens = 0);
 
 
 
@@ -52,6 +58,12 @@ namespace utils {
         void close();
     };
 
+
+    void send_all(int fd, const std::string& msg, int flags = 0);
+
+    std::string recv_all(int fd, std::size_t size, int flags = 0);
+
+    std::string recv_until(int fd, const std::string& end_token, int flags = 0);
 
 
     // Wrapper for getaddrinfo(), hardcoded for IPv4
