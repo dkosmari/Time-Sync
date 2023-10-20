@@ -39,13 +39,23 @@ namespace wups {
     int_item::get_current_value_selected_display(char* buf, std::size_t size)
         const
     {
-        const char* left = " ";
-        const char* right = " ";
-        if (variable > min_value)
+        const char* left = "";
+        const char* right = "";
+        const char* fast_left = "";
+        const char* fast_right = "";
+        if (variable > min_value) {
             left = NIN_GLYPH_BTN_DPAD_LEFT;
-        if (variable < max_value)
+            fast_left = NIN_GLYPH_BTN_L;
+        } if (variable < max_value) {
             right = NIN_GLYPH_BTN_DPAD_RIGHT;
-        std::snprintf(buf, size, "%s %d %s", left, variable, right);
+            fast_right = NIN_GLYPH_BTN_R;
+        }
+        std::snprintf(buf, size, "%s%s %d %s%s",
+                      fast_left,
+                      left,
+                      variable,
+                      right,
+                      fast_right);
         return 0;
     }
 

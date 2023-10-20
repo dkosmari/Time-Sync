@@ -6,6 +6,8 @@
 #include <regex>
 #include <stdexcept>
 
+#include <sys/socket.h>         // connect()
+
 #include "http_client.hpp"
 
 #include "utils.hpp"

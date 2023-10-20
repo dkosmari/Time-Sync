@@ -25,6 +25,7 @@ BUILD		:=	build
 SOURCES		:=	source source/wupsxx
 DATA		:=	data
 INCLUDES	:=	source
+PLUGIN_NAME	:=	"Time Sync"
 
 # Be verbose by default.
 V ?= 1
@@ -44,11 +45,17 @@ CXXFLAGS	:= $(CFLAGS) -std=c++23
 CPPFLAGS	= $(INCLUDE) \
 		  -D__WIIU__ \
 		  -D__WUT__ \
-		  -D__WUPS__
+		  -D__WUPS__ \
+		  -DPLUGIN_NAME=\"$(PLUGIN_NAME)\"
 
 ASFLAGS	:=	-g $(ARCH)
 
-LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map) $(WUPSSPECS) 
+LDFLAGS	=	-g \
+		$(ARCH) \
+		$(RPXSPECS) \
+		$(WUPSSPECS) \
+		-Wl,-Map,$(notdir $*.map) \
+		$(OPTFLAGS)
 
 LIBS	:=	-lnotifications -lwups -lwut
 

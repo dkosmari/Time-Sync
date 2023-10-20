@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+#include <functional>           // invoke()
 #include <future>
 #include <semaphore>
 
