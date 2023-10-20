@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 // standard headers
-#include <memory>               // unique_ptr<>
+#include <memory>               // make_unique()
 #include <thread>
 
 // WUT/WUPS headers
@@ -10,23 +10,17 @@
 #include <whb/log_udp.h>
 
 // local headers
-#include "wupsxx/bool_item.hpp"
-#include "wupsxx/category.hpp"
-#include "wupsxx/config.hpp"
-#include "wupsxx/int_item.hpp"
-#include "wupsxx/storage.hpp"
-#include "wupsxx/text_item.hpp"
-
 #include "cfg.hpp"
 #include "config_screen.hpp"
 #include "preview_screen.hpp"
 #include "core.hpp"
+#include "wupsxx/config.hpp"
 
 
 // Important plugin information.
 WUPS_PLUGIN_NAME(PLUGIN_NAME);
 WUPS_PLUGIN_DESCRIPTION("A plugin that synchronizes a Wii U's clock to the Internet.");
-WUPS_PLUGIN_VERSION("v2.1.0");
+WUPS_PLUGIN_VERSION("v3.0.0");
 WUPS_PLUGIN_AUTHOR("Nightkingale, Daniel K. O.");
 WUPS_PLUGIN_LICENSE("MIT");
 
@@ -37,14 +31,13 @@ WUPS_USE_STORAGE(PLUGIN_NAME);
 INITIALIZE_PLUGIN()
 {
     WHBLogUdpInit();
+    NotificationModule_InitLibrary(); // Set up for notifications.
 
     // Check if the plugin's settings have been saved before.
     if (WUPS_OpenStorage() == WUPS_STORAGE_ERROR_SUCCESS) {
         cfg::load();
         WUPS_CloseStorage();
     }
-
-    NotificationModule_InitLibrary(); // Set up for notifications.
 
     if (cfg::sync)
         core::sync_clock(); // Update clock when plugin is loaded.

@@ -26,7 +26,7 @@ struct timezone_item : wups::text_item {
 
     timezone_item() :
         wups::text_item{"",
-                        "Detect timezone (press " NIN_GLYPH_BTN_A ")",
+                        "Detect Timezone (press " NIN_GLYPH_BTN_A ")",
                         "Using http://ip-api.com"}
     {}
 

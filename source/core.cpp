@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+#include <atomic>
 #include <chrono>
 #include <cmath>                // fabs()
 #include <cstdio>
@@ -228,10 +229,10 @@ namespace core {
     {
         OSTime correction_ticks = correction * OSTimerClockSpeed;
 
+        nn::pdm::NotifySetTimeBeginEvent();
+
         OSTime now = OSGetTime();
         OSTime corrected = now + correction_ticks;
-
-        nn::pdm::NotifySetTimeBeginEvent();
 
         if (CCRSysSetSystemTime(corrected)) {
             nn::pdm::NotifySetTimeEndEvent();
