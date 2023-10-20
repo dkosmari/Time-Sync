@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-#ifndef PREVIEW_HPP
-#define PREVIEW_HPP
+#ifndef PREVIEW_SCREEN_HPP
+#define PREVIEW_SCREEN_HPP
 
 #include <map>
 #include <string>
 
-#include "wupsxx/text_item.hpp"
 #include "wupsxx/category.hpp"
+#include "wupsxx/text_item.hpp"
 
 
-struct preview : wups::category {
+struct preview_screen : wups::category {
 
     struct server_info {
         wups::text_item* name = nullptr;
@@ -23,7 +23,7 @@ struct preview : wups::category {
     std::map<std::string, server_info> server_infos;
 
 
-    preview();
+    preview_screen();
 
     void run();
 

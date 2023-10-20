@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "preview.hpp"
+#include "preview_screen.hpp"
 
 #include "cfg.hpp"
 #include "core.hpp"
@@ -19,9 +19,9 @@ using namespace std::literals;
 
 struct clock_item : wups::text_item {
 
-    preview* parent;
+    preview_screen* parent;
 
-    clock_item(preview* p) :
+    clock_item(preview_screen* p) :
         wups::text_item{"", "Clock (" NIN_GLYPH_BTN_A " to refresh)"},
         parent{p}
     {}
@@ -40,7 +40,7 @@ struct clock_item : wups::text_item {
 };
 
 
-preview::preview() :
+preview_screen::preview_screen() :
     wups::category{"Preview"}
 {
     auto c = make_unique<clock_item>(this);
@@ -100,7 +100,7 @@ namespace {
 
 
 void
-preview::run()
+preview_screen::run()
 try {
 
     using std::to_string;
