@@ -83,5 +83,5 @@ config_screen::config_screen() :
                               cfg::tolerance, 0, 5000));
 
     // show current NTP server address, no way to change it.
-    add(make_unique<wups::text_item>(cfg::key::server, "NTP servers", cfg::server));
+    add(make_unique<wups::text_item>(cfg::key::server, "NTP Servers", cfg::server));
 }
