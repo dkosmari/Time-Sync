@@ -12,7 +12,7 @@ namespace wups::config {
     text_item::text_item(const std::optional<std::string>& key,
                          const std::string& name,
                          const std::string& text) :
-        base_item{key, name},
+        item{key, name},
         text{text}
     {}
 
@@ -54,7 +54,7 @@ namespace wups::config {
     void
     text_item::on_input(WUPSConfigSimplePadData input)
     {
-        base_item::on_input(input);
+        item::on_input(input);
 
         if (text.empty())
             return;
@@ -76,4 +76,4 @@ namespace wups::config {
             start = 0;
     }
 
-} // namespace wups
+} // namespace wups::config

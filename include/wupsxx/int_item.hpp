@@ -5,12 +5,12 @@
 
 #include <memory>
 
-#include "base_item.hpp"
+#include "item.hpp"
 
 
 namespace wups::config {
 
-    struct int_item : base_item {
+    struct int_item : item {
 
         int& variable;
         int default_value = 0;

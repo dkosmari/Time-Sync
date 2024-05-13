@@ -6,9 +6,9 @@
 
 #include "wupsxx/int_item.hpp"
 
-#include "wupsxx/storage.hpp"
-#include "nintendo_glyphs.hpp"
 #include "log.hpp"
+#include "nintendo_glyphs.hpp"
+#include "wupsxx/storage.hpp"
 
 
 // TODO: have a Config parameter for constructor
@@ -20,7 +20,7 @@ namespace wups::config {
                        int& variable,
                        int min_value,
                        int max_value) :
-        base_item{key, name},
+        item{key, name},
         variable(variable),
         default_value{variable},
         min_value{min_value},
@@ -86,7 +86,7 @@ namespace wups::config {
     void
     int_item::on_input(WUPSConfigSimplePadData input)
     {
-        base_item::on_input(input);
+        item::on_input(input);
 
         if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT)
             --variable;

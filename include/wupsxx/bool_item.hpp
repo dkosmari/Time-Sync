@@ -6,12 +6,12 @@
 #include <memory>
 #include <string>
 
-#include "base_item.hpp"
+#include "item.hpp"
 
 
 namespace wups::config {
 
-    struct bool_item : base_item {
+    struct bool_item : item {
 
         bool& variable;
         bool default_value;

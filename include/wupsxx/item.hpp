@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-#ifndef WUPSXX_BASE_ITEM_HPP
-#define WUPSXX_BASE_ITEM_HPP
+#ifndef WUPSXX_ITEM_HPP
+#define WUPSXX_ITEM_HPP
 
 #include <optional>
 #include <string>
@@ -11,20 +11,20 @@
 
 namespace wups::config {
 
-    struct base_item {
+    struct item {
 
         WUPSConfigItemHandle handle;
         std::optional<std::string> key;
         std::string name;
 
 
-        base_item(const std::optional<std::string>& key,
-                  const std::string& name);
+        item(const std::optional<std::string>& key,
+             const std::string& name);
 
         // disallow moving, since the callbacks store the `this` pointer.
-        base_item(base_item&&) = delete;
+        item(item&&) = delete;
 
-        virtual ~base_item();
+        virtual ~item();
 
         void release();
 

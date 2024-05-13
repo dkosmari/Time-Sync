@@ -5,12 +5,12 @@
 
 #include <memory>
 
-#include "base_item.hpp"
+#include "item.hpp"
 
 
 namespace wups::config {
 
-    struct text_item : base_item {
+    struct text_item : item {
 
         std::string text;
         int max_width = 50;
@@ -36,7 +36,7 @@ namespace wups::config {
         virtual void on_input(WUPSConfigSimplePadData input) override;
     };
 
-} // namespace wups
+} // namespace wups::config
 
 
 #endif

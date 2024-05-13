@@ -5,9 +5,9 @@
 
 #include "wupsxx/bool_item.hpp"
 
+#include "log.hpp"
 #include "nintendo_glyphs.hpp"
 #include "wupsxx/storage.hpp"
-#include "log.hpp"
 
 
 namespace wups::config {
@@ -15,7 +15,7 @@ namespace wups::config {
     bool_item::bool_item(const std::optional<std::string>& key,
                          const std::string& name,
                          bool& variable) :
-        base_item{key, name},
+        item{key, name},
         variable(variable),
         default_value{variable}
     {}
@@ -63,7 +63,7 @@ namespace wups::config {
     void
     bool_item::on_input(WUPSConfigSimplePadData input)
     {
-        base_item::on_input(input);
+        item::on_input(input);
 
         if (input.buttons_d & WUPS_CONFIG_BUTTON_A)
             variable = !variable;

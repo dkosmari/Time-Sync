@@ -8,7 +8,7 @@
 
 #include <wups.h>
 
-#include "base_item.hpp"
+#include "item.hpp"
 
 
 namespace wups::config {
@@ -28,8 +28,7 @@ namespace wups::config {
 
         void release();
 
-        void add(std::unique_ptr<base_item>&& item);
-        void add(base_item* item);
+        void add(std::unique_ptr<item>&& item);
 
         void add(category&& child);
 

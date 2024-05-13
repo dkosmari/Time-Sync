@@ -19,7 +19,7 @@ namespace wups::config {
         WUPSConfigAPICreateCategoryOptionsV1 options{ .name = name.c_str() };
         auto status = WUPSConfigAPI_Category_Create(options, &handle);
         if (status != WUPSCONFIG_API_RESULT_SUCCESS)
-            throw config_error{"could not create category", status};
+            throw config_error{"could not create category \"" + name + "\"", status};
     }
 
 
@@ -46,15 +46,7 @@ namespace wups::config {
 
 
     void
-    category::add(std::unique_ptr<base_item>&& item)
-    {
-        add(item.get());
-        item.release(); // WUPS will call .onDelete() later
-    }
-
-
-    void
-    category::add(base_item* item)
+    category::add(std::unique_ptr<item>&& item)
     {
         if (!item)
             throw std::logic_error{"cannot add null item to category"};
@@ -64,6 +56,8 @@ namespace wups::config {
         auto status = WUPSConfigAPI_Category_AddItem(handle, item->handle);
         if (status != WUPSCONFIG_API_RESULT_SUCCESS)
             throw config_error{"cannot add item to category: ", status};
+
+        item.release(); // WUPS will call .onDelete() later
     }
 
 
