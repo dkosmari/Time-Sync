@@ -13,7 +13,7 @@ namespace wups::storage {
 
     struct storage_error : std::runtime_error {
 
-        storage_error(WUPSStorageError status);
+        storage_error(const std::string& msg, WUPSStorageError status);
 
     };
 

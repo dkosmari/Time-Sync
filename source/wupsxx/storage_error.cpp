@@ -5,8 +5,10 @@
 
 namespace wups::storage {
 
-    storage_error::storage_error(WUPSStorageError status) :
-        std::runtime_error{std::string(WUPSStorageAPI::GetStatusStr(status))}
+    storage_error::storage_error(const std::string& msg,
+                                 WUPSStorageError status) :
+        std::runtime_error{msg + ": " +
+                           std::string(WUPSStorageAPI::GetStatusStr(status))}
     {}
 
 }

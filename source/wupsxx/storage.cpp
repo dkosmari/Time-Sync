@@ -12,7 +12,7 @@ namespace wups::storage {
     {
         auto status = WUPSStorageAPI::SaveStorage();
         if (status != WUPS_STORAGE_ERROR_SUCCESS)
-            throw storage_error{status};
+            throw storage_error{"error saving storage", status};
     }
 
 
@@ -21,7 +21,7 @@ namespace wups::storage {
     {
         auto status = WUPSStorageAPI::ForceReloadStorage();
         if (status != WUPS_STORAGE_ERROR_SUCCESS)
-            throw storage_error{status};
+            throw storage_error{"error reloading storage", status};
     }
 
 

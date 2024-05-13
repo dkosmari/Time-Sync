@@ -23,7 +23,8 @@ namespace wups::storage {
                                             value,
                                             WUPSStorageAPI::GetOptions::RESIZE_EXISTING_BUFFER);
         if (status != WUPS_STORAGE_ERROR_SUCCESS)
-            return std::unexpected{storage_error{status}};
+            return std::unexpected{storage_error{"error loading key \"" + key + "\"",
+                                                 status}};
         return value;
     }
 
@@ -34,7 +35,8 @@ namespace wups::storage {
     {
         auto status = WUPSStorageAPI::StoreEx(nullptr, key, value);
         if (status != WUPS_STORAGE_ERROR_SUCCESS)
-            throw storage_error{status};
+            throw storage_error{"error storing key \"" + key + "\"",
+                                status};
     }
 
 
