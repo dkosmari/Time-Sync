@@ -4,14 +4,12 @@
 #include <cstdio>
 #include <stdexcept>
 
-#include "text_item.hpp"
+#include "wupsxx/text_item.hpp"
 
 
-using namespace std::literals;
+namespace wups::config {
 
-namespace wups {
-
-    text_item::text_item(const std::string& key,
+    text_item::text_item(const std::optional<std::string>& key,
                          const std::string& name,
                          const std::string& text) :
         base_item{key, name},
@@ -19,9 +17,18 @@ namespace wups {
     {}
 
 
+    std::unique_ptr<text_item>
+    text_item::create(const std::optional<std::string>& key,
+                      const std::string& name,
+                      const std::string& text)
+    {
+        return std::make_unique<text_item>(key, name, text);
+    }
+
+
     int
-    text_item::get_current_value_display(char* buf,
-                                         std::size_t size)
+    text_item::get_display(char* buf,
+                           std::size_t size)
         const
     {
         auto width = std::min<int>(size - 1, max_width);
@@ -45,9 +52,9 @@ namespace wups {
 
 
     void
-    text_item::on_button_pressed(WUPSConfigButtons buttons)
+    text_item::on_input(WUPSConfigSimplePadData input)
     {
-        base_item::on_button_pressed(buttons);
+        base_item::on_input(input);
 
         if (text.empty())
             return;
@@ -57,10 +64,10 @@ namespace wups {
         if (tsize <= max_width)
             return;
 
-        if (buttons & WUPS_CONFIG_BUTTON_LEFT)
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT)
             start -= 5;
 
-        if (buttons & WUPS_CONFIG_BUTTON_RIGHT)
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_RIGHT)
             start += 5;
 
         if (start >= tsize - max_width)

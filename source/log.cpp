@@ -22,7 +22,8 @@ report_error(const std::string& arg)
                                               {255, 255, 255, 255},
                                               {160, 32, 32, 255},
                                               nullptr,
-                                              nullptr);
+                                              nullptr,
+                                              true);
 }
 
 
@@ -40,7 +41,8 @@ report_info(const std::string& arg)
                                              {255, 255, 255, 255},
                                              {32, 32, 160, 255},
                                              nullptr,
-                                             nullptr);
+                                             nullptr,
+                                             true);
 }
 
 
@@ -58,5 +60,6 @@ report_success(const std::string& arg)
                                              {255, 255, 255, 255},
                                              {32, 160, 32, 255},
                                              nullptr,
-                                             nullptr);
+                                             nullptr,
+                                             true);
 }

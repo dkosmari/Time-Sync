@@ -3,101 +3,125 @@
 #include <cstdio>
 #include <stdexcept>
 
-#include "base_item.hpp"
+#include "wupsxx/base_item.hpp"
+
+#include "wupsxx/config_error.hpp"
 
 
-namespace wups {
+namespace wups::config {
 
-    base_item::base_item(const std::string& key,
+    namespace dispatchers {
+
+        int32_t
+        get_display(void* ctx, char* buf, int32_t size)
+        {
+            auto item = static_cast<const base_item*>(ctx);
+            return item->get_display(buf, size);
+        }
+
+        int32_t
+        get_selected_display(void* ctx, char* buf, int32_t size)
+        {
+            auto item = static_cast<const base_item*>(ctx);
+            return item->get_selected_display(buf, size);
+        }
+
+        void
+        on_selected(void* ctx, bool is_selected)
+        {
+            auto item = static_cast<base_item*>(ctx);
+            item->on_selected(is_selected);
+        }
+
+        void
+        restore_default(void* ctx)
+        {
+            auto item = static_cast<base_item*>(ctx);
+            item->restore();
+        }
+
+        bool
+        is_movement_allowed(void* ctx)
+        {
+            auto item = static_cast<const base_item*>(ctx);
+            return item->is_movement_allowed();
+        }
+
+        void
+        on_close(void* ctx)
+        {
+            auto item = static_cast<base_item*>(ctx);
+            item->on_close();
+        }
+
+        void
+        on_input(void* ctx, WUPSConfigSimplePadData input)
+        {
+            auto item = static_cast<base_item*>(ctx);
+            item->on_input(input);
+        }
+
+        void
+        on_input_ex(void* ctx, WUPSConfigComplexPadData input)
+        {
+            auto item = static_cast<base_item*>(ctx);
+            item->on_input(input);
+        }
+
+        void
+        on_delete(void* ctx)
+        {
+            auto item = static_cast<base_item*>(ctx);
+            item->release(); // don't destroy the handle, it's already happening
+            delete item;
+        }
+    }
+
+
+    base_item::base_item(const std::optional<std::string>& key,
                          const std::string& name) :
         key{key},
         name{name}
     {
-        WUPSConfigCallbacks_t cb;
-
-        cb.getCurrentValueDisplay = [](void* ctx, char* buf, int size) -> int
-        {
-            if (!ctx)
-                return -1;
-            auto item = reinterpret_cast<const base_item*>(ctx);
-            return item->get_current_value_display(buf, size);
+        WUPSConfigAPIItemOptionsV2 options {
+            .displayName = name.c_str(),
+            .context = this,
+            .callbacks = {
+                .getCurrentValueDisplay = dispatchers::get_display,
+                .getCurrentValueSelectedDisplay = dispatchers::get_selected_display,
+                .onSelected = dispatchers::on_selected,
+                .restoreDefault = dispatchers::restore_default,
+                .isMovementAllowed = dispatchers::is_movement_allowed,
+                .onCloseCallback = dispatchers::on_close,
+                .onInput = dispatchers::on_input,
+                .onInputEx = dispatchers::on_input_ex,
+                .onDelete = dispatchers::on_delete,
+            }
         };
 
-        cb.getCurrentValueSelectedDisplay = [](void* ctx, char* buf, int size) -> int
-        {
-            if (!ctx)
-                return -1;
-            auto item = reinterpret_cast<const base_item*>(ctx);
-            return item->get_current_value_selected_display(buf, size);
-        };
-
-        cb.onSelected = [](void* ctx, bool is_selected)
-        {
-            if (!ctx)
-                return;
-            auto item = reinterpret_cast<base_item*>(ctx);
-            item->on_selected(is_selected);
-        };
-
-        cb.restoreDefault = [](void* ctx)
-        {
-            if (!ctx)
-                return;
-            auto item = reinterpret_cast<base_item*>(ctx);
-            item->restore();
-        };
-
-        cb.isMovementAllowed = [](void* ctx) -> bool
-        {
-            if (!ctx)
-                return true;
-            auto item = reinterpret_cast<const base_item*>(ctx);
-            return item->is_movement_allowed();
-        };
-
-        cb.callCallback = [](void* ctx) -> bool
-        {
-            if (!ctx)
-                return false;
-            auto item = reinterpret_cast<base_item*>(ctx);
-            return item->callback();
-        };
-
-        cb.onButtonPressed = [](void* ctx, WUPSConfigButtons button)
-        {
-            if (!ctx)
-                return;
-            auto item = reinterpret_cast<base_item*>(ctx);
-            item->on_button_pressed(button);
-        };
-
-        // Called when WUPS is destroying the object.
-        cb.onDelete = [](void* ctx)
-        {
-            if (!ctx)
-                return;
-            auto item = reinterpret_cast<base_item*>(ctx);
-            item->handle = 0;
-            delete item;
-        };
-
-
-        if (WUPSConfigItem_Create(&handle, key.c_str(), name.c_str(), cb, this) < 0)
-            throw std::runtime_error{"could not create config item"};
-
+        auto status = WUPSConfigAPI_Item_Create(options, &handle);
+        if (status != WUPSCONFIG_API_RESULT_SUCCESS)
+            throw config_error{"could not create config item", status};
     }
 
 
     base_item::~base_item()
     {
-        if (handle)
-            WUPSConfigItem_Destroy(handle);
+        if (handle.handle)
+            WUPSConfigAPI_Item_Destroy(handle);
+    }
+
+
+    void
+    base_item::release()
+    {
+        handle = {};
     }
 
 
     int
-    base_item::get_current_value_display(char* buf,
-                                         std::size_t size)
+    base_item::get_display(char* buf,
+                           std::size_t size)
         const
     {
         std::snprintf(buf, size, "NOT IMPLEMENTED");
@@ -106,11 +130,11 @@ namespace wups {
 
 
     int
-    base_item::get_current_value_selected_display(char* buf,
-                                                  std::size_t size)
+    base_item::get_selected_display(char* buf,
+                                    std::size_t size)
         const
     {
-        return get_current_value_display(buf, size);
+        return get_display(buf, size);
     }
 
 
@@ -132,19 +156,22 @@ namespace wups {
     }
 
 
-    bool
-    base_item::callback()
-    {
-        return false;
-    }
+    void
+    base_item::on_close()
+    {}
 
 
     void
-    base_item::on_button_pressed(WUPSConfigButtons buttons)
+    base_item::on_input(WUPSConfigSimplePadData input)
     {
-        if (buttons & WUPS_CONFIG_BUTTON_X)
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_X)
             restore();
     }
 
 
-} // namespace wups
+    void
+    base_item::on_input(WUPSConfigComplexPadData /*input*/)
+    {}
+
+
+} // namespace wups::config

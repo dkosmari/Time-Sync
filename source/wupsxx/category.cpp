@@ -2,37 +2,54 @@
 
 #include <stdexcept>
 
-#include "category.hpp"
+#include "wupsxx/category.hpp"
+#include "wupsxx/config_error.hpp"
+
+namespace wups::config {
+
+    category::category(WUPSConfigCategoryHandle handle) :
+        handle{handle},
+        own_handle{false}
+    {}
 
 
-namespace wups {
-
-    category::category(const std::string& name)
+    category::category(const std::string& name) :
+        own_handle{true}
     {
-        if (WUPSConfigCategory_Create(&handle, name.c_str()) < 0)
-            throw std::runtime_error{"could not create category"};
+        WUPSConfigAPICreateCategoryOptionsV1 options{ .name = name.c_str() };
+        auto status = WUPSConfigAPI_Category_Create(options, &handle);
+        if (status != WUPSCONFIG_API_RESULT_SUCCESS)
+            throw config_error{"could not create category", status};
+    }
+
+
+    category::category(category&& other)
+        noexcept
+    {
+        handle = other.handle;
+        other.handle = {};
     }
 
 
     category::~category()
     {
-        if (handle)
-            WUPSConfigCategory_Destroy(handle);
+        if (own_handle && handle.handle)
+            WUPSConfigAPI_Category_Destroy(handle);
+    }
+
+
+    void
+    category::release()
+    {
+        handle = {};
     }
 
 
     void
     category::add(std::unique_ptr<base_item>&& item)
     {
-        if (!item)
-            throw std::logic_error{"cannot add null item to category"};
-        if (!item->handle)
-            throw std::logic_error{"cannot add null item handle to category"};
-
-        if (WUPSConfigCategory_AddItem(handle, item->handle) < 0)
-            throw std::runtime_error{"cannot add item to category"};
-
-        item.release(); // WUPS now owns this item
+        add(item.get());
+        item.release(); // WUPS will call .onDelete() later
     }
 
 
@@ -41,12 +58,23 @@ namespace wups {
     {
         if (!item)
             throw std::logic_error{"cannot add null item to category"};
-        if (!item->handle)
+        if (!item->handle.handle)
             throw std::logic_error{"cannot add null item handle to category"};
 
-        if (WUPSConfigCategory_AddItem(handle, item->handle) < 0)
-            throw std::runtime_error{"cannot add item to category"};
+        auto status = WUPSConfigAPI_Category_AddItem(handle, item->handle);
+        if (status != WUPSCONFIG_API_RESULT_SUCCESS)
+            throw config_error{"cannot add item to category: ", status};
     }
 
 
-} // namespace wups
+    void
+    category::add(category&& child)
+    {
+        auto status = WUPSConfigAPI_Category_AddCategory(handle, child.handle);
+        if (status != WUPSCONFIG_API_RESULT_SUCCESS)
+            throw config_error{"cannot add child category to category: ", status};
+
+        child.release();
+    }
+
+} // namespace wups::config

@@ -5,9 +5,6 @@
 
 namespace utc {
 
-    extern double timezone_offset;
-
-
     // Seconds since 2000-01-01 00:00:00 UTC
     struct timestamp {
         double value;
@@ -15,6 +12,9 @@ namespace utc {
 
 
     timestamp now() noexcept;
+
+
+    void update_offset(int hours, int minutes);
 
 } // namespace utc
 

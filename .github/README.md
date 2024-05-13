@@ -6,14 +6,18 @@ Time Sync is a Wii U homebrew plugin for the Aroma environment. It allows the co
 automatically synchronize its date and time through the Internet, similar to the feature
 found on the Nintendo Switch and other modern devices.
 
+
 ## Installation
+
 A Wii U plugin file (.wps) can be downloaded from the [Releases page](releases). It should
 be placed on your SD card, particularly in `wiiu/environments/aroma/plugins`.
 * You need to have the Aroma environment installed for Time Sync to work. Please visit the
   [hacking guide](https://wiiu.hacks.guide/) and the [Aroma
   webpage](https://aroma.foryour.cafe/) if you would like to softmod your Wii U console.
 
+
 ## Usage
+
 If the plugin is placed correctly on an SD card, "Time Sync" will be listed in the Aroma
 environment's Wii U Plugin System Config Menu.
 
@@ -22,41 +26,29 @@ placed the .wps file on your SD card correctly and restart your console.
 
 Configuration options:
 
-* `Syncing Enabled`: Enables the plugin. The default is `false`.
-* `Show Notifications`: Shows a notification whenever the plugin checks and/or updates the
-  time. The default is `true`.
-* `Notification Duration`: Controls how long the notification messages stay on
-  screen. Default is `5 seconds`.
-* `Hours Offset`: The amount of hours to add to UTC to match your local time, `0` by
-  default.
-* `Minutes Offset`: The amount of minutes to add to UTC to match your local time, `0` by
-  default.
-* `Detect Timezone`: press A to use an IP geolocation service (ip-api.com) to estimate
-  your timezone. This will automatically modify the `Hours Offset` and `Minutes Offset`,
-  and show the name of the detected timezone.
-* `Tolerance`: Don't alter the clock when the difference is less than this. Default is
-  `250 ms`.
-* `NTP Servers`: Shows the current list of NTP servers that will be queried. This setting
-  cannot be changed through the configuration menu. If you want to use a different server,
-  or add more servers, you must edit the `Time Sync.json` configuration file in a text
-  editor. Multiple servers can be provided, separated by spaces (or commas, or
-  semicolons.) The default is `pool.ntp.org`.
+* `Configuration -> Syncing Enabled`: Enables syncing to the Internet, `false` by default.
+* `Configuration -> Show Notifications`: Shows a notification whenever Wii U Time Sync adjusts the clock, `false` by default.
+* `Configuration -> Hour Offset`: The amount of hours to add/subtract from the coordinated universal time, `0` by default.
+* `Configuration -> Minutes Offset`: The amount of minutes to add/subtract from the coordinated universal time, `0` by default.
+* `Configuration -> Notification Duration (seconds)`: The amount of seconds which notifications will appear on screen for, `5` by default.
+* `Configuration -> Tolerance (milliseconds)`: The amount of milliseconds in which Wii U Time Sync will tolerate differences, `250` by default.
+* `Configuration -> Detect Timezone`: Uses the IP Geolocation API to guess the timezone, setting the offset accordingly.
+* `Configuration -> NTP Servers`: The list of NTP servers in which the plugin connects to, only `pool.ntp.org` by default.
+    * This cannot be edited on the console. However, you can edit the Wii U Time Sync configuration file on a computer to adjust the default server, or add more.
+        * The configuration file: `wiiu/environments/aroma/plugins/config/Time Sync.json`
+        * An example edit: `"server": "pool.ntp.org time.windows.com",`
+* `Preview`: Lets you preview what the system's clock is currently set to, as well as correction and latency statistics.
 
-As long as syncing is enabled by the user, **the clock will sync whenever the plugin starts,
-or when the plugin settings are exited**.
+As long as syncing is enabled by the user, the clock will sync whenever Aroma starts, or when the plugin settings are exited.
 
-The changes **will not appear** in the HOME Menu and most other applications right away,
-so the console will need to be **rebooted** for the changes to be visible by the system.
+**The changes will not be reflected in the HOME Menu and most other applications right away, so the console will need to be rebooted for changes to be completed.**
 
-There's also a **Preview** section, where you can just press A to query the NTP servers,
-without making any modifications to the local clock.
 
 ## Credits
-I hope that I am able to express my thanks as much as possible to those who made this
-repository possible.
-* [GaryOderNichts](https://github.com/GaryOderNichts), for writing the network connection
-  code and figuring out how to set the console's date and time through homebrew (so
-  basically all the functionality).
-* [Maschell](https://github.com/Maschell), for his work not only with figuring out setting
-  the date and time, but also his work on the Aroma environment.
 
+I hope that I am able to express my thanks as much as possible to those who made this repository possible.
+* [dkosmari](https://github.com/dkosmari), for his excellent refactoring of Wii U Time Sync, being used as our codebase ever since the release of v2.0.0.
+* [GaryOderNichts](https://github.com/GaryOderNichts), for writing the network connection code and figuring out how to set the console's date and time through homebrew (so basically all the functionality).
+* [Maschell](https://github.com/Maschell), for his work not only with figuring out setting the date and time, but also his work on the Aroma environment.
+* [LumaTeam](https://github.com/LumaTeam), for the time syncing code in [Luma3DS](https://github.com/LumaTeam/Luma3DS), which we based our code off of.
+* [Lettier](https://github.com/lettier), for his work on [NTP Client](https://github.com/lettier/ntpclient), which in turn led to the code in both Luma3DS and Wii U Time Sync.

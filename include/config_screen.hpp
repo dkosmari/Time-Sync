@@ -6,10 +6,7 @@
 #include "wupsxx/category.hpp"
 
 
-struct config_screen : wups::category {
+wups::config::category make_config_screen();
 
-    config_screen();
-
-};
 
 #endif

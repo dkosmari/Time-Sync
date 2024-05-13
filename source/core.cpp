@@ -262,8 +262,6 @@ namespace core {
             return;
         }
 
-        cfg::update_utc_offset();
-
         std::vector<std::string> servers = utils::split(cfg::server, " \t,;");
 
         utils::addrinfo_query query = {

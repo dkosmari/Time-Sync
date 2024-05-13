@@ -4,11 +4,16 @@
 
 #include "utc.hpp"
 
+#include "cfg.hpp"
+
 
 namespace utc {
 
-
-    double timezone_offset = 0;
+    double
+    get_timezone_offset()
+    {
+        return (cfg::hours * 60.0 + cfg::minutes) * 60.0;
+    }
 
 
     static
@@ -23,8 +28,7 @@ namespace utc {
     now()
         noexcept
     {
-        return timestamp{ local_time() - timezone_offset };
+        return timestamp{ local_time() - get_timezone_offset() };
     }
-
 
 } // namespace utc

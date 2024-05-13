@@ -14,18 +14,30 @@ WUMS_ROOT := $(DEVKITPRO)/wums
 WUT_ROOT := $(DEVKITPRO)/wut
 
 #-------------------------------------------------------------------------------
+# PLUGIN_NAME sets the name of the plugin
+# PLUGIN_DESCRIPTION sets the description of the plugin
+# PLUGIN_VERSION sets the version of the plugin
+# PLUGIN_AUTHOR sets the author of the plugin
+# PLUGIN_LICENSE sets the license of the plugin
+#-------------------------------------------------------------------------------
+PLUGIN_NAME        := Time Sync
+PLUGIN_DESCRIPTION := A plugin that synchronizes the system clock to the Internet.
+PLUGIN_VERSION     := v3.1
+PLUGIN_AUTHOR      := Nightkingale, Daniel K. O.
+PLUGIN_LICENSE     := MIT
+
+#-------------------------------------------------------------------------------
 # TARGET is the name of the output
 # BUILD is the directory where object files & intermediate files will be placed
 # SOURCES is a list of directories containing source code
 # DATA is a list of directories containing data files
 # INCLUDES is a list of directories containing header files
 #-------------------------------------------------------------------------------
-TARGET		:=	Time_Sync
-BUILD		:=	build
-SOURCES		:=	source source/wupsxx
-DATA		:=	data
-INCLUDES	:=	source
-PLUGIN_NAME	:=	"Time Sync"
+TARGET   := Time_Sync
+BUILD    := build
+SOURCES  := source source/wupsxx
+DATA     := data
+INCLUDES := include
 
 # Be verbose by default.
 V ?= 1
@@ -33,31 +45,33 @@ V ?= 1
 #-------------------------------------------------------------------------------
 # options for code generation
 #-------------------------------------------------------------------------------
-WARN_FLAGS	:= -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align
+WARN_FLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align
 
-OPTFLAGS	:= -O2 -fipa-pta -ffunction-sections
+OPTFLAGS := -O2 -fipa-pta -ffunction-sections
 
-CFLAGS	:=	$(WARN_FLAGS) $(OPTFLAGS) $(MACHDEP)
+CFLAGS := $(WARN_FLAGS) $(OPTFLAGS) $(MACHDEP)
 
-CXXFLAGS	:= $(CFLAGS) -std=c++23
+CXXFLAGS := $(CFLAGS) -std=c++23
+
+DEFINES := '-DPLUGIN_NAME="$(PLUGIN_NAME)"'                   \
+           '-DPLUGIN_DESCRIPTION="$(PLUGIN_DESCRIPTION)"'     \
+           '-DPLUGIN_VERSION="$(PLUGIN_VERSION)"'             \
+           '-DPLUGIN_AUTHOR="$(PLUGIN_AUTHOR)"'               \
+           '-DPLUGIN_LICENSE="$(PLUGIN_LICENSE)"'
 
 # Note: INCLUDE will be defined later, so CPPFLAGS has to be of the recursive flavor.
-CPPFLAGS	= $(INCLUDE) \
-		  -D__WIIU__ \
-		  -D__WUT__ \
-		  -D__WUPS__ \
-		  -DPLUGIN_NAME=\"$(PLUGIN_NAME)\"
+CPPFLAGS = $(INCLUDE) -D__WIIU__ -D__WUT__ -D__WUPS__  $(DEFINES)
 
-ASFLAGS	:=	-g $(ARCH)
+ASFLAGS	:= -g $(ARCH)
 
-LDFLAGS	=	-g \
-		$(ARCH) \
-		$(RPXSPECS) \
-		$(WUPSSPECS) \
-		-Wl,-Map,$(notdir $*.map) \
-		$(OPTFLAGS)
+LDFLAGS	= -g \
+          $(ARCH) \
+          $(RPXSPECS) \
+          $(WUPSSPECS) \
+          -Wl,-Map,$(notdir $*.map) \
+          $(CXXFLAGS)
 
-LIBS	:=	-lnotifications -lwups -lwut
+LIBS := -lnotifications -lwups -lwut
 
 #-------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level
@@ -153,12 +167,13 @@ $(OFILES_SRC)	: $(HFILES_BIN)
 endif
 #-------------------------------------------------------------------------------
 
+
 .PHONY: upload
 upload: all
-	ncftpput wiiu /fs/vol/external01/wiiu/environments/aroma/plugins/ $(TARGET).wps
-	[ -f "Time Sync.json" ] && ncftpput wiiu /fs/vol/external01/wiiu/environments/aroma/plugins/config/ "Time Sync.json"
+	curl --upload-file "$(TARGET).wps" "ftp://wiiu//fs/vol/external01/wiiu/environments/aroma/plugins/"
+	[ ! -f "$(PLUGIN_NAME).json" ] || curl --upload-file "$(PLUGIN_NAME).json" "ftp://wiiu//fs/vol/external01/wiiu/environments/aroma/plugins/config/"
 
 
 .PHONY: company
 company: Makefile
-	echo "$(CPPFLAGS)" | xargs -n1 | sort > source/compile_flags.txt
+	echo $(INCLUDE) -D__WIIU__ -D__WUT__ -D__WUPS__ | xargs -n1 | sort -u > compile_flags.txt

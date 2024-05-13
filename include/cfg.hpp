@@ -28,10 +28,10 @@ namespace cfg {
 
 
     void load();
+    void reload();
+    void save();
 
-
-    // send the hours and minutes variables to the utc module
-    void update_utc_offset();
+    void update_offsets_from_tz_offset(int tz_offset);
 
 }
 

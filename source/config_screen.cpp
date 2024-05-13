@@ -14,74 +14,83 @@
 #include "utils.hpp"
 
 
-using wups::bool_item;
-using wups::int_item;
-using wups::text_item;
-using std::make_unique;
+using wups::config::bool_item;
+using wups::config::int_item;
+using wups::config::text_item;
 
 using namespace std::literals;
 
 
-struct timezone_item : wups::text_item {
+struct timezone_item : text_item {
 
     timezone_item() :
-        wups::text_item{"",
-                        "Detect Timezone (press " NIN_GLYPH_BTN_A ")",
-                        "Using http://ip-api.com"}
+        text_item{{},
+        "Detect Timezone (press " NIN_GLYPH_BTN_A ")",
+        "Using http://ip-api.com"}
     {}
 
 
+    static
+    std::unique_ptr<timezone_item>
+    create()
+    {
+        return std::make_unique<timezone_item>();
+    }
+
+
     void
-    on_button_pressed(WUPSConfigButtons buttons)
+    on_input(WUPSConfigSimplePadData input)
         override
     {
-        text_item::on_button_pressed(buttons);
+        text_item::on_input(input);
 
-        if (buttons & WUPS_CONFIG_BUTTON_A)
-            query_timezone();
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_A) {
+            try {
+                query_timezone();
+            }
+            catch (std::exception& e) {
+                text = "Error: "s + e.what();
+            }
+        }
     }
 
 
     void
     query_timezone()
-    try {
+    {
         std::string tz = http::get("http://ip-api.com/line/?fields=timezone,offset");
         auto tokens = utils::split(tz, " \r\n");
         if (tokens.size() != 2)
             throw std::runtime_error{"Could not parse response from \"ip-api.com\"."};
 
-        int tz_offset = std::stoi(tokens[1]);
         text = tokens[0];
 
-        cfg::hours = tz_offset / (60 * 60);
-        cfg::minutes = tz_offset % (60 * 60) / 60;
-        if (cfg::minutes < 0) {
-            cfg::minutes += 60;
-            --cfg::hours;
-        }
-    }
-    catch (std::exception& e) {
-        text = "Error: "s + e.what();
+        int tz_offset = std::stoi(tokens[1]);
+        cfg::update_offsets_from_tz_offset(tz_offset);
     }
 
 };
 
 
-config_screen::config_screen() :
-    wups::category{"Configuration"}
+wups::config::category
+make_config_screen()
 {
-    add(make_unique<bool_item>(cfg::key::sync, "Syncing Enabled", cfg::sync));
-    add(make_unique<bool_item>(cfg::key::notify, "Show Notifications", cfg::notify));
-    add(make_unique<int_item>(cfg::key::msg_duration, "Notification Duration (seconds)",
-                              cfg::msg_duration, 0, 30));
-    add(make_unique<int_item>(cfg::key::hours, "Hours Offset", cfg::hours, -12, 14));
-    add(make_unique<int_item>(cfg::key::minutes, "Minutes Offset", cfg::minutes, 0, 59));
+    wups::config::category cat{"Configuration"};
 
-    add(make_unique<timezone_item>());
+    cat.add(bool_item::create(cfg::key::sync, "Syncing Enabled", cfg::sync));
+    cat.add(bool_item::create(cfg::key::notify, "Show Notifications", cfg::notify));
+    cat.add(int_item::create(cfg::key::msg_duration, "Notification Duration (seconds)",
+                             cfg::msg_duration, 0, 30));
+    cat.add(int_item::create(cfg::key::hours, "Hours Offset", cfg::hours, -12, 14));
+    cat.add(int_item::create(cfg::key::minutes, "Minutes Offset", cfg::minutes, 0, 59));
 
-    add(make_unique<int_item>(cfg::key::tolerance, "Tolerance (milliseconds)",
-                              cfg::tolerance, 0, 5000));
+    cat.add(timezone_item::create());
+
+    cat.add(int_item::create(cfg::key::tolerance, "Tolerance (milliseconds)",
+                             cfg::tolerance, 0, 5000));
 
     // show current NTP server address, no way to change it.
-    add(make_unique<wups::text_item>(cfg::key::server, "NTP Servers", cfg::server));
+    cat.add(text_item::create(cfg::key::server, "NTP Servers", cfg::server));
+
+    return cat;
 }

@@ -2,7 +2,7 @@
 
 #include "cfg.hpp"
 
-#include "utc.hpp"
+#include "log.hpp"
 #include "wupsxx/storage.hpp"
 
 
@@ -33,9 +33,9 @@ namespace cfg {
     load_or_init(const std::string& key,
                  T& variable)
     {
-        auto val = wups::load<T>(key);
+        auto val = wups::storage::load<T>(key);
         if (!val)
-            wups::store(key, variable);
+            wups::storage::store(key, variable);
         else
             variable = *val;
     }
@@ -44,21 +44,57 @@ namespace cfg {
     void
     load()
     {
-        load_or_init(key::hours,        hours);
-        load_or_init(key::minutes,      minutes);
-        load_or_init(key::msg_duration, msg_duration);
-        load_or_init(key::notify,       notify);
-        load_or_init(key::server,       server);
-        load_or_init(key::sync,         sync);
-        load_or_init(key::tolerance,    tolerance);
+        try {
+            load_or_init(key::hours,        hours);
+            load_or_init(key::minutes,      minutes);
+            load_or_init(key::msg_duration, msg_duration);
+            load_or_init(key::notify,       notify);
+            load_or_init(key::server,       server);
+            load_or_init(key::sync,         sync);
+            load_or_init(key::tolerance,    tolerance);
+            LOG("loaded settings");
+        }
+        catch (std::exception& e) {
+            LOG("error loading config: %s", e.what());
+        }
     }
 
 
     void
-    update_utc_offset()
+    reload()
     {
-        double offset_seconds = (hours * 60.0 + minutes) * 60.0;
-        utc::timezone_offset = offset_seconds;
+        try {
+            wups::storage::reload();
+            load();
+        }
+        catch (std::exception& e) {
+            LOG("error reloading config: %s", e.what());
+        }
+    }
+
+
+    void
+    save()
+    {
+        try {
+            wups::storage::save();
+            LOG("saved settings");
+        }
+        catch (std::exception& e) {
+            LOG("error saving config: %s", e.what());
+        }
+    }
+
+
+    void
+    update_offsets_from_tz_offset(int tz_offset)
+    {
+        hours = tz_offset / (60 * 60);
+        minutes = tz_offset % (60 * 60) / 60;
+        if (minutes < 0) {
+            minutes += 60;
+            --hours;
+        }
     }
 
 } // namespace cfg

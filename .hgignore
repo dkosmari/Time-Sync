@@ -1,0 +1,8 @@
+syntax: glob
+
+compile_flags.txt
+*~
+*.json
+build
+*.elf
+*.wps

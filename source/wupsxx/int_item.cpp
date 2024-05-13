@@ -2,18 +2,20 @@
 
 #include <algorithm>            // clamp()
 #include <cstdio>
-#include <stdexcept>
+#include <exception>
 
-#include "int_item.hpp"
-#include "storage.hpp"
+#include "wupsxx/int_item.hpp"
 
-#include "../nintendo_glyphs.hpp"
-
-
-namespace wups {
+#include "wupsxx/storage.hpp"
+#include "nintendo_glyphs.hpp"
+#include "log.hpp"
 
 
-    int_item::int_item(const std::string& key,
+// TODO: have a Config parameter for constructor
+
+namespace wups::config {
+
+    int_item::int_item(const std::optional<std::string>& key,
                        const std::string& name,
                        int& variable,
                        int min_value,
@@ -26,8 +28,19 @@ namespace wups {
     {}
 
 
+    std::unique_ptr<int_item>
+    int_item::create(const std::optional<std::string>& key,
+                     const std::string& name,
+                     int& variable,
+                     int min_value,
+                     int max_value)
+    {
+        return std::make_unique<int_item>(key, name, variable, min_value, max_value);
+    }
+
+
     int
-    int_item::get_current_value_display(char* buf, std::size_t size)
+    int_item::get_display(char* buf, std::size_t size)
         const
     {
         std::snprintf(buf, size, "%d", variable);
@@ -36,7 +49,7 @@ namespace wups {
 
 
     int
-    int_item::get_current_value_selected_display(char* buf, std::size_t size)
+    int_item::get_selected_display(char* buf, std::size_t size)
         const
     {
         const char* left = "";
@@ -50,7 +63,8 @@ namespace wups {
             right = NIN_GLYPH_BTN_DPAD_RIGHT;
             fast_right = NIN_GLYPH_BTN_R;
         }
-        std::snprintf(buf, size, "%s%s %d %s%s",
+        std::snprintf(buf, size,
+                      "%s%s %d %s%s",
                       fast_left,
                       left,
                       variable,
@@ -64,43 +78,46 @@ namespace wups {
     int_item::restore()
     {
         variable = default_value;
+        on_changed();
     }
 
 
-    bool
-    int_item::callback()
+    // TODO: handle held button
+    void
+    int_item::on_input(WUPSConfigSimplePadData input)
     {
-        if (key.empty())
-            return false;
+        base_item::on_input(input);
 
-        try {
-            store(key, variable);
-            return true;
-        }
-        catch (...) {
-            return false;
-        }
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT)
+            --variable;
+
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_RIGHT)
+            ++variable;
+
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_L)
+            variable -= 50;
+
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_R)
+            variable += 50;
+
+        variable = std::clamp(variable, min_value, max_value);
+
+        on_changed();
     }
 
 
     void
-    int_item::on_button_pressed(WUPSConfigButtons buttons)
+    int_item::on_changed()
     {
-        base_item::on_button_pressed(buttons);
+        if (!key)
+            return;
 
-        if (buttons & WUPS_CONFIG_BUTTON_LEFT)
-            --variable;
-
-        if (buttons & WUPS_CONFIG_BUTTON_RIGHT)
-            ++variable;
-
-        if (buttons & WUPS_CONFIG_BUTTON_L)
-            variable -= 50;
-
-        if (buttons & WUPS_CONFIG_BUTTON_R)
-            variable += 50;
-
-        variable = std::clamp(variable, min_value, max_value);
+        try {
+            storage::store(*key, variable);
+        }
+        catch (std::exception& e) {
+            LOG("Error storing int: %s", e.what());
+        }
     }
 
-} // namespace wups
+} // namespace wups::config
