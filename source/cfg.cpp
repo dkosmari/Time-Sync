@@ -95,6 +95,15 @@ namespace cfg {
             minutes += 60;
             --hours;
         }
+
+        // since these were updated from a different UI, we gotta store the new values
+        try {
+            wups::storage::store(key::hours, hours);
+            wups::storage::store(key::minutes, minutes);
+        }
+        catch (std::exception& e) {
+            LOG("error storing tz offsets: %s", e.what());
+        }
     }
 
 } // namespace cfg

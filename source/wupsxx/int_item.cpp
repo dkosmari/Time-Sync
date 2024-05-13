@@ -19,12 +19,14 @@ namespace wups::config {
                        const std::string& name,
                        int& variable,
                        int min_value,
-                       int max_value) :
+                       int max_value,
+                       int fast_increment) :
         item{key, name},
         variable(variable),
         default_value{variable},
         min_value{min_value},
-        max_value{max_value}
+        max_value{max_value},
+        fast_increment{fast_increment}
     {}
 
 
@@ -33,9 +35,11 @@ namespace wups::config {
                      const std::string& name,
                      int& variable,
                      int min_value,
-                     int max_value)
+                     int max_value,
+                     int fast_increment)
     {
-        return std::make_unique<int_item>(key, name, variable, min_value, max_value);
+        return std::make_unique<int_item>(key, name, variable,
+                                          min_value, max_value, fast_increment);
     }
 
 
@@ -95,10 +99,10 @@ namespace wups::config {
             ++variable;
 
         if (input.buttons_d & WUPS_CONFIG_BUTTON_L)
-            variable -= 50;
+            variable -= fast_increment;
 
         if (input.buttons_d & WUPS_CONFIG_BUTTON_R)
-            variable += 50;
+            variable += fast_increment;
 
         variable = std::clamp(variable, min_value, max_value);
 

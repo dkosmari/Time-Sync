@@ -15,20 +15,24 @@ namespace wups::config {
 
         bool& variable;
         bool default_value;
-        std::string true_str = "true";
-        std::string false_str = "false";
+        std::string true_str;
+        std::string false_str;
 
 
         bool_item(const std::optional<std::string>& key,
                   const std::string& name,
-                  bool& variable);
+                  bool& variable,
+                  const std::string& true_str = "true",
+                  const std::string& false_str = "false");
 
 
         static
         std::unique_ptr<bool_item>
         create(const std::optional<std::string>& key,
                const std::string& name,
-               bool& variable);
+               bool& variable,
+               const std::string& true_str = "true",
+               const std::string& false_str = "false");
 
 
         virtual int get_display(char* buf, std::size_t size) const override;

@@ -14,19 +14,25 @@ namespace wups::config {
 
     bool_item::bool_item(const std::optional<std::string>& key,
                          const std::string& name,
-                         bool& variable) :
+                         bool& variable,
+                         const std::string& true_str,
+                         const std::string& false_str) :
         item{key, name},
         variable(variable),
-        default_value{variable}
+        default_value{variable},
+        true_str{true_str},
+        false_str{false_str}
     {}
 
 
     std::unique_ptr<bool_item>
     bool_item::create(const std::optional<std::string>& key,
                       const std::string& name,
-                      bool& variable)
+                      bool& variable,
+                      const std::string& true_str,
+                      const std::string& false_str)
     {
-        return std::make_unique<bool_item>(key, name, variable);
+        return std::make_unique<bool_item>(key, name, variable, true_str, false_str);
     }
 
 
@@ -45,9 +51,15 @@ namespace wups::config {
         const
     {
         if (variable)
-            std::snprintf(buf, size, "%s %s  ", NIN_GLYPH_BTN_DPAD_LEFT, true_str.c_str());
+            std::snprintf(buf, size,
+                          "%s %s  ",
+                          NIN_GLYPH_BTN_DPAD_LEFT,
+                          true_str.c_str());
         else
-            std::snprintf(buf, size, "  %s %s", false_str.c_str(), NIN_GLYPH_BTN_DPAD_RIGHT);
+            std::snprintf(buf, size,
+                          "  %s %s",
+                          false_str.c_str(),
+                          NIN_GLYPH_BTN_DPAD_RIGHT);
         return 0;
     }
 

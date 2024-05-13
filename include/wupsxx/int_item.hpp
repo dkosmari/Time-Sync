@@ -13,16 +13,18 @@ namespace wups::config {
     struct int_item : item {
 
         int& variable;
-        int default_value = 0;
+        int default_value;
         int min_value;
         int max_value;
+        int fast_increment;
 
 
         int_item(const std::optional<std::string>& key,
                  const std::string& name,
                  int& variable,
                  int min_value,
-                 int max_value);
+                 int max_value,
+                 int fast_increment = 10);
 
         static
         std::unique_ptr<int_item>
@@ -30,7 +32,8 @@ namespace wups::config {
                const std::string& name,
                int& variable,
                int min_value,
-               int max_value);
+               int max_value,
+               int fast_increment = 10);
 
 
         virtual int get_display(char* buf, std::size_t size) const override;

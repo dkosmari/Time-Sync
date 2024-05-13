@@ -77,17 +77,31 @@ make_config_screen()
 {
     wups::config::category cat{"Configuration"};
 
-    cat.add(bool_item::create(cfg::key::sync, "Syncing Enabled", cfg::sync));
-    cat.add(bool_item::create(cfg::key::notify, "Show Notifications", cfg::notify));
+    cat.add(bool_item::create(cfg::key::sync, "Syncing Enabled",
+                              cfg::sync,
+                              "yes", "no"));
+
+    cat.add(bool_item::create(cfg::key::notify, "Show Notifications",
+                              cfg::notify,
+                              "yes", "no"));
+
     cat.add(int_item::create(cfg::key::msg_duration, "Notification Duration (seconds)",
-                             cfg::msg_duration, 0, 30));
-    cat.add(int_item::create(cfg::key::hours, "Hours Offset", cfg::hours, -12, 14));
-    cat.add(int_item::create(cfg::key::minutes, "Minutes Offset", cfg::minutes, 0, 59));
+                             cfg::msg_duration,
+                             0, 30, 5));
+
+    cat.add(int_item::create(cfg::key::hours, "Hours Offset",
+                             cfg::hours,
+                             -12, 14));
+
+    cat.add(int_item::create(cfg::key::minutes, "Minutes Offset",
+                             cfg::minutes,
+                             0, 59));
 
     cat.add(timezone_item::create());
 
     cat.add(int_item::create(cfg::key::tolerance, "Tolerance (milliseconds)",
-                             cfg::tolerance, 0, 5000));
+                             cfg::tolerance,
+                             0, 5000, 100));
 
     // show current NTP server address, no way to change it.
     cat.add(text_item::create(cfg::key::server, "NTP Servers", cfg::server));
