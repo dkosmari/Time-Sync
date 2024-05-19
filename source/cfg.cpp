@@ -52,10 +52,10 @@ namespace cfg {
             load_or_init(key::server,       server);
             load_or_init(key::sync,         sync);
             load_or_init(key::tolerance,    tolerance);
-            LOG("loaded settings");
+            logging::printf("loaded settings");
         }
         catch (std::exception& e) {
-            LOG("error loading config: %s", e.what());
+            logging::printf("error loading config: %s", e.what());
         }
     }
 
@@ -68,7 +68,7 @@ namespace cfg {
             load();
         }
         catch (std::exception& e) {
-            LOG("error reloading config: %s", e.what());
+            logging::printf("error reloading config: %s", e.what());
         }
     }
 
@@ -78,10 +78,10 @@ namespace cfg {
     {
         try {
             wups::storage::save();
-            LOG("saved settings");
+            logging::printf("saved settings");
         }
         catch (std::exception& e) {
-            LOG("error saving config: %s", e.what());
+            logging::printf("error saving config: %s", e.what());
         }
     }
 
@@ -102,7 +102,7 @@ namespace cfg {
             wups::storage::store(key::minutes, minutes);
         }
         catch (std::exception& e) {
-            LOG("error storing tz offsets: %s", e.what());
+            logging::printf("error storing tz offsets: %s", e.what());
         }
     }
 

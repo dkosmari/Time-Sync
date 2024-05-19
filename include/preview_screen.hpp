@@ -3,9 +3,6 @@
 #ifndef PREVIEW_SCREEN_HPP
 #define PREVIEW_SCREEN_HPP
 
-#include <map>
-#include <string>
-
 #include "wupsxx/category.hpp"
 
 

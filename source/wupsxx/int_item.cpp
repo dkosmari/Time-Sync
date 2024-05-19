@@ -120,7 +120,7 @@ namespace wups::config {
             storage::store(*key, variable);
         }
         catch (std::exception& e) {
-            LOG("Error storing int: %s", e.what());
+            logging::printf("Error storing int: %s", e.what());
         }
     }
 

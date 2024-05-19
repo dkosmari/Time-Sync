@@ -41,6 +41,9 @@ namespace ntp {
         std::strong_ordering operator <=>(timestamp other) const noexcept;
 
     };
+    // TODO: implement difference calculations for timestamps, as recommended by the RFC.
+    // Differences sould be done in fixed-point, should check for overflows, and return
+    // floating-point.
 
 
     // This is a u16.16 fixed-point format.

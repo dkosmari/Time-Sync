@@ -1,65 +1,74 @@
 // SPDX-License-Identifier: MIT
 
-#include <notifications/notifications.h>
+#include <cstdarg>
+#include <cstdio>
+#include <string>
+
+#include <whb/log_cafe.h>
+#include <whb/log_module.h>
+#include <whb/log_udp.h>
 
 #include "log.hpp"
 
-#include "cfg.hpp"
+
+using namespace std::literals;
 
 
-void
-report_error(const std::string& arg)
-{
-    LOG("ERROR: %s", arg.c_str());
+namespace logging {
 
-    if (!cfg::notify)
-        return;
-
-    std::string msg = LOG_PREFIX + arg;
-    NotificationModule_AddErrorNotificationEx(msg.c_str(),
-                                              cfg::msg_duration,
-                                              1,
-                                              {255, 255, 255, 255},
-                                              {160, 32, 32, 255},
-                                              nullptr,
-                                              nullptr,
-                                              true);
-}
+    bool init_cafe = false;
+    bool init_module = false;
+    bool init_udp = false;
 
 
-void
-report_info(const std::string& arg)
-{
-    LOG("INFO: %s", arg.c_str());
-
-    if (!cfg::notify)
-        return;
-
-    std::string msg = LOG_PREFIX + arg;
-    NotificationModule_AddInfoNotificationEx(msg.c_str(),
-                                             cfg::msg_duration,
-                                             {255, 255, 255, 255},
-                                             {32, 32, 160, 255},
-                                             nullptr,
-                                             nullptr,
-                                             true);
-}
+    void
+    initialize()
+    {
+        init_cafe = WHBLogCafeInit();
+        init_module = WHBLogModuleInit();
+        init_udp = WHBLogUdpInit();
+    }
 
 
-void
-report_success(const std::string& arg)
-{
-    LOG("SUCCESS: %s", arg.c_str());
+    void
+    cleanup()
+    {
+        if (init_cafe)
+            WHBLogCafeDeinit();
+        init_cafe = false;
 
-    if (!cfg::notify)
-        return;
+        if (init_module)
+            WHBLogModuleDeinit();
+        init_module = false;
 
-    std::string msg = LOG_PREFIX + arg;
-    NotificationModule_AddInfoNotificationEx(msg.c_str(),
-                                             cfg::msg_duration,
-                                             {255, 255, 255, 255},
-                                             {32, 160, 32, 255},
-                                             nullptr,
-                                             nullptr,
-                                             true);
-}
+        if (init_udp)
+            WHBLogUdpDeinit();
+        init_udp = false;
+    }
+
+
+    void
+    printf(const char* fmt, ...)
+    {
+        std::string buf(256, '\0');
+        std::string xfmt = std::string("[" PLUGIN_NAME "] ") + fmt;
+
+        std::va_list args;
+
+        va_start(args, fmt);
+        int sz = std::vsnprintf(buf.data(), buf.size(), xfmt.c_str(), args);
+        va_end(args);
+
+        if (sz > 0 && static_cast<unsigned>(sz) >= buf.size()) {
+            buf.resize(sz + 1);
+
+            va_start(args, fmt);
+            std::vsnprintf(buf.data(), buf.size(), xfmt.c_str(), args);
+            va_end(args);
+        }
+
+        if (sz > 0)
+            WHBLogPrint(buf.c_str());
+    }
+
+} // namespace logging

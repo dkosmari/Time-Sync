@@ -26,6 +26,7 @@
 #include "cfg.hpp"
 #include "limited_async.hpp"
 #include "log.hpp"
+#include "notify.hpp"
 #include "ntp.hpp"
 #include "utc.hpp"
 #include "utils.hpp"
@@ -34,7 +35,7 @@
 using namespace std::literals;
 
 
-std::counting_semaphore<> async_limit{5}; // limit to 5 threads
+std::counting_semaphore<> async_limit{2}; // limit to 5 threads
 
 
 namespace {
@@ -224,23 +225,27 @@ namespace core {
     bool
     apply_clock_correction(double correction)
     {
-        OSTime correction_ticks = correction * OSTimerClockSpeed;
+        OSTime correction1 = correction * OSTimerClockSpeed;
+        OSTime correction2 = (correction + 0.070) * OSTimerClockSpeed;
 
         nn::pdm::NotifySetTimeBeginEvent();
 
-        OSTime now = OSGetTime();
-        OSTime corrected = now + correction_ticks;
+        OSTime ccr_start = OSGetSystemTime();
+        bool success1 = !CCRSysSetSystemTime(OSGetTime() + correction1);
+        OSTime ccr_finish = OSGetSystemTime();
 
-        if (CCRSysSetSystemTime(corrected)) {
-            nn::pdm::NotifySetTimeEndEvent();
-            return false;
-        }
-
-        bool res = __OSSetAbsoluteSystemTime(corrected);
+        OSTime abs_start = OSGetSystemTime();
+        bool success2 = __OSSetAbsoluteSystemTime(OSGetTime() + correction2);
+        OSTime abs_finish = OSGetSystemTime();
 
         nn::pdm::NotifySetTimeEndEvent();
 
-        return res;
+        logging::printf("CCRSysSetSystemTime() took %f ms",
+                        1000.0 * (ccr_finish - ccr_start) / OSTimerClockSpeed);
+        logging::printf("__OSSetAbsoluteSystemTime() took %f ms",
+                        1000.0 * (abs_finish - abs_start) / OSTimerClockSpeed);
+
+        return success1 && success2;
     }
 
 
@@ -258,7 +263,7 @@ namespace core {
         utils::exec_guard guard{executing};
         if (!guard.guarded) {
             // Another thread is already executing this function.
-            report_info("Skipping NTP task: already in progress.");
+            notify::info("Skipping NTP task: already in progress.");
             return;
         }
 
@@ -272,8 +277,7 @@ namespace core {
 
         // First, resolve all the names, in parallel.
         // Some IP addresses might be duplicated when we use *.pool.ntp.org.
-        std::set<struct sockaddr_in,
-                 utils::less_sockaddr_in> addresses;
+        std::set<struct sockaddr_in, utils::less_sockaddr_in> addresses;
         {
             using info_vec = std::vector<utils::addrinfo_result>;
             std::vector<std::future<info_vec>> futures(servers.size());
@@ -289,7 +293,7 @@ namespace core {
                         addresses.insert(info.address);
                 }
                 catch (std::exception& e) {
-                    report_error(e.what());
+                    notify::error(e.what());
                 }
         }
 
@@ -304,17 +308,17 @@ namespace core {
             try {
                 auto [correction, latency] = fut.get();
                 corrections.push_back(correction);
-                report_info(utils::to_string(address)
-                            + ": correction = "s + seconds_to_human(correction)
-                            + ", latency = "s + seconds_to_human(latency));
+                notify::info(utils::to_string(address)
+                             + ": correction = "s + seconds_to_human(correction)
+                             + ", latency = "s + seconds_to_human(latency));
             }
             catch (std::exception& e) {
-                report_error(utils::to_string(address) + ": "s + e.what());
+                notify::error(utils::to_string(address) + ": "s + e.what());
             }
 
 
         if (corrections.empty()) {
-            report_error("No NTP server could be used!");
+            notify::error("No NTP server could be used!");
             return;
         }
 
@@ -324,17 +328,17 @@ namespace core {
             / corrections.size();
 
         if (std::fabs(avg_correction) * 1000 <= cfg::tolerance) {
-            report_success("Tolerating clock drift (correction is only "
-                           + seconds_to_human(avg_correction) + ")."s);
+            notify::success("Tolerating clock drift (correction is only "
+                            + seconds_to_human(avg_correction) + ")."s);
             return;
         }
 
         if (cfg::sync) {
             if (!apply_clock_correction(avg_correction)) {
-                report_error("Failed to set system clock!");
+                notify::error("Failed to set system clock!");
                 return;
             }
-            report_success("Clock corrected by " + seconds_to_human(avg_correction));
+            notify::success("Clock corrected by " + seconds_to_human(avg_correction));
         }
 
     }

@@ -139,15 +139,15 @@ struct clock_item : text_item {
                         server_latencies.push_back(latency);
                         total += correction;
                         ++num_values;
-                        LOG("%s (%s): correction = %s, latency = %s",
-                            server.c_str(),
-                            to_string(info.address).c_str(),
-                            seconds_to_human(correction).c_str(),
-                            seconds_to_human(latency).c_str());
+                        logging::printf("%s (%s): correction = %s, latency = %s",
+                                        server.c_str(),
+                                        to_string(info.address).c_str(),
+                                        seconds_to_human(correction).c_str(),
+                                        seconds_to_human(latency).c_str());
                     }
                     catch (std::exception& e) {
                         ++errors;
-                        LOG("Error: %s", e.what());
+                        logging::printf("Error: %s", e.what());
                     }
                 }
 

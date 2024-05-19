@@ -6,7 +6,6 @@
 
 // WUT/WUPS headers
 #include <notifications/notifications.h>
-#include <whb/log_udp.h>
 #include <wups.h>
 
 // local headers
@@ -14,6 +13,7 @@
 #include "config_screen.hpp"
 #include "core.hpp"
 #include "log.hpp"
+#include "notify.hpp"
 #include "preview_screen.hpp"
 
 #include "wupsxx/category.hpp"
@@ -36,18 +36,20 @@ static void close_config();
 
 INITIALIZE_PLUGIN()
 {
-    WHBLogUdpInit();
-    NotificationModule_InitLibrary(); // Set up for notifications.
+    logging::initialize();
 
     auto status = WUPSConfigAPI_Init({ .name = PLUGIN_NAME },
                                      open_config,
                                      close_config);
     if (status != WUPSCONFIG_API_RESULT_SUCCESS) {
-        LOG("Init error: %s", WUPSConfigAPI_GetStatusStr(status));
+        logging::printf("Init error: %s", WUPSConfigAPI_GetStatusStr(status));
         return;
     }
 
     cfg::load();
+
+    if (cfg::notify)
+        notify::initialize();
 
     if (cfg::sync)
         core::sync_clock(); // Update clock when plugin is loaded.
@@ -57,8 +59,8 @@ INITIALIZE_PLUGIN()
 
 DEINITIALIZE_PLUGIN()
 {
-    NotificationModule_DeInitLibrary();
-    WHBLogUdpDeinit();
+    notify::cleanup();
+    logging::cleanup();
 }
 
 
@@ -87,6 +89,11 @@ void
 close_config()
 {
     cfg::save();
+
+    if (cfg::notify)
+        notify::initialize();
+    else
+        notify::cleanup();
 
     std::jthread update_time_thread(core::sync_clock);
     update_time_thread.detach(); // Update time when settings are closed.
