@@ -8,6 +8,9 @@
 #include <notifications/notifications.h>
 #include <wups.h>
 
+// DEBUG code
+#include <mocha/mocha.h>
+
 // local headers
 #include "cfg.hpp"
 #include "config_screen.hpp"
@@ -45,6 +48,13 @@ INITIALIZE_PLUGIN()
         logging::printf("Init error: %s", WUPSConfigAPI_GetStatusStr(status));
         return;
     }
+
+    // DEBUG code
+    Mocha_InitLibrary();
+    Mocha_IOSUKernelWrite32(0x05025aac, 0x46c046c0);
+    Mocha_IOSUKernelWrite32(0x05025ab0, 0x46c068fd);
+    Mocha_DeInitLibrary();
+
 
     cfg::load();
 

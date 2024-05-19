@@ -17,6 +17,11 @@
 #include <nn/ccr.h>             // CCRSysSetSystemTime()
 #include <nn/pdm.h>             // __OSSetAbsoluteSystemTime()
 
+// DEBUG code
+#include <coreinit/ios.h>
+#include <coreinit/mcp.h>
+
+
 // unix headers
 #include <sys/select.h>         // select()
 #include <sys/socket.h>         // connect(), send(), recv()
@@ -83,6 +88,34 @@ namespace {
         auto ut = to_utc(t);
         OSTime ticks = ut.value * OSTimerClockSpeed;
         return ticks_to_string(ticks);
+    }
+
+
+
+    // DEBUG code
+    IOSError
+    MCP_GetAbsoluteSystemTime(IOSHandle handle,
+                              std::uint64_t* absSystemTime)
+    {
+        alignas(64) std::uint64_t buf;
+        IOSError err = IOS_Ioctl(handle, 0x61, nullptr, 0, &buf, sizeof(buf));
+        if (err >= 0)
+            *absSystemTime = buf;
+
+        return err;
+    }
+
+
+    std::uint64_t
+    get_MCP_time()
+    {
+        IOSHandle handle = MCP_Open();
+        uint64_t absSystemTime = 0;
+        IOSError err = MCP_GetAbsoluteSystemTime(handle, &absSystemTime);
+        MCP_Close(handle);
+        if (err)
+            logging::printf("MCP_GetAbsoluteSystemTime() failed: %d", int(err));
+        return absSystemTime;
     }
 
 }
@@ -225,6 +258,10 @@ namespace core {
     bool
     apply_clock_correction(double correction)
     {
+        OSTime before = OSGetSystemTime();
+
+        auto mcp_before = get_MCP_time();
+
         OSTime correction1 = correction * OSTimerClockSpeed;
         OSTime correction2 = (correction + 0.070) * OSTimerClockSpeed;
 
@@ -244,6 +281,15 @@ namespace core {
                         1000.0 * (ccr_finish - ccr_start) / OSTimerClockSpeed);
         logging::printf("__OSSetAbsoluteSystemTime() took %f ms",
                         1000.0 * (abs_finish - abs_start) / OSTimerClockSpeed);
+
+        auto mcp_after = get_MCP_time();
+        logging::printf("MCP before: %llu", mcp_before);
+        logging::printf("MCP after : %llu", mcp_after);
+        logging::printf("MCP difference: %llu", mcp_after - mcp_before);
+
+        OSTime after = OSGetSystemTime();
+        logging::printf("Total time: %f ms",
+                        1000.0 * (after - before) / OSTimerClockSpeed);
 
         return success1 && success2;
     }

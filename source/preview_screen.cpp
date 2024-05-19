@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <cmath>
+#include <map>
 #include <memory>
 #include <vector>
 
