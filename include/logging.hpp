@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-#ifndef LOG_HPP
-#define LOG_HPP
+#ifndef LOGGING_HPP
+#define LOGGING_HPP
 
 #include <whb/log.h>
 

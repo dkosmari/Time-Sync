@@ -5,8 +5,8 @@
 
 #include "wupsxx/bool_item.hpp"
 
-#include "log.hpp"
-#include "nintendo_glyphs.hpp"
+#include "logging.hpp"
+#include "nintendo_glyphs.h"
 #include "wupsxx/storage.hpp"
 
 

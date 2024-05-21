@@ -1,24 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-// standard headers
 #include <memory>               // make_unique()
 #include <thread>
 
-// WUT/WUPS headers
 #include <notifications/notifications.h>
 #include <wups.h>
 
-// DEBUG code
-#include <mocha/mocha.h>
-
-// local headers
 #include "cfg.hpp"
 #include "config_screen.hpp"
 #include "core.hpp"
-#include "log.hpp"
+#include "logging.hpp"
 #include "notify.hpp"
 #include "preview_screen.hpp"
-
 #include "wupsxx/category.hpp"
 
 
@@ -49,13 +42,6 @@ INITIALIZE_PLUGIN()
         return;
     }
 
-    // DEBUG code
-    Mocha_InitLibrary();
-    Mocha_IOSUKernelWrite32(0x05025aac, 0x46c046c0);
-    Mocha_IOSUKernelWrite32(0x05025ab0, 0x46c068fd);
-    Mocha_DeInitLibrary();
-
-
     cfg::load();
 
     if (cfg::notify)
@@ -69,6 +55,8 @@ INITIALIZE_PLUGIN()
 
 DEINITIALIZE_PLUGIN()
 {
+    // TODO: use a std::stop_token to stop the background threads?
+
     notify::cleanup();
     logging::cleanup();
 }

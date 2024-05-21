@@ -11,8 +11,8 @@
 
 #include "cfg.hpp"
 #include "core.hpp"
-#include "log.hpp"
-#include "nintendo_glyphs.hpp"
+#include "logging.hpp"
+#include "nintendo_glyphs.h"
 #include "utils.hpp"
 
 

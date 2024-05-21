@@ -10,7 +10,7 @@
 
 #include "cfg.hpp"
 #include "http_client.hpp"
-#include "nintendo_glyphs.hpp"
+#include "nintendo_glyphs.h"
 #include "utils.hpp"
 
 

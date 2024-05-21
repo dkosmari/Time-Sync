@@ -5,7 +5,7 @@
 #include "notify.hpp"
 
 #include "cfg.hpp"
-#include "log.hpp"
+#include "logging.hpp"
 
 
 namespace notify {

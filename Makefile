@@ -45,7 +45,7 @@ V ?= 1
 #-------------------------------------------------------------------------------
 # options for code generation
 #-------------------------------------------------------------------------------
-WARN_FLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align
+WARN_FLAGS := -Wall -Wextra -Werror -Wundef -Wpointer-arith -Wcast-align
 
 OPTFLAGS := -O2 -fipa-pta -ffunction-sections
 
@@ -71,13 +71,13 @@ LDFLAGS	= -g \
           -Wl,-Map,$(notdir $*.map) \
           $(CXXFLAGS)
 
-LIBS := -lmocha -lnotifications -lwups -lwut
+LIBS := -lnotifications -lwups -lwut
 
 #-------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level
 # containing include and lib
 #-------------------------------------------------------------------------------
-LIBDIRS	:= $(WUMS_ROOT) $(WUPS_ROOT) $(WUT_ROOT) $(WUT_ROOT)/usr
+LIBDIRS	:= $(WUMS_ROOT) $(WUPS_ROOT) $(WUT_ROOT)
 
 #-------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional

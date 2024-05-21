@@ -12,25 +12,20 @@
 #include <thread>
 #include <vector>
 
-// WUT/WUPS headers
-#include <coreinit/time.h>
-#include <nn/ccr.h>             // CCRSysSetSystemTime()
-#include <nn/pdm.h>             // __OSSetAbsoluteSystemTime()
-
-// DEBUG code
-#include <coreinit/ios.h>
-#include <coreinit/mcp.h>
-
-
 // unix headers
 #include <sys/select.h>         // select()
 #include <sys/socket.h>         // connect(), send(), recv()
+
+// WUT headers
+#include <coreinit/time.h>
+#include <nn/ccr.h>             // CCRSysSetSystemTime()
+#include <nn/pdm.h>             // __OSSetAbsoluteSystemTime()
 
 #include "core.hpp"
 
 #include "cfg.hpp"
 #include "limited_async.hpp"
-#include "log.hpp"
+#include "logging.hpp"
 #include "notify.hpp"
 #include "ntp.hpp"
 #include "utc.hpp"
@@ -88,34 +83,6 @@ namespace {
         auto ut = to_utc(t);
         OSTime ticks = ut.value * OSTimerClockSpeed;
         return ticks_to_string(ticks);
-    }
-
-
-
-    // DEBUG code
-    IOSError
-    MCP_GetAbsoluteSystemTime(IOSHandle handle,
-                              std::uint64_t* absSystemTime)
-    {
-        alignas(64) std::uint64_t buf;
-        IOSError err = IOS_Ioctl(handle, 0x61, nullptr, 0, &buf, sizeof(buf));
-        if (err >= 0)
-            *absSystemTime = buf;
-
-        return err;
-    }
-
-
-    std::uint64_t
-    get_MCP_time()
-    {
-        IOSHandle handle = MCP_Open();
-        uint64_t absSystemTime = 0;
-        IOSError err = MCP_GetAbsoluteSystemTime(handle, &absSystemTime);
-        MCP_Close(handle);
-        if (err)
-            logging::printf("MCP_GetAbsoluteSystemTime() failed: %d", int(err));
-        return absSystemTime;
     }
 
 }
@@ -256,40 +223,32 @@ namespace core {
 
 
     bool
-    apply_clock_correction(double correction)
+    apply_clock_correction(double seconds)
     {
-        OSTime before = OSGetSystemTime();
+        // OSTime before = OSGetSystemTime();
 
-        auto mcp_before = get_MCP_time();
-
-        OSTime correction1 = correction * OSTimerClockSpeed;
-        OSTime correction2 = (correction + 0.070) * OSTimerClockSpeed;
+        OSTime ticks = seconds * OSTimerClockSpeed;
 
         nn::pdm::NotifySetTimeBeginEvent();
 
-        OSTime ccr_start = OSGetSystemTime();
-        bool success1 = !CCRSysSetSystemTime(OSGetTime() + correction1);
-        OSTime ccr_finish = OSGetSystemTime();
+        // OSTime ccr_start = OSGetSystemTime();
+        bool success1 = !CCRSysSetSystemTime(OSGetTime() + ticks);
+        // OSTime ccr_finish = OSGetSystemTime();
 
-        OSTime abs_start = OSGetSystemTime();
-        bool success2 = __OSSetAbsoluteSystemTime(OSGetTime() + correction2);
-        OSTime abs_finish = OSGetSystemTime();
+        // OSTime abs_start = OSGetSystemTime();
+        bool success2 = __OSSetAbsoluteSystemTime(OSGetTime() + ticks);
+        // OSTime abs_finish = OSGetSystemTime();
 
         nn::pdm::NotifySetTimeEndEvent();
 
-        logging::printf("CCRSysSetSystemTime() took %f ms",
-                        1000.0 * (ccr_finish - ccr_start) / OSTimerClockSpeed);
-        logging::printf("__OSSetAbsoluteSystemTime() took %f ms",
-                        1000.0 * (abs_finish - abs_start) / OSTimerClockSpeed);
+        // logging::printf("CCRSysSetSystemTime() took %f ms",
+        //                 1000.0 * (ccr_finish - ccr_start) / OSTimerClockSpeed);
+        // logging::printf("__OSSetAbsoluteSystemTime() took %f ms",
+        //                 1000.0 * (abs_finish - abs_start) / OSTimerClockSpeed);
 
-        auto mcp_after = get_MCP_time();
-        logging::printf("MCP before: %llu", mcp_before);
-        logging::printf("MCP after : %llu", mcp_after);
-        logging::printf("MCP difference: %llu", mcp_after - mcp_before);
-
-        OSTime after = OSGetSystemTime();
-        logging::printf("Total time: %f ms",
-                        1000.0 * (after - before) / OSTimerClockSpeed);
+        // OSTime after = OSGetSystemTime();
+        // logging::printf("Total time: %f ms",
+        //                 1000.0 * (after - before) / OSTimerClockSpeed);
 
         return success1 && success2;
     }

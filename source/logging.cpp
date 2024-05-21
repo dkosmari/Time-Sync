@@ -8,7 +8,7 @@
 #include <whb/log_module.h>
 #include <whb/log_udp.h>
 
-#include "log.hpp"
+#include "logging.hpp"
 
 
 using namespace std::literals;
