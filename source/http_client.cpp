@@ -8,7 +8,6 @@
 
 #include "http_client.hpp"
 
-#include "logging.hpp"
 #include "net/addrinfo.hpp"
 #include "net/socket.hpp"
 #include "utils.hpp"
@@ -59,7 +58,7 @@ namespace http {
             req += "/";
         req += " HTTP/1.1" + CRLF;
         req += "Host: " + fields.host + CRLF;
-        req += "User-Agent: Wii U Time Sync Plugin" + CRLF;
+        req += "User-Agent: " PLUGIN_NAME "/" PLUGIN_VERSION " (Wii U; Aroma)" + CRLF;
         req += "Accept: text/plain" + CRLF;
         req += "Connection: close" + CRLF;
         req += CRLF;
