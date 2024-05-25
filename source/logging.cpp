@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+#include <atomic>
 #include <cstdarg>
 #include <cstdio>
 #include <string>
@@ -16,6 +17,9 @@ using namespace std::literals;
 
 namespace logging {
 
+    std::atomic_uint refs = 0;
+
+
     bool init_cafe = false;
     bool init_module = false;
     bool init_udp = false;
@@ -24,6 +28,10 @@ namespace logging {
     void
     initialize()
     {
+        // don't initialize again if refs was already positive
+        if (refs++)
+            return;
+
         init_cafe = WHBLogCafeInit();
         init_module = WHBLogModuleInit();
         init_udp = WHBLogUdpInit();
@@ -31,8 +39,12 @@ namespace logging {
 
 
     void
-    cleanup()
+    finalize()
     {
+        // don't finalize if refs is still positive
+        if (--refs)
+            return;
+
         if (init_cafe)
             WHBLogCafeDeinit();
         init_cafe = false;

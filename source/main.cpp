@@ -44,11 +44,8 @@ INITIALIZE_PLUGIN()
 
     cfg::load();
 
-    if (cfg::notify)
-        notify::initialize();
-
     if (cfg::sync)
-        core::sync_clock(); // Update clock when plugin is loaded.
+        core::run(); // Update clock when plugin is loaded.
 
 }
 
@@ -57,8 +54,7 @@ DEINITIALIZE_PLUGIN()
 {
     // TODO: use a std::stop_token to stop the background threads?
 
-    notify::cleanup();
-    logging::cleanup();
+    logging::finalize();
 }
 
 
@@ -88,11 +84,7 @@ close_config()
 {
     cfg::save();
 
-    if (cfg::notify)
-        notify::initialize();
-    else
-        notify::cleanup();
-
-    std::jthread update_time_thread(core::sync_clock);
-    update_time_thread.detach(); // Update time when settings are closed.
+    // Update time when settings are closed.
+    std::jthread update_time_thread(core::run);
+    update_time_thread.detach();
 }

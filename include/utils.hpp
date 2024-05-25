@@ -35,60 +35,6 @@ namespace utils {
 
 
 
-    // Ordering for sockaddr_in, so we can put it inside a std::set.
-    struct less_sockaddr_in {
-        bool
-        operator ()(const struct sockaddr_in& a,
-                    const struct sockaddr_in& b) const noexcept;
-    };
-
-
-    // Generate A.B.C.D string from IP address.
-    std::string to_string(const struct sockaddr_in& addr);
-
-
-
-    // RAII class to create and close down a socket on exit.
-    struct socket_guard {
-        int fd;
-
-        socket_guard(int ns, int st, int pr);
-        ~socket_guard();
-
-        void close();
-    };
-
-
-    void send_all(int fd, const std::string& msg, int flags = 0);
-
-    std::string recv_all(int fd, std::size_t size, int flags = 0);
-
-    std::string recv_until(int fd, const std::string& end_token, int flags = 0);
-
-
-    // Wrapper for getaddrinfo(), hardcoded for IPv4
-    struct addrinfo_query {
-        int flags    = 0;
-        int family   = AF_UNSPEC;
-        int socktype = 0;
-        int protocol = 0;
-    };
-
-    struct addrinfo_result {
-        int                        family;
-        int                        socktype;
-        int                        protocol;
-        struct sockaddr_in         address;
-        std::optional<std::string> canonname;
-    };
-
-    std::vector<addrinfo_result>
-    get_address_info(const std::optional<std::string>& name,
-                     const std::optional<std::string>& port = {},
-                     std::optional<addrinfo_query> query = {});
-
-
-
 
     // RAII type to ensure a function is never executed in parallel.
     struct exec_guard {

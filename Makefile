@@ -22,7 +22,7 @@ WUT_ROOT := $(DEVKITPRO)/wut
 #-------------------------------------------------------------------------------
 PLUGIN_NAME        := Time Sync
 PLUGIN_DESCRIPTION := A plugin that synchronizes the system clock to the Internet.
-PLUGIN_VERSION     := v3.1
+PLUGIN_VERSION     := v3.0+
 PLUGIN_AUTHOR      := Nightkingale, Daniel K. O.
 PLUGIN_LICENSE     := MIT
 
@@ -35,7 +35,7 @@ PLUGIN_LICENSE     := MIT
 #-------------------------------------------------------------------------------
 TARGET   := Time_Sync
 BUILD    := build
-SOURCES  := source source/wupsxx
+SOURCES  := source source/net source/wupsxx
 DATA     := data
 INCLUDES := include
 

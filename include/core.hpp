@@ -6,14 +6,14 @@
 #include <utility>              // pair<>
 #include <string>
 
-#include <netinet/in.h>         // struct sockaddr_in
+#include "net/address.hpp"
 
 
 namespace core {
 
-    std::pair<double, double> ntp_query(struct sockaddr_in address);
+    std::pair<double, double> ntp_query(net::address address);
 
-    void sync_clock();
+    void run();
 
     std::string local_clock_to_string();
 

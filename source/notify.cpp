@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+#include <atomic>
+
 #include <notifications/notifications.h>
 
 #include "notify.hpp"
@@ -10,22 +12,30 @@
 
 namespace notify {
 
-    /*
-     * Note: libnotification can safely handle multiple initializations and deinitializations.
-     * Double-Init is a no-op.
-     * Double De-Init is a no-op.
-     */
+    std::atomic_uint refs = 0;
+
 
     void
     initialize()
     {
+        // don't initialize again if refs was already positive
+        if (refs++)
+            return;
+
         NotificationModule_InitLibrary();
     }
 
 
     void
-    cleanup()
+    finalize()
     {
+        if (!refs)
+            return;
+
+        // don't finalize if refs is still positive
+        if (--refs)
+            return;
+
         NotificationModule_DeInitLibrary();
     }
 
@@ -86,5 +96,28 @@ namespace notify {
                                                  nullptr,
                                                  true);
     }
+
+
+
+    guard::guard(bool init) :
+        must_finalize{init}
+    {
+        initialize();
+    }
+
+
+    guard::~guard()
+    {
+        if (must_finalize)
+            finalize();
+    }
+
+
+    void
+    guard::release()
+    {
+        must_finalize = false;
+    }
+
 
 }

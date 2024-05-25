@@ -12,6 +12,7 @@
 #include "cfg.hpp"
 #include "core.hpp"
 #include "logging.hpp"
+#include "net/addrinfo.hpp"
 #include "nintendo_glyphs.h"
 #include "utils.hpp"
 
@@ -102,7 +103,6 @@ struct clock_item : text_item {
     {
         using std::to_string;
         using utils::seconds_to_human;
-        using utils::to_string;
 
         for (auto& [key, value] : server_infos) {
             value.name->text.clear();
@@ -112,11 +112,7 @@ struct clock_item : text_item {
 
         auto servers = utils::split(cfg::server, " \t,;");
 
-        utils::addrinfo_query query = {
-            .family = AF_INET,
-            .socktype = SOCK_DGRAM,
-            .protocol = IPPROTO_UDP
-        };
+        net::addrinfo::hints opts{ .type = net::socket::type::udp };
 
         double total = 0;
         unsigned num_values = 0;
@@ -124,7 +120,7 @@ struct clock_item : text_item {
         for (const auto& server : servers) {
             auto& si = server_infos.at(server);
             try {
-                auto infos = utils::get_address_info(server, "123", query);
+                auto infos = net::addrinfo::lookup(server, "123", opts);
 
                 si.name->text = to_string(infos.size())
                     + (infos.size() > 1 ? " addresses."s : " address."s);
@@ -135,14 +131,14 @@ struct clock_item : text_item {
 
                 for (const auto& info : infos) {
                     try {
-                        auto [correction, latency] = core::ntp_query(info.address);
+                        auto [correction, latency] = core::ntp_query(info.addr);
                         server_corrections.push_back(correction);
                         server_latencies.push_back(latency);
                         total += correction;
                         ++num_values;
                         logging::printf("%s (%s): correction = %s, latency = %s",
                                         server.c_str(),
-                                        to_string(info.address).c_str(),
+                                        to_string(info.addr).c_str(),
                                         seconds_to_human(correction).c_str(),
                                         seconds_to_human(latency).c_str());
                     }

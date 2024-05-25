@@ -26,6 +26,8 @@
 #include "cfg.hpp"
 #include "limited_async.hpp"
 #include "logging.hpp"
+#include "net/addrinfo.hpp"
+#include "net/socket.hpp"
 #include "notify.hpp"
 #include "ntp.hpp"
 #include "utc.hpp"
@@ -92,30 +94,30 @@ namespace core {
 
     // Note: hardcoded for IPv4, the Wii U doesn't have IPv6.
     std::pair<double, double>
-    ntp_query(struct sockaddr_in address)
+    ntp_query(net::address address)
     {
         using std::to_string;
 
-        utils::socket_guard s{PF_INET, SOCK_DGRAM, IPPROTO_UDP};
-
-        connect(s.fd, reinterpret_cast<struct sockaddr*>(&address), sizeof address);
+        net::socket sock{net::socket::type::udp};
+        sock.connect(address);
 
         ntp::packet packet;
         packet.version(4);
         packet.mode(ntp::packet::mode_flag::client);
 
 
-        unsigned num_send_tries = 0;
+        unsigned send_attempts = 0;
+        const unsigned max_send_attempts = 4;
     try_again_send:
         auto t1 = to_ntp(utc::now());
         packet.transmit_time = t1;
 
-        if (send(s.fd, &packet, sizeof packet, 0) == -1) {
-            int e = errno;
-            if (e != ENOMEM)
-                throw std::runtime_error{"send() failed: "s
-                                         + utils::errno_to_string(e)};
-            if (++num_send_tries < 4) {
+        auto send_status = sock.try_send(&packet, sizeof packet);
+        if (!send_status) {
+            auto& e = send_status.error();
+            if (e.code() != std::errc::not_enough_memory)
+                throw e;
+            if (++send_attempts < max_send_attempts) {
                 std::this_thread::sleep_for(100ms);
                 goto try_again_send;
             } else
@@ -123,35 +125,34 @@ namespace core {
         }
 
 
-        struct timeval timeout = { 4, 0 };
-        fd_set read_set;
-        unsigned num_select_tries = 0;
-    try_again_select:
-        FD_ZERO(&read_set);
-        FD_SET(s.fd, &read_set);
 
-        if (select(s.fd + 1, &read_set, nullptr, nullptr, &timeout) == -1) {
-            // Wii U's OS can only handle 16 concurrent select() calls,
+        unsigned poll_attempts = 0;
+        const unsigned max_poll_attempts = 4;
+    try_again_poll:
+        auto readable_status = sock.try_is_readable(4s);
+        if (!readable_status) {
+            // Wii U OS can only handle 16 concurrent select()/poll() calls,
             // so we may need to try again later.
-            int e = errno;
-            if (e != ENOMEM)
-                throw std::runtime_error{"select() failed: "s
-                                         + utils::errno_to_string(e)};
-            if (++num_select_tries < 4) {
+            auto& e = readable_status.error();
+            if (e.code() != std::errc::not_enough_memory)
+                throw e;
+            if (++poll_attempts < max_poll_attempts) {
                 std::this_thread::sleep_for(10ms);
-                goto try_again_select;
+                goto try_again_poll;
             } else
-                throw std::runtime_error{"No resources for select(), too many retries!"};
+                throw std::runtime_error{"No resources for poll(), too many retries!"};
         }
 
-        if (!FD_ISSET(s.fd, &read_set))
+        if (!*readable_status)
             throw std::runtime_error{"Timeout reached!"};
 
         // Measure the arrival time as soon as possible.
         auto t4 = to_ntp(utc::now());
 
-        if (recv(s.fd, &packet, sizeof packet, 0) < 48)
+        if (sock.recv(&packet, sizeof packet) < 48)
             throw std::runtime_error{"Invalid NTP response!"};
+
+        sock.close(); // close it early
 
         auto v = packet.version();
         if (v < 3 || v > 4)
@@ -256,12 +257,15 @@ namespace core {
 
 
     void
-    sync_clock()
+    run()
     {
         using utils::seconds_to_human;
 
         if (!cfg::sync)
             return;
+
+        // ensure notification is initialized if needed
+        notify::guard ng{cfg::notify};
 
         static std::atomic<bool> executing = false;
 
@@ -274,28 +278,24 @@ namespace core {
 
         std::vector<std::string> servers = utils::split(cfg::server, " \t,;");
 
-        utils::addrinfo_query query = {
-            .family = AF_INET,
-            .socktype = SOCK_DGRAM,
-            .protocol = IPPROTO_UDP
-        };
-
         // First, resolve all the names, in parallel.
         // Some IP addresses might be duplicated when we use *.pool.ntp.org.
-        std::set<struct sockaddr_in, utils::less_sockaddr_in> addresses;
+        std::set<net::address> addresses;
         {
-            using info_vec = std::vector<utils::addrinfo_result>;
+            // nested scope so the futures vector is destroyed
+            using info_vec = std::vector<net::addrinfo::result>;
             std::vector<std::future<info_vec>> futures(servers.size());
 
+            net::addrinfo::hints opts{ .type = net::socket::type::udp };
             // Launch DNS queries asynchronously.
             for (auto [fut, server] : std::views::zip(futures, servers))
-                fut = limited_async(utils::get_address_info, server, "123", query);
+                fut = limited_async(net::addrinfo::lookup, server, "123"s, opts);
 
             // Collect all future results.
             for (auto& fut : futures)
                 try {
                     for (auto info : fut.get())
-                        addresses.insert(info.address);
+                        addresses.insert(info.addr);
                 }
                 catch (std::exception& e) {
                     notify::error(e.what());
@@ -313,12 +313,12 @@ namespace core {
             try {
                 auto [correction, latency] = fut.get();
                 corrections.push_back(correction);
-                notify::info(utils::to_string(address)
+                notify::info(to_string(address)
                              + ": correction = "s + seconds_to_human(correction)
                              + ", latency = "s + seconds_to_human(latency));
             }
             catch (std::exception& e) {
-                notify::error(utils::to_string(address) + ": "s + e.what());
+                notify::error(to_string(address) + ": "s + e.what());
             }
 
 
