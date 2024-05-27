@@ -15,6 +15,7 @@ namespace cfg {
         extern const char* notify;
         extern const char* server;
         extern const char* sync;
+        extern const char* threads;
         extern const char* tolerance;
     }
 
@@ -24,6 +25,7 @@ namespace cfg {
     extern bool        notify;
     extern std::string server;
     extern bool        sync;
+    extern int         threads;
     extern int         tolerance;
 
 

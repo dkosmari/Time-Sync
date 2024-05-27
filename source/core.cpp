@@ -12,11 +12,6 @@
 #include <thread>
 #include <vector>
 
-// unix headers
-#include <sys/select.h>         // select()
-#include <sys/socket.h>         // connect(), send(), recv()
-
-// WUT headers
 #include <coreinit/time.h>
 #include <nn/ccr.h>             // CCRSysSetSystemTime()
 #include <nn/pdm.h>             // __OSSetAbsoluteSystemTime()
@@ -24,20 +19,17 @@
 #include "core.hpp"
 
 #include "cfg.hpp"
-#include "limited_async.hpp"
 #include "logging.hpp"
 #include "net/addrinfo.hpp"
 #include "net/socket.hpp"
 #include "notify.hpp"
 #include "ntp.hpp"
+#include "thread_pool.hpp"
 #include "utc.hpp"
 #include "utils.hpp"
 
 
 using namespace std::literals;
-
-
-std::counting_semaphore<> async_limit{2}; // limit to 5 threads
 
 
 namespace {
@@ -62,7 +54,6 @@ namespace {
     {
         return utc::timestamp{static_cast<double>(t) - epoch_diff};
     }
-
 
 
     std::string
@@ -272,9 +263,13 @@ namespace core {
         utils::exec_guard guard{executing};
         if (!guard.guarded) {
             // Another thread is already executing this function.
-            notify::info("Skipping NTP task: already in progress.");
+            notify::info("Skipping NTP task: operation already in progress.");
             return;
         }
+
+
+        thread_pool pool(cfg::threads);
+
 
         std::vector<std::string> servers = utils::split(cfg::server, " \t,;");
 
@@ -289,7 +284,7 @@ namespace core {
             net::addrinfo::hints opts{ .type = net::socket::type::udp };
             // Launch DNS queries asynchronously.
             for (auto [fut, server] : std::views::zip(futures, servers))
-                fut = limited_async(net::addrinfo::lookup, server, "123"s, opts);
+                fut = pool.submit(net::addrinfo::lookup, server, "123"s, opts);
 
             // Collect all future results.
             for (auto& fut : futures)
@@ -305,7 +300,7 @@ namespace core {
         // Launch NTP queries asynchronously.
         std::vector<std::future<std::pair<double, double>>> futures(addresses.size());
         for (auto [fut, address] : std::views::zip(futures, addresses))
-            fut = limited_async(ntp_query, address);
+            fut = pool.submit(ntp_query, address);
 
         // Collect all future results.
         std::vector<double> corrections;

@@ -56,7 +56,7 @@ namespace net {
     to_string(address addr)
     {
         auto raw_addr = addr.data();
-        char buf[32];
+        char buf[INET_ADDRSTRLEN];
         return ::inet_ntop(AF_INET, &raw_addr.sin_addr, buf, sizeof buf);
     }
 

@@ -108,5 +108,10 @@ make_config_screen()
     // show current NTP server address, no way to change it.
     cat.add(text_item::create(cfg::key::server, "NTP Servers", cfg::server));
 
+
+    cat.add(int_item::create(cfg::key::threads, "Background threads",
+                             cfg::threads,
+                             0, 8, 2));
+
     return cat;
 }

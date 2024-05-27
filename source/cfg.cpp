@@ -15,6 +15,7 @@ namespace cfg {
         const char* notify       = "notify";
         const char* server       = "server";
         const char* sync         = "sync";
+        const char* threads      = "threads";
         const char* tolerance    = "tolerance";
     }
 
@@ -25,6 +26,7 @@ namespace cfg {
     bool        notify       = true;
     std::string server       = "pool.ntp.org";
     bool        sync         = false;
+    int         threads      = 4;
     int         tolerance    = 250;
 
 
@@ -51,6 +53,7 @@ namespace cfg {
             load_or_init(key::notify,       notify);
             load_or_init(key::server,       server);
             load_or_init(key::sync,         sync);
+            load_or_init(key::threads,      threads);
             load_or_init(key::tolerance,    tolerance);
             logging::printf("loaded settings");
         }
