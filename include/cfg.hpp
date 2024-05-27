@@ -9,6 +9,7 @@
 namespace cfg {
 
     namespace key {
+        extern const char* auto_tz;
         extern const char* hours;
         extern const char* minutes;
         extern const char* msg_duration;
@@ -19,6 +20,7 @@ namespace cfg {
         extern const char* tolerance;
     }
 
+    extern bool        auto_tz;
     extern int         hours;
     extern int         minutes;
     extern int         msg_duration;

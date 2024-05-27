@@ -116,7 +116,6 @@ namespace core {
         }
 
 
-
         unsigned poll_attempts = 0;
         const unsigned max_poll_attempts = 4;
     try_again_poll:

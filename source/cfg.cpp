@@ -9,6 +9,7 @@
 namespace cfg {
 
     namespace key {
+        const char* auto_tz      = "auto_tz";
         const char* hours        = "hours";
         const char* minutes      = "minutes";
         const char* msg_duration = "msg_duration";
@@ -20,6 +21,7 @@ namespace cfg {
     }
 
 
+    bool        auto_tz      = false;
     int         hours        = 0;
     int         minutes      = 0;
     int         msg_duration = 5;
@@ -47,6 +49,7 @@ namespace cfg {
     load()
     {
         try {
+            load_or_init(key::auto_tz,      auto_tz);
             load_or_init(key::hours,        hours);
             load_or_init(key::minutes,      minutes);
             load_or_init(key::msg_duration, msg_duration);
