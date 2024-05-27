@@ -3,9 +3,6 @@
 #ifndef LOGGING_HPP
 #define LOGGING_HPP
 
-#include <whb/log.h>
-
-
 namespace logging {
 
     void initialize();

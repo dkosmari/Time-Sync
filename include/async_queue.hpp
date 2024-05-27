@@ -7,7 +7,7 @@
 #include <mutex>
 #include <optional>
 #include <queue>
-#include <utility>
+#include <utility>              // forward(), move()
 
 
 template<typename T,

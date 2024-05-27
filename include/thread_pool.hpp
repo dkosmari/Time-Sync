@@ -5,13 +5,12 @@
 
 #include <atomic>
 #include <exception>
-#include <functional>
+#include <functional>           // bind(), move_only_function<>
 #include <future>
 #include <mutex>
 #include <thread>
-//#include <tuple>
-#include <type_traits>
-#include <utility>
+#include <type_traits>          // decay_t<>, invoke_result_t<>
+#include <utility>              // forward(), move()
 #include <vector>
 
 #include "async_queue.hpp"
@@ -47,9 +46,10 @@ public:
                                      std::decay_t<Args>...>>
     submit(Func&& func, Args&&... args)
     {
+        using Ret = std::invoke_result_t<std::decay_t<Func>, std::decay_t<Args>...>;
+
         auto bfunc = std::bind(std::forward<Func>(func),
                                std::forward<Args>(args)...);
-        using Ret = decltype(bfunc());
 
         std::packaged_task<Ret()> task{std::move(bfunc)};
         auto future = task.get_future();

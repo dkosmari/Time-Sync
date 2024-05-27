@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <string>
 
+#include <whb/log.h>
 #include <whb/log_cafe.h>
 #include <whb/log_module.h>
 #include <whb/log_udp.h>
