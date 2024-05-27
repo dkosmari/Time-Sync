@@ -3,7 +3,6 @@
 #include <cmath>                // fabs()
 #include <cstdio>               // snprintf()
 #include <cstring>              // memset(), memcpy()
-#include <memory>               // unique_ptr<>
 #include <stdexcept>            // runtime_error, logic_error
 #include <utility>              // move()
 

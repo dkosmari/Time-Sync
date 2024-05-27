@@ -278,7 +278,7 @@ namespace core {
                 update_tz();
             }
             catch (std::exception& e) {
-                logging::printf("failed to update timezone: %s", e.what());
+                logging::printf("Failed to update timezone: %s", e.what());
             }
         }
 
