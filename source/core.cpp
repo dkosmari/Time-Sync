@@ -245,6 +245,13 @@ namespace core {
     }
 
 
+    void
+    update_tz()
+    {
+        auto [tz_name, tz_offset] = utils::fetch_timezone();
+        cfg::update_offsets_from_tz_offset(tz_offset);
+    }
+
 
     void
     run()
@@ -255,17 +262,25 @@ namespace core {
             return;
 
         // ensure notification is initialized if needed
-        notify::guard ng{cfg::notify};
+        notify::guard notify_guard{cfg::notify};
 
         static std::atomic<bool> executing = false;
-
-        utils::exec_guard guard{executing};
-        if (!guard.guarded) {
+        utils::exec_guard exec_guard{executing};
+        if (!exec_guard.guarded) {
             // Another thread is already executing this function.
             notify::info("Skipping NTP task: operation already in progress.");
             return;
         }
 
+
+        if (cfg::auto_tz) {
+            try {
+                update_tz();
+            }
+            catch (std::exception& e) {
+                logging::printf("failed to update timezone: %s", e.what());
+            }
+        }
 
         thread_pool pool(cfg::threads);
 

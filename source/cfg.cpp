@@ -102,7 +102,8 @@ namespace cfg {
             --hours;
         }
 
-        // since these were updated from a different UI, we gotta store the new values
+        // Since these were updated from outside their UI items, we gotta store the new
+        // values manually.
         try {
             wups::storage::store(key::hours, hours);
             wups::storage::store(key::minutes, minutes);

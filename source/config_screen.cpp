@@ -9,7 +9,6 @@
 #include "config_screen.hpp"
 
 #include "cfg.hpp"
-#include "http_client.hpp"
 #include "nintendo_glyphs.h"
 #include "utils.hpp"
 
@@ -46,29 +45,22 @@ struct timezone_item : text_item {
     {
         text_item::on_input(input);
 
-        if (input.buttons_d & WUPS_CONFIG_BUTTON_A) {
-            try {
-                query_timezone();
-            }
-            catch (std::exception& e) {
-                text = "Error: "s + e.what();
-            }
-        }
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_A)
+            update_timezone();
     }
 
 
     void
-    query_timezone()
+    update_timezone()
     {
-        std::string tz = http::get("http://ip-api.com/line/?fields=timezone,offset");
-        auto tokens = utils::split(tz, " \r\n");
-        if (tokens.size() != 2)
-            throw std::runtime_error{"Could not parse response from \"ip-api.com\"."};
-
-        text = tokens[0];
-
-        int tz_offset = std::stoi(tokens[1]);
-        cfg::update_offsets_from_tz_offset(tz_offset);
+        try {
+            auto [tz_name, tz_offset] = utils::fetch_timezone();
+            text = tz_name;
+            cfg::update_offsets_from_tz_offset(tz_offset);
+        }
+        catch (std::exception& e) {
+            text = "Error: "s + e.what();
+        }
     }
 
 };
@@ -100,6 +92,10 @@ make_config_screen()
                              0, 59));
 
     cat.add(timezone_item::create());
+
+    cat.add(bool_item::create(cfg::key::auto_tz, "Auto-update Timezone Offset",
+                              cfg::auto_tz,
+                              "yes", "no"));
 
     cat.add(int_item::create(cfg::key::tolerance, "Tolerance (milliseconds)",
                              cfg::tolerance,

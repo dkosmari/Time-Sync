@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-// standard headers
 #include <cmath>                // fabs()
 #include <cstdio>               // snprintf()
 #include <cstring>              // memset(), memcpy()
@@ -8,26 +7,12 @@
 #include <stdexcept>            // runtime_error, logic_error
 #include <utility>              // move()
 
-// unix headers
-#include <arpa/inet.h>          // inet_ntop()
-#include <netdb.h>              // getaddrinfo()
-#include <sys/socket.h>         // socket()
-#include <unistd.h>             // close()
-
-// local headers
 #include "utils.hpp"
+
+#include "http_client.hpp"
 
 
 namespace utils {
-
-    std::string
-    errno_to_string(int e)
-    {
-        char buf[100];
-        strerror_r(e, buf, sizeof buf);
-        return buf;
-    }
-
 
     std::string
     seconds_to_human(double s)
@@ -90,6 +75,20 @@ namespace utils {
     {
         if (guarded)
             flag = false;
+    }
+
+
+
+    std::pair<std::string, int>
+    fetch_timezone()
+    {
+        std::string tz = http::get("http://ip-api.com/line/?fields=timezone,offset");
+        auto tokens = utils::split(tz, " \r\n");
+        if (tokens.size() != 2)
+            throw std::runtime_error{"Could not parse response from \"ip-api.com\"."};
+
+        int tz_offset = std::stoi(tokens[1]);
+        return {tokens[0], tz_offset};
     }
 
 

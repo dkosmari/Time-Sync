@@ -4,19 +4,11 @@
 #define UTILS_HPP
 
 #include <atomic>
-#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
-#include <netinet/in.h> // struct sockaddr_in
-#include <sys/socket.h> // AF_*
-
 namespace utils {
-
-
-    // Wrapper for strerror_r()
-    std::string errno_to_string(int e);
-
 
     // Generate time duration strings for humans.
     std::string seconds_to_human(double s);
@@ -34,12 +26,10 @@ namespace utils {
           std::size_t max_tokens = 0);
 
 
-
-
     // RAII type to ensure a function is never executed in parallel.
     struct exec_guard {
 
-        std::atomic<bool>& flag;
+        std::atomic_bool& flag;
         bool guarded; // when false, the function is already executing in some thread.
 
         exec_guard(std::atomic<bool>& f);
@@ -47,6 +37,9 @@ namespace utils {
         ~exec_guard();
 
     };
+
+
+    std::pair<std::string, int> fetch_timezone();
 
 
 } // namespace utils
