@@ -12,11 +12,14 @@ namespace wups::config {
 
     class int_item : public item {
 
+    protected:
+
         int& variable;
         int default_value;
         int min_value;
         int max_value;
         int fast_increment;
+        int slow_increment;
 
     public:
 
@@ -25,7 +28,8 @@ namespace wups::config {
                  int& variable,
                  int min_value,
                  int max_value,
-                 int fast_increment = 10);
+                 int fast_increment = 10,
+                 int slow_increment = 1);
 
         static
         std::unique_ptr<int_item>
@@ -34,7 +38,8 @@ namespace wups::config {
                int& variable,
                int min_value,
                int max_value,
-               int fast_increment = 10);
+               int fast_increment = 10,
+               int slow_increment = 1);
 
         virtual int get_display(char* buf, std::size_t size) const override;
 

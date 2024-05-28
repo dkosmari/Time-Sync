@@ -170,8 +170,8 @@ endif
 
 .PHONY: upload
 upload: all
-	curl --upload-file "$(TARGET).wps" "ftp://wiiu//fs/vol/external01/wiiu/environments/aroma/plugins/"
-	[ ! -f "$(PLUGIN_NAME).json" ] || curl --upload-file "$(PLUGIN_NAME).json" "ftp://wiiu//fs/vol/external01/wiiu/environments/aroma/plugins/config/"
+	curl --upload-file "$(TARGET).wps" "ftp://wiiu:/fs/vol/external01/wiiu/environments/aroma/plugins/"
+	[ ! -f "$(PLUGIN_NAME).json" ] || curl --upload-file "$(PLUGIN_NAME).json" "ftp://wiiu:/fs/vol/external01/wiiu/environments/aroma/plugins/config/"
 
 
 .PHONY: company

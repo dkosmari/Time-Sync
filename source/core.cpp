@@ -246,14 +246,6 @@ namespace core {
 
 
     void
-    update_tz()
-    {
-        auto [tz_name, tz_offset] = utils::fetch_timezone();
-        cfg::set_tz_offset(tz_offset);
-    }
-
-
-    void
     run()
     {
         using utils::seconds_to_human;
@@ -275,7 +267,11 @@ namespace core {
 
         if (cfg::auto_tz) {
             try {
-                update_tz();
+                auto [name, offset] = utils::fetch_timezone();
+                cfg::set_utc_offset(offset);
+                logging::printf("Auto-updated timezone: %s (%+d min)",
+                                name.c_str(),
+                                static_cast<int>(offset.count()));
             }
             catch (std::exception& e) {
                 logging::printf("Failed to update timezone: %s", e.what());

@@ -76,7 +76,7 @@ namespace utils {
     }
 
 
-    std::pair<std::string, int>
+    std::pair<std::string, std::chrono::minutes>
     fetch_timezone()
     {
         std::string tz = http::get("http://ip-api.com/line/?fields=timezone,offset");
@@ -84,8 +84,8 @@ namespace utils {
         if (tokens.size() != 2)
             throw std::runtime_error{"Could not parse response from \"ip-api.com\"."};
 
-        int tz_offset = std::stoi(tokens[1]);
-        return {tokens[0], tz_offset};
+        int tz_offset_min = std::stoi(tokens[1]) / 60;
+        return {tokens[0], std::chrono::minutes{tz_offset_min}};
     }
 
 } // namespace utils

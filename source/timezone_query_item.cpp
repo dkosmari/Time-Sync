@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-#include "timezone_item.hpp"
+#include "timezone_query_item.hpp"
 
 #include "cfg.hpp"
 #include "nintendo_glyphs.h"
@@ -10,7 +10,7 @@
 using namespace std::literals;
 
 
-timezone_item::timezone_item() :
+timezone_query_item::timezone_query_item() :
     wups::config::text_item{{},
                             "Detect Timezone (press " NIN_GLYPH_BTN_A ")",
                             "Using http://ip-api.com",
@@ -18,15 +18,15 @@ timezone_item::timezone_item() :
 {}
 
 
-std::unique_ptr<timezone_item>
-timezone_item::create()
+std::unique_ptr<timezone_query_item>
+timezone_query_item::create()
 {
-    return std::make_unique<timezone_item>();
+    return std::make_unique<timezone_query_item>();
 }
 
 
 void
-timezone_item::on_input(WUPSConfigSimplePadData input)
+timezone_query_item::on_input(WUPSConfigSimplePadData input)
 {
     text_item::on_input(input);
 
@@ -36,12 +36,12 @@ timezone_item::on_input(WUPSConfigSimplePadData input)
 
 
 void
-timezone_item::run()
+timezone_query_item::run()
 {
     try {
-        auto [tz_name, tz_offset] = utils::fetch_timezone();
-        text = tz_name;
-        cfg::set_tz_offset(tz_offset);
+        auto [name, offset] = utils::fetch_timezone();
+        text = name;
+        cfg::set_utc_offset(offset);
     }
     catch (std::exception& e) {
         text = "Error: "s + e.what();

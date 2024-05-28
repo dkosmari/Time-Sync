@@ -1,47 +1,67 @@
 # Time Sync
 
-A plugin that synchronizes a Wii U's clock to the NTP servers on the internet.
-
-Time Sync is a Wii U homebrew plugin for the Aroma environment. It allows the console to
-automatically synchronize its date and time through the Internet, similar to the feature
-found on the Nintendo Switch and other modern devices.
+Time Sync is a Wii U homebrew plugin for the [Aroma](https://aroma.foryour.cafe/)
+environment. It allows the console to automatically synchronize its date and time through
+the Internet, similar to the feature found on the Nintendo Switch and other modern
+devices.
 
 
 ## Installation
 
 A Wii U plugin file (.wps) can be downloaded from the [Releases page](releases). It should
-be placed on your SD card, particularly in `wiiu/environments/aroma/plugins`.
-* You need to have the Aroma environment installed for Time Sync to work. Please visit the
-  [hacking guide](https://wiiu.hacks.guide/) and the [Aroma
-  webpage](https://aroma.foryour.cafe/) if you would like to softmod your Wii U console.
+be placed on your SD card, in `wiiu/environments/aroma/plugins`.
+
+You need to have the [Aroma](https://aroma.foryour.cafe/) environment installed for **Time
+Sync** to work. Please visit the [hacking guide](https://wiiu.hacks.guide/) for
+instructions on how to install Aroma.
 
 
 ## Usage
 
-If the plugin is placed correctly on an SD card, "Time Sync" will be listed in the Aroma
-environment's Wii U Plugin System Config Menu.
+As long as syncing is enabled by the user, the clock will sync whenever Aroma starts, or
+when the *Wii U Plugin System Config Menu* (**L** + **R** + **SELECT** + **↓**) is closed.
 
-If "Time Sync" doesn't show up in the Wii U Plugin System Config Menu, confirm you
-placed the .wps file on your SD card correctly and restart your console.
+**The HOME Menu and other applications might not see the updated clock until the console
+is rebooted.**
 
-Configuration options:
 
-* `Configuration -> Syncing Enabled`: Enables syncing to the Internet, `false` by default.
-* `Configuration -> Show Notifications`: Shows a notification whenever Wii U Time Sync adjusts the clock, `false` by default.
-* `Configuration -> Hour Offset`: The amount of hours to add/subtract from the coordinated universal time, `0` by default.
-* `Configuration -> Minutes Offset`: The amount of minutes to add/subtract from the coordinated universal time, `0` by default.
-* `Configuration -> Notification Duration (seconds)`: The amount of seconds which notifications will appear on screen for, `5` by default.
-* `Configuration -> Tolerance (milliseconds)`: The amount of milliseconds in which Wii U Time Sync will tolerate differences, `250` by default.
-* `Configuration -> Detect Timezone`: Uses the IP Geolocation API to guess the timezone, setting the offset accordingly.
-* `Configuration -> NTP Servers`: The list of NTP servers in which the plugin connects to, only `pool.ntp.org` by default.
-    * This cannot be edited on the console. However, you can edit the Wii U Time Sync configuration file on a computer to adjust the default server, or add more.
-        * The configuration file: `wiiu/environments/aroma/plugins/config/Time Sync.json`
-        * An example edit: `"server": "pool.ntp.org time.windows.com",`
-* `Preview`: Lets you preview what the system's clock is currently set to, as well as correction and latency statistics.
+### Configuration screen
 
-As long as syncing is enabled by the user, the clock will sync whenever Aroma starts, or when the plugin settings are exited.
+ - **Syncing Enabled**: Enables the plugin. Default is "no". That means the plugin will
+   not adjust the clock until you configure it, and set this option to "yes".
 
-**The changes will not be reflected in the HOME Menu and most other applications right away, so the console will need to be rebooted for changes to be completed.**
+ - **Show Notifications**: Shows a notification whenever Wii U Time Sync adjusts the
+   clock. Default is "yes".
+
+ - **Notification Duration (seconds)**: How long notifications should remain on
+   screen. Default is 5 seconds.
+
+ - **Timezone Offset**: The offset of your timezone. Use L/R to adjust by hour increments,
+   ←/→ to adjust by 15 minutes increments.
+
+ - **Detect Timezone (press A)**: This is not a configuration option, but a button to
+   detect the timezone using [IP Geolocation from IP-API.com](https://ip-api.com). This
+   will update the **Timezone Offset** option above.
+
+ - **Auto-update Timezone Offset**: automatically update the timezone before running a
+   synchronization task. Default is "no".
+
+ - **Tolerance (milliseconds)**: How many milliseconds of error will be tolerated until
+   the clock is adjusted. Default is 500 ms.
+
+ - **Server**: Shows one or more NTP servers that will be contacted for
+   synchronization. Multiple servers can be specified, separated by spaces. Default is
+   `pool.ntp.org`. This option cannot be edited within the plugin, you must edit the JSON
+   configuration file manually to change it.
+   
+ - **Background threads**: Maximum number of background threads to use for NTP
+   queries. Default is 4, because the default server (`pool.ntp.org`) returns 4 different
+   addresses, so all 4 servers will be queried at the same time.
+
+
+### Preview screen
+
+The **Preview** screen allows for testing the plugin, without modifying the clock.
 
 
 ## Credits

@@ -42,6 +42,7 @@ INITIALIZE_PLUGIN()
     }
 
     cfg::load();
+    cfg::migrate_old_config();
 
     if (cfg::sync)
         core::run(); // Update clock when plugin is loaded.

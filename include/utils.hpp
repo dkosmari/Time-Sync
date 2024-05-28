@@ -4,6 +4,7 @@
 #define UTILS_HPP
 
 #include <atomic>
+#include <chrono>
 #include <cstddef>              // size_t
 #include <string>
 #include <utility>              // pair<>
@@ -41,7 +42,9 @@ namespace utils {
     };
 
 
-    std::pair<std::string, int> fetch_timezone();
+    std::pair<std::string,
+              std::chrono::minutes>
+    fetch_timezone();
 
 } // namespace utils
 

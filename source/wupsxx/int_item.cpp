@@ -11,35 +11,37 @@
 #include "wupsxx/storage.hpp"
 
 
-// TODO: have a Config parameter for constructor
-
 namespace wups::config {
 
     int_item::int_item(const std::optional<std::string>& key,
-                       const std::string& name,
+                       const std::string& label,
                        int& variable,
                        int min_value,
                        int max_value,
-                       int fast_increment) :
-        item{key, name},
+                       int fast_increment,
+                       int slow_increment) :
+        item{key, label},
         variable(variable),
         default_value{variable},
         min_value{min_value},
         max_value{max_value},
-        fast_increment{fast_increment}
+        fast_increment{fast_increment},
+        slow_increment{slow_increment}
     {}
 
 
     std::unique_ptr<int_item>
     int_item::create(const std::optional<std::string>& key,
-                     const std::string& name,
+                     const std::string& label,
                      int& variable,
                      int min_value,
                      int max_value,
-                     int fast_increment)
+                     int fast_increment,
+                     int slow_increment)
     {
-        return std::make_unique<int_item>(key, name, variable,
-                                          min_value, max_value, fast_increment);
+        return std::make_unique<int_item>(key, label, variable,
+                                          min_value, max_value,
+                                          fast_increment, slow_increment);
     }
 
 
@@ -56,23 +58,23 @@ namespace wups::config {
     int_item::get_selected_display(char* buf, std::size_t size)
         const
     {
-        const char* left = "";
-        const char* right = "";
+        const char* slow_left = "";
+        const char* slow_right = "";
         const char* fast_left = "";
         const char* fast_right = "";
         if (variable > min_value) {
-            left = NIN_GLYPH_BTN_DPAD_LEFT;
+            slow_left = NIN_GLYPH_BTN_DPAD_LEFT " ";
             fast_left = NIN_GLYPH_BTN_L;
         } if (variable < max_value) {
-            right = NIN_GLYPH_BTN_DPAD_RIGHT;
+            slow_right = " " NIN_GLYPH_BTN_DPAD_RIGHT;
             fast_right = NIN_GLYPH_BTN_R;
         }
         std::snprintf(buf, size,
-                      "%s%s %d %s%s",
+                      "%s%s%d%s%s",
                       fast_left,
-                      left,
+                      slow_left,
                       variable,
-                      right,
+                      slow_right,
                       fast_right);
         return 0;
     }
@@ -93,10 +95,10 @@ namespace wups::config {
         item::on_input(input);
 
         if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT)
-            --variable;
+            variable -= slow_increment;
 
         if (input.buttons_d & WUPS_CONFIG_BUTTON_RIGHT)
-            ++variable;
+            variable += slow_increment;
 
         if (input.buttons_d & WUPS_CONFIG_BUTTON_L)
             variable -= fast_increment;

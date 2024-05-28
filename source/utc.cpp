@@ -21,7 +21,8 @@ namespace utc {
     now()
         noexcept
     {
-        return timestamp{ local_time() - cfg::get_tz_offset() };
+        auto offset_seconds = duration_cast<std::chrono::seconds>(cfg::get_utc_offset());
+        return timestamp{ local_time() - offset_seconds.count() };
     }
 
 } // namespace utc
