@@ -31,12 +31,12 @@ timezone_item::on_input(WUPSConfigSimplePadData input)
     text_item::on_input(input);
 
     if (input.buttons_d & WUPS_CONFIG_BUTTON_A)
-        update_timezone();
+        run();
 }
 
 
 void
-timezone_item::update_timezone()
+timezone_item::run()
 {
     try {
         auto [tz_name, tz_offset] = utils::fetch_timezone();
