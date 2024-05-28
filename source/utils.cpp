@@ -2,9 +2,7 @@
 
 #include <cmath>                // fabs()
 #include <cstdio>               // snprintf()
-#include <cstring>              // memset(), memcpy()
-#include <stdexcept>            // runtime_error, logic_error
-#include <utility>              // move()
+#include <stdexcept>            // runtime_error
 
 #include "utils.hpp"
 
@@ -70,12 +68,12 @@ namespace utils {
             guarded = true; // Exactly one thread can have the "guarded" flag as true.
     }
 
+
     exec_guard::~exec_guard()
     {
         if (guarded)
             flag = false;
     }
-
 
 
     std::pair<std::string, int>
@@ -89,6 +87,5 @@ namespace utils {
         int tz_offset = std::stoi(tokens[1]);
         return {tokens[0], tz_offset};
     }
-
 
 } // namespace utils

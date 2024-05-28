@@ -92,8 +92,15 @@ namespace cfg {
     }
 
 
+    int
+    get_tz_offset()
+    {
+        return (cfg::hours * 60 + cfg::minutes) * 60;
+    }
+
+
     void
-    update_offsets_from_tz_offset(int tz_offset)
+    set_tz_offset(int tz_offset)
     {
         hours = tz_offset / (60 * 60);
         minutes = tz_offset % (60 * 60) / 60;

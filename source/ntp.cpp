@@ -121,5 +121,4 @@ namespace ntp {
         return static_cast<mode_flag>(lvm & 0b000'0111);
     }
 
-
 } // namespace ntp

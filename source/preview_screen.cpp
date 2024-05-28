@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 
 #include <cmath>
+#include <exception>
 #include <map>
-#include <memory>
+#include <memory>               // unique_ptr<>
+#include <utility>              // move()
 #include <vector>
 
 #include "preview_screen.hpp"
-
-#include "wupsxx/text_item.hpp"
 
 #include "cfg.hpp"
 #include "core.hpp"
@@ -15,6 +15,7 @@
 #include "net/addrinfo.hpp"
 #include "nintendo_glyphs.h"
 #include "utils.hpp"
+#include "wupsxx/text_item.hpp"
 
 
 using wups::config::text_item;
@@ -60,7 +61,6 @@ struct server_info {
     text_item* correction = nullptr;
     text_item* latency = nullptr;
 };
-
 
 
 struct clock_item : text_item {

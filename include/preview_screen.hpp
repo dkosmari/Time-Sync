@@ -8,5 +8,4 @@
 
 wups::config::category make_preview_screen();
 
-
 #endif

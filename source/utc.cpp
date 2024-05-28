@@ -9,13 +9,6 @@
 
 namespace utc {
 
-    double
-    get_timezone_offset()
-    {
-        return (cfg::hours * 60.0 + cfg::minutes) * 60.0;
-    }
-
-
     static
     double
     local_time()
@@ -28,7 +21,7 @@ namespace utc {
     now()
         noexcept
     {
-        return timestamp{ local_time() - get_timezone_offset() };
+        return timestamp{ local_time() - cfg::get_tz_offset() };
     }
 
 } // namespace utc

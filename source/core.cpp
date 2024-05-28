@@ -3,11 +3,11 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>                // fabs()
-#include <cstdio>
+#include <cstdio>               // snprintf()
 #include <numeric>              // accumulate()
 #include <ranges>               // views::zip()
 #include <set>
-#include <stdexcept>
+#include <stdexcept>            // runtime_error
 #include <string>
 #include <thread>
 #include <vector>
@@ -249,7 +249,7 @@ namespace core {
     update_tz()
     {
         auto [tz_name, tz_offset] = utils::fetch_timezone();
-        cfg::update_offsets_from_tz_offset(tz_offset);
+        cfg::set_tz_offset(tz_offset);
     }
 
 

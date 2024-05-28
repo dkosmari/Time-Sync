@@ -2,7 +2,7 @@
 
 #include <atomic>
 #include <cstdarg>
-#include <cstdio>
+#include <cstdio>               // vsnprintf()
 #include <string>
 
 #include <whb/log.h>

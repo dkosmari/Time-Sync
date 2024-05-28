@@ -8,5 +8,4 @@
 
 wups::config::category make_config_screen();
 
-
 #endif

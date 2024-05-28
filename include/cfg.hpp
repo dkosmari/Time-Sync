@@ -35,8 +35,9 @@ namespace cfg {
     void reload();
     void save();
 
-    void update_offsets_from_tz_offset(int tz_offset);
+    int get_tz_offset();
+    void set_tz_offset(int tz_offset);
 
-}
+} // namespace cfg
 
 #endif

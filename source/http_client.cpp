@@ -2,9 +2,9 @@
 
 #include <map>
 #include <optional>
-#include <ranges>
+#include <ranges>               // views::drop()
 #include <regex>
-#include <stdexcept>
+#include <stdexcept>            // runtime_error
 
 #include "http_client.hpp"
 

@@ -3,8 +3,8 @@
 #ifndef CORE_HPP
 #define CORE_HPP
 
-#include <utility>              // pair<>
 #include <string>
+#include <utility>              // pair<>
 
 #include "net/address.hpp"
 
@@ -18,6 +18,5 @@ namespace core {
     std::string local_clock_to_string();
 
 } // namespace core
-
 
 #endif

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-#include <memory>               // make_unique()
+#include <exception>
 #include <thread>
 
-#include <notifications/notifications.h>
 #include <wups.h>
 
 #include "cfg.hpp"
@@ -52,8 +51,6 @@ INITIALIZE_PLUGIN()
 
 DEINITIALIZE_PLUGIN()
 {
-    // TODO: use a std::stop_token to stop the background threads?
-
     logging::finalize();
 }
 
@@ -72,7 +69,8 @@ open_config(WUPSConfigCategoryHandle root_handle)
 
         return WUPSCONFIG_API_CALLBACK_RESULT_SUCCESS;
     }
-    catch (...) {
+    catch (std::exception& e) {
+        logging::printf("Error opening config: %s", e.what());
         return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
     }
 }
@@ -85,6 +83,6 @@ close_config()
     cfg::save();
 
     // Update time when settings are closed.
-    std::jthread update_time_thread(core::run);
+    std::jthread update_time_thread{core::run};
     update_time_thread.detach();
 }

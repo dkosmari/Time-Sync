@@ -9,60 +9,12 @@
 #include "config_screen.hpp"
 
 #include "cfg.hpp"
-#include "nintendo_glyphs.h"
-#include "utils.hpp"
+#include "timezone_item.hpp"
 
 
 using wups::config::bool_item;
 using wups::config::int_item;
 using wups::config::text_item;
-
-using namespace std::literals;
-
-
-struct timezone_item : text_item {
-
-    timezone_item() :
-        text_item{{},
-                  "Detect Timezone (press " NIN_GLYPH_BTN_A ")",
-                  "Using http://ip-api.com",
-                  30}
-    {}
-
-
-    static
-    std::unique_ptr<timezone_item>
-    create()
-    {
-        return std::make_unique<timezone_item>();
-    }
-
-
-    void
-    on_input(WUPSConfigSimplePadData input)
-        override
-    {
-        text_item::on_input(input);
-
-        if (input.buttons_d & WUPS_CONFIG_BUTTON_A)
-            update_timezone();
-    }
-
-
-    void
-    update_timezone()
-    {
-        try {
-            auto [tz_name, tz_offset] = utils::fetch_timezone();
-            text = tz_name;
-            cfg::update_offsets_from_tz_offset(tz_offset);
-        }
-        catch (std::exception& e) {
-            text = "Error: "s + e.what();
-        }
-    }
-
-};
 
 
 wups::config::category

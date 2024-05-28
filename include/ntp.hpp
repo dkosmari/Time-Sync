@@ -103,9 +103,9 @@ namespace ntp {
 
     static_assert(sizeof(packet) == 48);
 
+
     std::string to_string(packet::mode_flag m);
 
 } // namespace ntp
-
 
 #endif

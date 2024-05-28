@@ -9,10 +9,14 @@
 namespace notify {
 
     void initialize();
+
     void finalize();
 
+
     void error(const std::string& arg);
+
     void info(const std::string& arg);
+
     void success(const std::string& arg);
 
 
@@ -26,6 +30,5 @@ namespace notify {
     };
 
 }
-
 
 #endif
