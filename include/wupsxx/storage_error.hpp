@@ -17,7 +17,6 @@ namespace wups::storage {
 
     };
 
-}
-
+} // namespace wups::storage
 
 #endif

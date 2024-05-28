@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-#include <algorithm>
-#include <cstdio>
+#include <algorithm>            // min()
+#include <cstdio>               // snprintf()
 #include <stdexcept>
 
 #include "wupsxx/text_item.hpp"
@@ -10,19 +10,22 @@
 namespace wups::config {
 
     text_item::text_item(const std::optional<std::string>& key,
-                         const std::string& name,
-                         const std::string& text) :
-        item{key, name},
-        text{text}
+                         const std::string& label,
+                         const std::string& text,
+                         int max_width) :
+        item{key, label},
+        text{text},
+        max_width{max_width}
     {}
 
 
     std::unique_ptr<text_item>
     text_item::create(const std::optional<std::string>& key,
-                      const std::string& name,
-                      const std::string& text)
+                      const std::string& label,
+                      const std::string& text,
+                      int max_width)
     {
-        return std::make_unique<text_item>(key, name, text);
+        return std::make_unique<text_item>(key, label, text, max_width);
     }
 
 

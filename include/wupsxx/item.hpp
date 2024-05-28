@@ -3,6 +3,7 @@
 #ifndef WUPSXX_ITEM_HPP
 #define WUPSXX_ITEM_HPP
 
+#include <cstddef>              // size_t
 #include <optional>
 #include <string>
 
@@ -11,21 +12,25 @@
 
 namespace wups::config {
 
-    struct item {
+    class item {
 
         WUPSConfigItemHandle handle;
-        std::optional<std::string> key;
-        std::string name;
 
+    protected:
+
+        std::optional<std::string> key;
+
+    public:
 
         item(const std::optional<std::string>& key,
-             const std::string& name);
+             const std::string& label);
 
-        // disallow moving, since the callbacks store the `this` pointer.
+        // Disallow moving, since the callbacks store the `this` pointer.
         item(item&&) = delete;
 
         virtual ~item();
 
+        // Gives up ownership of the handle.
         void release();
 
 
@@ -44,6 +49,9 @@ namespace wups::config {
         virtual void on_input(WUPSConfigSimplePadData input);
 
         virtual void on_input(WUPSConfigComplexPadData input);
+
+
+        friend class category;
 
     };
 

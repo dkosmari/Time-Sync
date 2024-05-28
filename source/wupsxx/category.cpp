@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-#include <stdexcept>
-
 #include "wupsxx/category.hpp"
 #include "wupsxx/config_error.hpp"
 
@@ -13,13 +11,13 @@ namespace wups::config {
     {}
 
 
-    category::category(const std::string& name) :
+    category::category(const std::string& label) :
         own_handle{true}
     {
-        WUPSConfigAPICreateCategoryOptionsV1 options{ .name = name.c_str() };
+        WUPSConfigAPICreateCategoryOptionsV1 options{ .name = label.c_str() };
         auto status = WUPSConfigAPI_Category_Create(options, &handle);
         if (status != WUPSCONFIG_API_RESULT_SUCCESS)
-            throw config_error{"could not create category \"" + name + "\"", status};
+            throw config_error{status, "could not create category \"" + label + "\""};
     }
 
 
@@ -55,7 +53,7 @@ namespace wups::config {
 
         auto status = WUPSConfigAPI_Category_AddItem(handle, item->handle);
         if (status != WUPSCONFIG_API_RESULT_SUCCESS)
-            throw config_error{"cannot add item to category: ", status};
+            throw config_error{status, "cannot add item to category: "};
 
         item.release(); // WUPS will call .onDelete() later
     }
@@ -66,7 +64,7 @@ namespace wups::config {
     {
         auto status = WUPSConfigAPI_Category_AddCategory(handle, child.handle);
         if (status != WUPSCONFIG_API_RESULT_SUCCESS)
-            throw config_error{"cannot add child category to category: ", status};
+            throw config_error{status, "cannot add child category to category: "};
 
         child.release();
     }

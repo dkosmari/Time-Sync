@@ -13,11 +13,10 @@ namespace wups::config {
 
     struct config_error : std::runtime_error {
 
-        config_error(const std::string& msg, WUPSConfigAPIStatus status);
+        config_error(WUPSConfigAPIStatus status, const std::string& msg);
 
     };
 
-}
-
+} // namespace wups::config
 
 #endif

@@ -25,10 +25,9 @@ struct timezone_item : text_item {
     timezone_item() :
         text_item{{},
                   "Detect Timezone (press " NIN_GLYPH_BTN_A ")",
-                  "Using http://ip-api.com"}
-    {
-        max_width = 30;
-    }
+                  "Using http://ip-api.com",
+                  30}
+    {}
 
 
     static

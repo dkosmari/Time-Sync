@@ -3,8 +3,8 @@
 #ifndef WUPSXX_STORAGE_HPP
 #define WUPSXX_STORAGE_HPP
 
-#include <string>
 #include <expected>
+#include <string>
 
 #include <wups/storage.h>
 
@@ -43,7 +43,6 @@ namespace wups::storage {
     void save();
 
     void reload();
-
 
 } // namespace wups::storage
 

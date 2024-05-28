@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-#include <cstdio>
-#include <stdexcept>
+#include <cstdio>               // snprintf()
 
 #include "wupsxx/item.hpp"
 
@@ -26,20 +25,6 @@ namespace wups::config {
             return i->get_selected_display(buf, size);
         }
 
-        void
-        on_selected(void* ctx, bool is_selected)
-        {
-            auto i = static_cast<item*>(ctx);
-            i->on_selected(is_selected);
-        }
-
-        void
-        restore_default(void* ctx)
-        {
-            auto i = static_cast<item*>(ctx);
-            i->restore();
-        }
-
         bool
         is_movement_allowed(void* ctx)
         {
@@ -52,6 +37,14 @@ namespace wups::config {
         {
             auto i = static_cast<item*>(ctx);
             i->on_close();
+        }
+
+        void
+        on_delete(void* ctx)
+        {
+            auto i = static_cast<item*>(ctx);
+            i->release(); // don't destroy the handle, it's already happening
+            delete i;
         }
 
         void
@@ -69,39 +62,46 @@ namespace wups::config {
         }
 
         void
-        on_delete(void* ctx)
+        on_selected(void* ctx, bool is_selected)
         {
             auto i = static_cast<item*>(ctx);
-            i->release(); // don't destroy the handle, it's already happening
-            delete i;
+            i->on_selected(is_selected);
         }
-    }
+
+        void
+        restore_default(void* ctx)
+        {
+            auto i = static_cast<item*>(ctx);
+            i->restore();
+        }
+
+    } // namespace dispatchers
 
 
     item::item(const std::optional<std::string>& key,
-               const std::string& name) :
-        key{key},
-        name{name}
+               const std::string& label) :
+        key{key}
     {
         WUPSConfigAPIItemOptionsV2 options {
-            .displayName = name.c_str(),
+            .displayName = label.c_str(),
             .context = this,
             .callbacks = {
-                .getCurrentValueDisplay = dispatchers::get_display,
+                // Note: do not sort, must be initialized in the order of declaration.
+                .getCurrentValueDisplay         = dispatchers::get_display,
                 .getCurrentValueSelectedDisplay = dispatchers::get_selected_display,
-                .onSelected = dispatchers::on_selected,
-                .restoreDefault = dispatchers::restore_default,
-                .isMovementAllowed = dispatchers::is_movement_allowed,
-                .onCloseCallback = dispatchers::on_close,
-                .onInput = dispatchers::on_input,
-                .onInputEx = dispatchers::on_input_ex,
-                .onDelete = dispatchers::on_delete,
+                .onSelected                     = dispatchers::on_selected,
+                .restoreDefault                 = dispatchers::restore_default,
+                .isMovementAllowed              = dispatchers::is_movement_allowed,
+                .onCloseCallback                = dispatchers::on_close,
+                .onInput                        = dispatchers::on_input,
+                .onInputEx                      = dispatchers::on_input_ex,
+                .onDelete                       = dispatchers::on_delete,
             }
         };
 
         auto status = WUPSConfigAPI_Item_Create(options, &handle);
         if (status != WUPSCONFIG_API_RESULT_SUCCESS)
-            throw config_error{"could not create config item \"" + name + "\"", status};
+            throw config_error{status, "could not create config item \"" + label + "\""};
     }
 
 
@@ -172,6 +172,5 @@ namespace wups::config {
     void
     item::on_input(WUPSConfigComplexPadData /*input*/)
     {}
-
 
 } // namespace wups::config

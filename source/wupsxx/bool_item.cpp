@@ -13,11 +13,11 @@
 namespace wups::config {
 
     bool_item::bool_item(const std::optional<std::string>& key,
-                         const std::string& name,
+                         const std::string& label,
                          bool& variable,
                          const std::string& true_str,
                          const std::string& false_str) :
-        item{key, name},
+        item{key, label},
         variable(variable),
         default_value{variable},
         true_str{true_str},
@@ -27,12 +27,12 @@ namespace wups::config {
 
     std::unique_ptr<bool_item>
     bool_item::create(const std::optional<std::string>& key,
-                      const std::string& name,
+                      const std::string& label,
                       bool& variable,
                       const std::string& true_str,
                       const std::string& false_str)
     {
-        return std::make_unique<bool_item>(key, name, variable, true_str, false_str);
+        return std::make_unique<bool_item>(key, label, variable, true_str, false_str);
     }
 
 
@@ -103,6 +103,5 @@ namespace wups::config {
             logging::printf("Error storing bool: %s", e.what());
         }
     }
-
 
 } // namespace wups::config

@@ -10,9 +10,9 @@ using namespace std::literals;
 
 namespace wups::config {
 
-    config_error::config_error(const std::string& msg,
-                               WUPSConfigAPIStatus status) :
-        runtime_error{msg + ": "s + WUPSConfigAPI_GetStatusStr(status)}
+    config_error::config_error(WUPSConfigAPIStatus status,
+                               const std::string& msg) :
+        std::runtime_error{msg + ": "s + WUPSConfigAPI_GetStatusStr(status)}
     {}
 
-}
+} // namespace wups::config

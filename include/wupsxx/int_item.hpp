@@ -10,7 +10,7 @@
 
 namespace wups::config {
 
-    struct int_item : item {
+    class int_item : public item {
 
         int& variable;
         int default_value;
@@ -18,9 +18,10 @@ namespace wups::config {
         int max_value;
         int fast_increment;
 
+    public:
 
         int_item(const std::optional<std::string>& key,
-                 const std::string& name,
+                 const std::string& label,
                  int& variable,
                  int min_value,
                  int max_value,
@@ -29,12 +30,11 @@ namespace wups::config {
         static
         std::unique_ptr<int_item>
         create(const std::optional<std::string>& key,
-               const std::string& name,
+               const std::string& label,
                int& variable,
                int min_value,
                int max_value,
                int fast_increment = 10);
-
 
         virtual int get_display(char* buf, std::size_t size) const override;
 
@@ -44,6 +44,7 @@ namespace wups::config {
 
         virtual void on_input(WUPSConfigSimplePadData input) override;
 
+    private:
 
         void on_changed();
 

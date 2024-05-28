@@ -10,23 +10,25 @@
 
 namespace wups::config {
 
+    // Note: this class doesn't do much on its own, so it's all public.
+
     struct text_item : item {
 
         std::string text;
-        int max_width = 50;
+        int max_width;
         int start = 0;
 
-        text_item(const std::optional<std::string>& key = "",
-                  const std::string& name = "",
-                  const std::string& text = "");
+        text_item(const std::optional<std::string>& key,
+                  const std::string& label,
+                  const std::string& text = "",
+                  int max_width = 50);
 
-
-        // convenience constructor
         static
         std::unique_ptr<text_item>
-        create(const std::optional<std::string>& key = "",
-               const std::string& name = "",
-               const std::string& text = "");
+        create(const std::optional<std::string>& key,
+               const std::string& label,
+               const std::string& text = "",
+               int max_width = 50);
 
 
         virtual int get_display(char* buf, std::size_t size) const override;
@@ -34,9 +36,9 @@ namespace wups::config {
         virtual void on_selected(bool is_selected) override;
 
         virtual void on_input(WUPSConfigSimplePadData input) override;
+
     };
 
 } // namespace wups::config
-
 
 #endif

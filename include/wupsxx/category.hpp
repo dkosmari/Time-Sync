@@ -16,12 +16,14 @@ namespace wups::config {
     class category final {
 
         WUPSConfigCategoryHandle handle;
-        bool own_handle;
+        bool own_handle; // if true, will destroy the handle in the destructor
 
     public:
 
+        // This constructor does not take ownership of the handle.
         category(WUPSConfigCategoryHandle handle);
-        category(const std::string& name);
+
+        category(const std::string& label);
         category(category&& other) noexcept;
 
         ~category();
@@ -35,6 +37,5 @@ namespace wups::config {
     };
 
 } // namespace wups
-
 
 #endif
