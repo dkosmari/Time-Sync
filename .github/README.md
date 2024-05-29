@@ -8,12 +8,12 @@ devices.
 
 ## Installation
 
-A Wii U plugin file (.wps) can be downloaded from the [Releases page](releases). It should
-be placed on your SD card, in `wiiu/environments/aroma/plugins`.
-
 You need to have the [Aroma](https://aroma.foryour.cafe/) environment installed for **Time
 Sync** to work. Please visit the [hacking guide](https://wiiu.hacks.guide/) for
 instructions on how to install Aroma.
+
+A Wii U plugin file (.wps) can be downloaded from the [releases page](releases). It should
+be placed on your SD card, in `wiiu/environments/aroma/plugins`.
 
 
 ## Usage
