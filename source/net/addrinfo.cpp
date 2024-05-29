@@ -50,8 +50,8 @@ namespace net::addrinfo {
     {
         ai_ptr info;
 
-        ::addrinfo raw_hints;
-        ::addrinfo* raw_hints_ptr = nullptr;
+        struct ::addrinfo raw_hints;
+        struct ::addrinfo* raw_hints_ptr = nullptr;
 
         if (opts) {
             raw_hints_ptr = &raw_hints;
@@ -72,7 +72,7 @@ namespace net::addrinfo {
             }
         }
 
-        ::addrinfo* raw_result_ptr = nullptr;
+        struct ::addrinfo* raw_result_ptr = nullptr;
         int status = ::getaddrinfo(name ? name->c_str() : nullptr,
                                    service ? service->c_str() : nullptr,
                                    raw_hints_ptr,
@@ -87,7 +87,7 @@ namespace net::addrinfo {
         // walk through the linked list
         for (auto a = info.get(); a; a = a->ai_next) {
             // sanity check: Wii U only supports IPv4
-            if (a->ai_addrlen != sizeof(::sockaddr_in))
+            if (a->ai_addrlen != sizeof(sockaddr_in))
                 throw std::logic_error{"getaddrinfo() returned invalid result!"};
 
             result item;
