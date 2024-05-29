@@ -30,15 +30,18 @@ make_config_screen()
     cat.add(bool_item::create(cfg::key::sync,
                               cfg::label::sync,
                               cfg::sync,
+                              cfg::defaults::sync,
                               "yes", "no"));
 
     cat.add(verbosity_item::create(cfg::key::notify,
                                    cfg::label::notify,
-                                   cfg::notify));
+                                   cfg::notify,
+                                   cfg::defaults::notify));
 
     cat.add(int_item::create(cfg::key::msg_duration,
                              cfg::label::msg_duration,
                              cfg::msg_duration,
+                             cfg::defaults::msg_duration,
                              0, 30, 5));
 
     cat.add(timezone_offset_item::create(cfg::key::utc_offset,
@@ -50,11 +53,13 @@ make_config_screen()
     cat.add(bool_item::create(cfg::key::auto_tz,
                               cfg::label::auto_tz,
                               cfg::auto_tz,
+                              cfg::defaults::auto_tz,
                               "yes", "no"));
 
     cat.add(int_item::create(cfg::key::tolerance,
                              cfg::label::tolerance,
                              cfg::tolerance,
+                             cfg::defaults::tolerance,
                              0, 5000, 100));
 
     // show current NTP server address, no way to change it.
@@ -65,6 +70,7 @@ make_config_screen()
     cat.add(int_item::create(cfg::key::threads,
                              cfg::label::threads,
                              cfg::threads,
+                             cfg::defaults::threads,
                              0, 8, 2));
 
     return cat;

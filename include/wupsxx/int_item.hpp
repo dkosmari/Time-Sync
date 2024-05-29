@@ -15,7 +15,7 @@ namespace wups::config {
     protected:
 
         int& variable;
-        int default_value;
+        const int default_value;
         int min_value;
         int max_value;
         int fast_increment;
@@ -25,9 +25,8 @@ namespace wups::config {
 
         int_item(const std::optional<std::string>& key,
                  const std::string& label,
-                 int& variable,
-                 int min_value,
-                 int max_value,
+                 int& variable, int default_value,
+                 int min_value, int max_value,
                  int fast_increment = 10,
                  int slow_increment = 1);
 
@@ -35,9 +34,8 @@ namespace wups::config {
         std::unique_ptr<int_item>
         create(const std::optional<std::string>& key,
                const std::string& label,
-               int& variable,
-               int min_value,
-               int max_value,
+               int& variable, int default_value,
+               int min_value, int max_value,
                int fast_increment = 10,
                int slow_increment = 1);
 

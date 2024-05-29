@@ -3,8 +3,11 @@
 #include "cfg.hpp"
 
 #include "logging.hpp"
+#include "utils.hpp"
 #include "wupsxx/storage.hpp"
 
+
+using std::chrono::minutes;
 
 using namespace std::literals;
 
@@ -35,14 +38,25 @@ namespace cfg {
     }
 
 
-    bool                 auto_tz      = false;
-    int                  msg_duration = 5;
-    int                  notify       = 1;
-    std::string          server       = "pool.ntp.org";
-    bool                 sync         = false;
-    int                  threads      = 4;
-    int                  tolerance    = 500;
-    std::chrono::minutes utc_offset   = 0min;
+    namespace defaults {
+        const bool        auto_tz      = false;
+        const int         msg_duration = 5;
+        const int         notify       = 1;
+        const std::string server       = "pool.ntp.org";
+        const bool        sync         = false;
+        const int         threads      = 4;
+        const int         tolerance    = 500;
+    }
+
+
+    bool        auto_tz      = defaults::auto_tz;
+    int         msg_duration = defaults::msg_duration;
+    int         notify       = defaults::notify;
+    std::string server       = defaults::server;
+    bool        sync         = defaults::sync;
+    int         threads      = defaults::threads;
+    int         tolerance    = defaults::tolerance;
+    minutes     utc_offset   = 0min;
 
 
     template<typename T>
@@ -60,13 +74,13 @@ namespace cfg {
 
     void
     load_or_init(const std::string& key,
-                 std::chrono::minutes& variable)
+                 minutes& variable)
     {
         auto val = wups::storage::load<int>(key);
         if (!val)
             wups::storage::store<int>(key, variable.count());
         else
-            variable = std::chrono::minutes{*val};
+            variable = minutes{*val};
     }
 
 
@@ -120,17 +134,18 @@ namespace cfg {
     migrate_old_config()
     {
         // check for leftovers from old versions
-        auto hours = wups::storage::load<int>("hours");
-        auto minutes = wups::storage::load<int>("minutes");
-        if (hours || minutes) {
-            int h = hours.value_or(0);
-            int m = minutes.value_or(0);
-            set_utc_offset(std::chrono::minutes{h * 60 + m});
+        auto hrs = wups::storage::load<int>("hours");
+        auto min = wups::storage::load<int>("minutes");
+        if (hrs || min) {
+            int h = hrs.value_or(0);
+            int m = min.value_or(0);
+            set_utc_offset(minutes{h * 60 + m});
             WUPSStorageAPI::DeleteItem("hours");
             WUPSStorageAPI::DeleteItem("minutes");
             save();
-            logging::printf("Migrated old config: %d hrs + %d min -> %d.",
-                            h, m, static_cast<int>(utc_offset.count()));
+            logging::printf("Migrated old config: %d hrs + %d min -> %s.",
+                            h, m,
+                            utils::tz_offset_to_string(get_utc_offset()).c_str());
         }
     }
 

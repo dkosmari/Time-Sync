@@ -12,13 +12,15 @@ struct verbosity_item : wups::config::int_item {
 
     verbosity_item(const std::string& key,
                    const std::string& label,
-                   int& variable);
+                   int& variable,
+                   int default_value);
 
     static
     std::unique_ptr<verbosity_item>
     create(const std::string& notify_key,
            const std::string& label,
-           int& variable);
+           int& variable,
+           int default_value);
 
 
     virtual int get_display(char* buf, std::size_t size) const override;

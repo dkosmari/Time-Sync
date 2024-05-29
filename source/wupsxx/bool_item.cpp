@@ -15,11 +15,12 @@ namespace wups::config {
     bool_item::bool_item(const std::optional<std::string>& key,
                          const std::string& label,
                          bool& variable,
+                         bool default_value,
                          const std::string& true_str,
                          const std::string& false_str) :
         item{key, label},
         variable(variable),
-        default_value{variable},
+        default_value{default_value},
         true_str{true_str},
         false_str{false_str}
     {}
@@ -29,10 +30,13 @@ namespace wups::config {
     bool_item::create(const std::optional<std::string>& key,
                       const std::string& label,
                       bool& variable,
+                      bool default_value,
                       const std::string& true_str,
                       const std::string& false_str)
     {
-        return std::make_unique<bool_item>(key, label, variable, true_str, false_str);
+        return std::make_unique<bool_item>(key, label,
+                                           variable, default_value,
+                                           true_str, false_str);
     }
 
 

@@ -25,17 +25,21 @@ namespace {
 
 verbosity_item::verbosity_item(const std::string& key,
                                const std::string& label,
-                               int& variable) :
-    int_item{key, label, variable, 0, 2, 2}
+                               int& variable,
+                               int default_value) :
+    int_item{key, label,
+             variable, default_value,
+             0, 2, 2}
 {}
 
 
 std::unique_ptr<verbosity_item>
 verbosity_item::create(const std::string& key,
                        const std::string& label,
-                       int& variable)
+                       int& variable,
+                       int default_value)
 {
-    return std::make_unique<verbosity_item>(key, label, variable);
+    return std::make_unique<verbosity_item>(key, label, variable, default_value);
 }
 
 

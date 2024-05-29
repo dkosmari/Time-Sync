@@ -15,14 +15,12 @@ namespace wups::config {
 
     int_item::int_item(const std::optional<std::string>& key,
                        const std::string& label,
-                       int& variable,
-                       int min_value,
-                       int max_value,
-                       int fast_increment,
-                       int slow_increment) :
+                       int& variable, int default_value,
+                       int min_value, int max_value,
+                       int fast_increment, int slow_increment) :
         item{key, label},
         variable(variable),
-        default_value{variable},
+        default_value{default_value},
         min_value{min_value},
         max_value{max_value},
         fast_increment{fast_increment},
@@ -33,13 +31,12 @@ namespace wups::config {
     std::unique_ptr<int_item>
     int_item::create(const std::optional<std::string>& key,
                      const std::string& label,
-                     int& variable,
-                     int min_value,
-                     int max_value,
-                     int fast_increment,
-                     int slow_increment)
+                     int& variable, int default_value,
+                     int min_value, int max_value,
+                     int fast_increment, int slow_increment)
     {
-        return std::make_unique<int_item>(key, label, variable,
+        return std::make_unique<int_item>(key, label,
+                                          variable, default_value,
                                           min_value, max_value,
                                           fast_increment, slow_increment);
     }

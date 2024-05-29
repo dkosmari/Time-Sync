@@ -13,7 +13,7 @@ namespace wups::config {
     class bool_item : public item {
 
         bool& variable;
-        bool default_value;
+        const bool default_value;
         std::string true_str;
         std::string false_str;
 
@@ -22,6 +22,7 @@ namespace wups::config {
         bool_item(const std::optional<std::string>& key,
                   const std::string& label,
                   bool& variable,
+                  bool default_value,
                   const std::string& true_str = "true",
                   const std::string& false_str = "false");
 
@@ -30,6 +31,7 @@ namespace wups::config {
         create(const std::optional<std::string>& key,
                const std::string& label,
                bool& variable,
+               bool default_value,
                const std::string& true_str = "true",
                const std::string& false_str = "false");
 

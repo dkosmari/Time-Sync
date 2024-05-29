@@ -32,6 +32,16 @@ namespace cfg {
         extern const char* utc_offset;
     }
 
+    namespace defaults {
+        extern const bool        auto_tz;
+        extern const int         msg_duration;
+        extern const int         notify;
+        extern const std::string server;
+        extern const bool        sync;
+        extern const int         threads;
+        extern const int         tolerance;
+    }
+
 
     extern bool                 auto_tz;
     extern int                  msg_duration;
