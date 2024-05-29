@@ -37,7 +37,7 @@ namespace cfg {
 
     bool                 auto_tz      = false;
     int                  msg_duration = 5;
-    bool                 notify       = true;
+    int                  notify       = 1;
     std::string          server       = "pool.ntp.org";
     bool                 sync         = false;
     int                  threads      = 4;
@@ -82,7 +82,7 @@ namespace cfg {
             load_or_init(key::threads,      threads);
             load_or_init(key::tolerance,    tolerance);
             load_or_init(key::utc_offset,   utc_offset);
-            logging::printf("Loaded settings.");
+            // logging::printf("Loaded settings.");
         }
         catch (std::exception& e) {
             logging::printf("Error loading config: %s", e.what());
@@ -108,7 +108,7 @@ namespace cfg {
     {
         try {
             wups::storage::save();
-            logging::printf("Saved settings");
+            // logging::printf("Saved settings");
         }
         catch (std::exception& e) {
             logging::printf("Error saving config: %s", e.what());

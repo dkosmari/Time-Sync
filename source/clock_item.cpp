@@ -53,7 +53,7 @@ namespace {
 
 
 clock_item::clock_item() :
-    text_item{{}, "Clock (" NIN_GLYPH_BTN_A " to refresh)"}
+    text_item{{}, "Clock (" NIN_GLYPH_BTN_A " to refresh)", "",  36}
 {}
 
 
@@ -121,7 +121,7 @@ clock_item::run()
                     logging::printf("%s (%s): correction = %s, latency = %s",
                                     server.c_str(),
                                     to_string(info.addr).c_str(),
-                                    seconds_to_human(correction).c_str(),
+                                    seconds_to_human(correction, true).c_str(),
                                     seconds_to_human(latency).c_str());
                 }
                 catch (std::exception& e) {
@@ -135,9 +135,9 @@ clock_item::run()
                     + (errors > 1 ? " errors."s : " error."s);
             if (!server_corrections.empty()) {
                 auto corr_stats = get_statistics(server_corrections);
-                si.correction->text = "min = "s + seconds_to_human(corr_stats.min)
-                    + ", max = "s + seconds_to_human(corr_stats.max)
-                    + ", avg = "s + seconds_to_human(corr_stats.avg);
+                si.correction->text = "min = "s + seconds_to_human(corr_stats.min, true)
+                    + ", max = "s + seconds_to_human(corr_stats.max, true)
+                    + ", avg = "s + seconds_to_human(corr_stats.avg, true);
                 auto late_stats = get_statistics(server_latencies);
                 si.latency->text = "min = "s + seconds_to_human(late_stats.min)
                     + ", max = "s + seconds_to_human(late_stats.max)
@@ -156,7 +156,7 @@ clock_item::run()
 
     if (num_values) {
         double avg = total / num_values;
-        text += ", needs "s + seconds_to_human(avg);
+        text += ", needs "s + seconds_to_human(avg, true);
     }
 
 }

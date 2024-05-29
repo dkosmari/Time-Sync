@@ -3,18 +3,20 @@
 #include <algorithm>            // clamp()
 #include <cmath>                // abs()
 #include <cstdio>               // snprintf()
+#include <string.h>             // BSD strlcpy()
 
 #include "timezone_offset_item.hpp"
 
 #include "logging.hpp"
 #include "nintendo_glyphs.h"
+#include "utils.hpp"
 #include "wupsxx/storage.hpp"
 
 
 using namespace std::literals;
 
 
-timezone_offset_item::timezone_offset_item(const std::optional<std::string>& key,
+timezone_offset_item::timezone_offset_item(const std::string& key,
                                            const std::string& label,
                                            std::chrono::minutes& variable) :
     item{key, label},
@@ -23,7 +25,7 @@ timezone_offset_item::timezone_offset_item(const std::optional<std::string>& key
 
 
 std::unique_ptr<timezone_offset_item>
-timezone_offset_item::create(const std::optional<std::string>& key,
+timezone_offset_item::create(const std::string& key,
                              const std::string& label,
                              std::chrono::minutes& variable)
 {
@@ -35,9 +37,8 @@ int
 timezone_offset_item::get_display(char* buf, std::size_t size)
     const
 {
-    int hours = variable.count() / 60;
-    int minutes = std::abs(variable.count() % 60);
-    std::snprintf(buf, size, "%+02d:%02d", hours, minutes);
+    auto str = utils::tz_offset_to_string(variable);
+    ::strlcpy(buf, str.c_str(), size);
     return 0;
 }
 
@@ -58,14 +59,11 @@ timezone_offset_item::get_selected_display(char* buf, std::size_t size)
         fast_right = NIN_GLYPH_BTN_R;
     }
 
-    int hours = variable.count() / 60;
-    int minutes = std::abs(variable.count() % 60);
-    std::snprintf(buf, size, "%s%s%+02d:%02d%s%s",
-                  fast_left,
-                  slow_left,
-                  hours, minutes,
-                  slow_right,
-                  fast_right);
+    auto str = utils::tz_offset_to_string(variable);
+    std::snprintf(buf, size, "%s%s" "%s" "%s%s",
+                  fast_left, slow_left,
+                  str.c_str(),
+                  slow_right, fast_right);
     return 0;
 }
 

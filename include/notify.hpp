@@ -8,16 +8,23 @@
 
 namespace notify {
 
+
+    enum class level : int {
+        quiet = 0,
+        normal = 1,
+        verbose = 2
+    };
+
     void initialize();
 
     void finalize();
 
 
-    void error(const std::string& arg);
+    void error(level lvl, const std::string& arg);
 
-    void info(const std::string& arg);
+    void info(level lvl, const std::string& arg);
 
-    void success(const std::string& arg);
+    void success(level lvl, const std::string& arg);
 
 
     // RAII type to ensure it's intialized and finalized

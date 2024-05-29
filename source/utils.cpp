@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-#include <cmath>                // fabs()
+#include <cmath>                // abs()
 #include <cstdio>               // snprintf()
 #include <stdexcept>            // runtime_error
 
@@ -12,22 +12,27 @@
 namespace utils {
 
     std::string
-    seconds_to_human(double s)
+    seconds_to_human(double s, bool show_positive)
     {
         char buf[64];
 
-        if (std::fabs(s) < 2) // less than 2 seconds
+        if (std::abs(s) < 2) // less than 2 seconds
             std::snprintf(buf, sizeof buf, "%.1f ms", 1000 * s);
-        else if (std::fabs(s) < 2 * 60) // less than 2 minutes
+        else if (std::abs(s) < 2 * 60) // less than 2 minutes
             std::snprintf(buf, sizeof buf, "%.1f s", s);
-        else if (std::fabs(s) < 2 * 60 * 60) // less than 2 hours
+        else if (std::abs(s) < 2 * 60 * 60) // less than 2 hours
             std::snprintf(buf, sizeof buf, "%.1f min", s / 60);
-        else if (std::fabs(s) < 2 * 24 * 60 * 60) // less than 2 days
-            std::snprintf(buf, sizeof buf, "%.1f hrs", s / (60 * 60));
+        else if (std::abs(s) < 2 * 24 * 60 * 60) // less than 2 days
+            std::snprintf(buf, sizeof buf, "%+.1f hrs", s / (60 * 60));
         else
             std::snprintf(buf, sizeof buf, "%.1f days", s / (24 * 60 * 60));
 
-        return buf;
+        std::string result = buf;
+
+        if (show_positive && s > 0)
+            result = "+" + result;
+
+        return result;
     }
 
 
@@ -86,6 +91,17 @@ namespace utils {
 
         int tz_offset_min = std::stoi(tokens[1]) / 60;
         return {tokens[0], std::chrono::minutes{tz_offset_min}};
+    }
+
+
+    std::string
+    tz_offset_to_string(std::chrono::minutes offset)
+    {
+        char buf[32];
+        int hours = offset.count() / 60;
+        int minutes = std::abs(offset.count() % 60);
+        std::snprintf(buf, sizeof buf, "%+02d:%02d", hours, minutes);
+        return buf;
     }
 
 } // namespace utils

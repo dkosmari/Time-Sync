@@ -34,13 +34,13 @@ namespace cfg {
 
 
     extern bool                 auto_tz;
-    extern std::chrono::minutes utc_offset;
     extern int                  msg_duration;
-    extern bool                 notify;
+    extern int                  notify;
     extern std::string          server;
     extern bool                 sync;
     extern int                  threads;
     extern int                  tolerance;
+    extern std::chrono::minutes utc_offset;
 
 
     void load();

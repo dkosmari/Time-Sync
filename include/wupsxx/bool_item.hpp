@@ -4,7 +4,6 @@
 #define WUPSXX_BOOL_ITEM_HPP
 
 #include <memory>
-#include <string>
 
 #include "item.hpp"
 

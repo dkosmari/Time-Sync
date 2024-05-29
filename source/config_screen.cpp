@@ -12,6 +12,7 @@
 #include "cfg.hpp"
 #include "timezone_offset_item.hpp"
 #include "timezone_query_item.hpp"
+#include "verbosity_item.hpp"
 
 
 using wups::config::bool_item;
@@ -31,10 +32,9 @@ make_config_screen()
                               cfg::sync,
                               "yes", "no"));
 
-    cat.add(bool_item::create(cfg::key::notify,
-                              cfg::label::notify,
-                              cfg::notify,
-                              "yes", "no"));
+    cat.add(verbosity_item::create(cfg::key::notify,
+                                   cfg::label::notify,
+                                   cfg::notify));
 
     cat.add(int_item::create(cfg::key::msg_duration,
                              cfg::label::msg_duration,

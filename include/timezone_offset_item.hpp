@@ -13,13 +13,13 @@ struct timezone_offset_item : wups::config::item {
 
     std::chrono::minutes& variable;
 
-    timezone_offset_item(const std::optional<std::string>& key,
+    timezone_offset_item(const std::string& key,
                          const std::string& label,
                          std::chrono::minutes& variable);
 
     static
     std::unique_ptr<timezone_offset_item>
-    create(const std::optional<std::string>& key,
+    create(const std::string& key,
            const std::string& label,
            std::chrono::minutes& variable);
 

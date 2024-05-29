@@ -254,13 +254,14 @@ namespace core {
             return;
 
         // ensure notification is initialized if needed
-        notify::guard notify_guard{cfg::notify};
+        notify::guard notify_guard{cfg::notify > 0};
 
         static std::atomic<bool> executing = false;
         utils::exec_guard exec_guard{executing};
         if (!exec_guard.guarded) {
             // Another thread is already executing this function.
-            notify::info("Skipping NTP task: operation already in progress.");
+            notify::info(notify::level::verbose,
+                         "Skipping NTP task: operation already in progress.");
             return;
         }
 
@@ -268,13 +269,16 @@ namespace core {
         if (cfg::auto_tz) {
             try {
                 auto [name, offset] = utils::fetch_timezone();
-                cfg::set_utc_offset(offset);
-                logging::printf("Auto-updated timezone: %s (%+d min)",
-                                name.c_str(),
-                                static_cast<int>(offset.count()));
+                if (offset != cfg::get_utc_offset()) {
+                    cfg::set_utc_offset(offset);
+                    notify::info(notify::level::verbose,
+                                 "Auto-updated timezone to " + name +
+                                 "(" + utils::tz_offset_to_string(offset) + ")");
+                }
             }
             catch (std::exception& e) {
-                logging::printf("Failed to update timezone: %s", e.what());
+                notify::error(notify::level::verbose,
+                              "Failed to auto-update timezone: "s + e.what());
             }
         }
 
@@ -284,7 +288,7 @@ namespace core {
         std::vector<std::string> servers = utils::split(cfg::server, " \t,;");
 
         // First, resolve all the names, in parallel.
-        // Some IP addresses might be duplicated when we use *.pool.ntp.org.
+        // Some IP addresses might be duplicated when we use "pool.ntp.org".
         std::set<net::address> addresses;
         {
             // nested scope so the futures vector is destroyed
@@ -303,8 +307,14 @@ namespace core {
                         addresses.insert(info.addr);
                 }
                 catch (std::exception& e) {
-                    notify::error(e.what());
+                    notify::error(notify::level::verbose, e.what());
                 }
+        }
+
+        if (addresses.empty()) {
+            // Probably a mistake in config, or network failure.
+            notify::error(notify::level::normal, "No NTP address could be used.");
+            return;
         }
 
         // Launch NTP queries asynchronously.
@@ -318,17 +328,20 @@ namespace core {
             try {
                 auto [correction, latency] = fut.get();
                 corrections.push_back(correction);
-                notify::info(to_string(address)
-                             + ": correction = "s + seconds_to_human(correction)
+                notify::info(notify::level::verbose,
+                             to_string(address)
+                             + ": correction = "s + seconds_to_human(correction, true)
                              + ", latency = "s + seconds_to_human(latency));
             }
             catch (std::exception& e) {
-                notify::error(to_string(address) + ": "s + e.what());
+                notify::error(notify::level::verbose,
+                              to_string(address) + ": "s + e.what());
             }
 
 
         if (corrections.empty()) {
-            notify::error("No NTP server could be used!");
+            notify::error(notify::level::normal,
+                          "No NTP server could be used!");
             return;
         }
 
@@ -338,17 +351,21 @@ namespace core {
             / corrections.size();
 
         if (std::fabs(avg_correction) * 1000 <= cfg::tolerance) {
-            notify::success("Tolerating clock drift (correction is only "
-                            + seconds_to_human(avg_correction) + ")."s);
+            notify::success(notify::level::verbose,
+                            "Tolerating clock drift (correction is only "
+                            + seconds_to_human(avg_correction, true) + ")."s);
             return;
         }
 
         if (cfg::sync) {
             if (!apply_clock_correction(avg_correction)) {
-                notify::error("Failed to set system clock!");
+                // This error woudl be so bad, the user should always know about it.
+                notify::error(notify::level::quiet,
+                              "Failed to set system clock!");
                 return;
             }
-            notify::success("Clock corrected by " + seconds_to_human(avg_correction));
+            notify::success(notify::level::normal,
+                            "Clock corrected by " + seconds_to_human(avg_correction, true));
         }
 
     }

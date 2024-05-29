@@ -41,11 +41,11 @@ namespace notify {
 
 
     void
-    error(const std::string& arg)
+    error(level lvl, const std::string& arg)
     {
         logging::printf("ERROR: %s", arg.c_str());
 
-        if (!cfg::notify)
+        if (static_cast<int>(lvl) > cfg::notify)
             return;
 
         std::string msg = "[" PLUGIN_NAME "] " + arg;
@@ -61,11 +61,11 @@ namespace notify {
 
 
     void
-    info(const std::string& arg)
+    info(level lvl, const std::string& arg)
     {
         logging::printf("INFO: %s", arg.c_str());
 
-        if (!cfg::notify)
+        if (static_cast<int>(lvl) > cfg::notify)
             return;
 
         std::string msg = "[" PLUGIN_NAME "] " + arg;
@@ -80,11 +80,11 @@ namespace notify {
 
 
     void
-    success(const std::string& arg)
+    success(level lvl, const std::string& arg)
     {
         logging::printf("SUCCESS: %s", arg.c_str());
 
-        if (!cfg::notify)
+        if (static_cast<int>(lvl) > cfg::notify)
             return;
 
         std::string msg = "[" PLUGIN_NAME "] " + arg;
