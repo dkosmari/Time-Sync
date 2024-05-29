@@ -19,7 +19,7 @@ instructions on how to install Aroma.
 ## Usage
 
 As long as syncing is enabled by the user, the clock will sync whenever Aroma starts, or
-when the *Wii U Plugin System Config Menu* (**L** + **R** + **SELECT** + **↓**) is closed.
+when the *Wii U Plugin System Config Menu* (**L** + **R** + **SELECT** + **🡻**) is closed.
 
 **The HOME Menu and other applications might not see the updated clock until the console
 is rebooted.**
