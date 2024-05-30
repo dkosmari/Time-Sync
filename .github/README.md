@@ -40,7 +40,7 @@ Note: options can be reset back to their default value by pressing **X**.
    screen. Default is **5** seconds.
 
  - **Timezone Offset**: The offset of your timezone. Use **L**/**R** to adjust by hour
-   increments, **🡸**/**🡺** to adjust by 15 minutes increments.
+   increments, **🡸**/**🡺** to adjust by minute increments.
 
  - **Detect Timezone (press A)**: This is not a configuration option, but a button to
    detect the timezone using [IP Geolocation from IP-API.com](https://ip-api.com). This
