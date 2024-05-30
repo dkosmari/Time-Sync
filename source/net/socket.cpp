@@ -606,6 +606,16 @@ namespace net {
     }
 
 
+    int
+    socket::release()
+        noexcept
+    {
+        int result = fd;
+        fd = -1;
+        return result;
+    }
+
+
     std::size_t
     socket::send(const void* buf, std::size_t len,
                  msg_flags flags)

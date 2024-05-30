@@ -223,6 +223,10 @@ namespace net {
                  msg_flags flags = msg_flags::none);
 
 
+        // Disassociate the handle from this socket.
+        int release() noexcept;
+
+
         std::size_t
         send(const void* buf, std::size_t len,
              msg_flags flags = msg_flags::none);
