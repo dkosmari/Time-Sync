@@ -23,7 +23,7 @@ namespace utils {
         else if (std::abs(s) < 2 * 60 * 60) // less than 2 hours
             std::snprintf(buf, sizeof buf, "%.1f min", s / 60);
         else if (std::abs(s) < 2 * 24 * 60 * 60) // less than 2 days
-            std::snprintf(buf, sizeof buf, "%+.1f hrs", s / (60 * 60));
+            std::snprintf(buf, sizeof buf, "%.1f hrs", s / (60 * 60));
         else
             std::snprintf(buf, sizeof buf, "%.1f days", s / (24 * 60 * 60));
 
