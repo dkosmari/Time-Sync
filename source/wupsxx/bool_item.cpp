@@ -54,16 +54,13 @@ namespace wups::config {
     bool_item::get_selected_display(char* buf, std::size_t size)
         const
     {
-        if (*variable)
-            std::snprintf(buf, size,
-                          "%s %s  ",
-                          NIN_GLYPH_BTN_DPAD_LEFT,
-                          true_str.c_str());
-        else
-            std::snprintf(buf, size,
-                          "  %s %s",
-                          false_str.c_str(),
-                          NIN_GLYPH_BTN_DPAD_RIGHT);
+        const char* str = *variable ? true_str.c_str() : false_str.c_str();
+
+        std::snprintf(buf, size,
+                      "%s %s %s",
+                      NIN_GLYPH_BTN_DPAD_LEFT,
+                      str,
+                      NIN_GLYPH_BTN_DPAD_RIGHT);
         return 0;
     }
 
@@ -82,14 +79,11 @@ namespace wups::config {
     {
         item::on_input(input, repeat);
 
-        if (input.buttons_d & WUPS_CONFIG_BUTTON_A)
+        // Allow toggling with A, left or right.
+        auto mask = WUPS_CONFIG_BUTTON_A | WUPS_CONFIG_BUTTON_LEFT | WUPS_CONFIG_BUTTON_RIGHT;
+
+        if (input.buttons_d & mask)
             variable = !*variable;
-
-        if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT)
-            variable = false;
-
-        if (input.buttons_d & WUPS_CONFIG_BUTTON_RIGHT)
-            variable = true;
 
         on_changed();
     }

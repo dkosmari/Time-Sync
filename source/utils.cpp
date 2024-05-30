@@ -100,7 +100,7 @@ namespace utils {
         char buf[32];
         int hours = offset.count() / 60;
         int minutes = std::abs(offset.count() % 60);
-        std::snprintf(buf, sizeof buf, "%+02d:%02d", hours, minutes);
+        std::snprintf(buf, sizeof buf, "%+03d:%02d", hours, minutes);
         return buf;
     }
 
