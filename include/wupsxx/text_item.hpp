@@ -15,23 +15,25 @@ namespace wups::config {
     struct text_item : item {
 
         std::string text;
-        int max_width;
-        int start = 0;
+        std::size_t max_width;
+        std::size_t first = 0; // first visible character
 
         text_item(const std::optional<std::string>& key,
                   const std::string& label,
                   const std::string& text = "",
-                  int max_width = 50);
+                  std::size_t max_width = 50);
 
         static
         std::unique_ptr<text_item>
         create(const std::optional<std::string>& key,
                const std::string& label,
                const std::string& text = "",
-               int max_width = 50);
+               std::size_t max_width = 50);
 
 
         virtual int get_display(char* buf, std::size_t size) const override;
+
+        virtual int get_selected_display(char* buf, std::size_t size) const override;
 
         virtual void on_selected(bool is_selected) override;
 
