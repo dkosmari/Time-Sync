@@ -46,7 +46,6 @@ INITIALIZE_PLUGIN()
 
     if (cfg::sync)
         core::run(); // Update clock when plugin is loaded.
-
 }
 
 

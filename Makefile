@@ -14,11 +14,11 @@ WUMS_ROOT := $(DEVKITPRO)/wums
 WUT_ROOT := $(DEVKITPRO)/wut
 
 #-------------------------------------------------------------------------------
-# PLUGIN_NAME sets the name of the plugin
-# PLUGIN_DESCRIPTION sets the description of the plugin
-# PLUGIN_VERSION sets the version of the plugin
-# PLUGIN_AUTHOR sets the author of the plugin
-# PLUGIN_LICENSE sets the license of the plugin
+# PLUGIN_NAME sets the name of the plugin.
+# PLUGIN_DESCRIPTION sets the description of the plugin.
+# PLUGIN_VERSION sets the version of the plugin.
+# PLUGIN_AUTHOR sets the author of the plugin.
+# PLUGIN_LICENSE sets the license of the plugin.
 #-------------------------------------------------------------------------------
 PLUGIN_NAME        := Time Sync
 PLUGIN_DESCRIPTION := A plugin that synchronizes the system clock to the Internet.
@@ -27,11 +27,11 @@ PLUGIN_AUTHOR      := Nightkingale, Daniel K. O.
 PLUGIN_LICENSE     := MIT
 
 #-------------------------------------------------------------------------------
-# TARGET is the name of the output
-# BUILD is the directory where object files & intermediate files will be placed
-# SOURCES is a list of directories containing source code
-# DATA is a list of directories containing data files
-# INCLUDES is a list of directories containing header files
+# TARGET is the name of the output.
+# BUILD is the directory where object files & intermediate files will be placed.
+# SOURCES is a list of directories containing source code.
+# DATA is a list of directories containing data files.
+# INCLUDES is a list of directories containing header files.
 #-------------------------------------------------------------------------------
 TARGET   := Time_Sync
 BUILD    := build
