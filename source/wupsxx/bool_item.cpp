@@ -45,7 +45,7 @@ namespace wups::config {
         const
     {
         std::snprintf(buf, size, "%s",
-                      variable ? true_str.c_str() : false_str.c_str());
+                      *variable ? true_str.c_str() : false_str.c_str());
         return 0;
     }
 
@@ -54,7 +54,7 @@ namespace wups::config {
     bool_item::get_selected_display(char* buf, std::size_t size)
         const
     {
-        if (variable)
+        if (*variable)
             std::snprintf(buf, size,
                           "%s %s  ",
                           NIN_GLYPH_BTN_DPAD_LEFT,
@@ -77,12 +77,13 @@ namespace wups::config {
 
 
     void
-    bool_item::on_input(WUPSConfigSimplePadData input)
+    bool_item::on_input(WUPSConfigSimplePadData input,
+                        WUPS_CONFIG_SIMPLE_INPUT repeat)
     {
-        item::on_input(input);
+        item::on_input(input, repeat);
 
         if (input.buttons_d & WUPS_CONFIG_BUTTON_A)
-            variable = !variable;
+            variable = !*variable;
 
         if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT)
             variable = false;
@@ -99,9 +100,12 @@ namespace wups::config {
     {
         if (!key)
             return;
+        if (!variable.changed())
+            return;
 
         try {
-            storage::store(*key, variable);
+            storage::store(*key, *variable);
+            variable.reset();
         }
         catch (std::exception& e) {
             logging::printf("Error storing bool: %s", e.what());

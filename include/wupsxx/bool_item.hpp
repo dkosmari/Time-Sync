@@ -7,12 +7,14 @@
 
 #include "item.hpp"
 
+#include "var_watch.hpp"
+
 
 namespace wups::config {
 
     class bool_item : public item {
 
-        bool& variable;
+        var_watch<bool> variable;
         const bool default_value;
         std::string true_str;
         std::string false_str;
@@ -41,7 +43,8 @@ namespace wups::config {
 
         virtual void restore() override;
 
-        virtual void on_input(WUPSConfigSimplePadData input) override;
+        virtual void on_input(WUPSConfigSimplePadData input,
+                              WUPS_CONFIG_SIMPLE_INPUT repeat) override;
 
     private:
 

@@ -26,9 +26,10 @@ timezone_query_item::create()
 
 
 void
-timezone_query_item::on_input(WUPSConfigSimplePadData input)
+timezone_query_item::on_input(WUPSConfigSimplePadData input,
+                              WUPS_CONFIG_SIMPLE_INPUT repeat)
 {
-    text_item::on_input(input);
+    text_item::on_input(input, repeat);
 
     if (input.buttons_d & WUPS_CONFIG_BUTTON_A)
         run();

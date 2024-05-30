@@ -46,7 +46,8 @@ namespace wups::config {
 
         virtual void on_close();
 
-        virtual void on_input(WUPSConfigSimplePadData input);
+        virtual void on_input(WUPSConfigSimplePadData input,
+                              WUPS_CONFIG_SIMPLE_INPUT repeat);
 
         virtual void on_input(WUPSConfigComplexPadData input);
 

@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: MIT
 
+#include <array>
+#include <chrono>
 #include <cstdio>               // snprintf()
 
 #include "wupsxx/item.hpp"
 
 #include "wupsxx/config_error.hpp"
+
+
+using namespace std::literals;
 
 
 namespace wups::config {
@@ -18,12 +23,14 @@ namespace wups::config {
             return i->get_display(buf, size);
         }
 
+
         int32_t
         get_selected_display(void* ctx, char* buf, int32_t size)
         {
             auto i = static_cast<const item*>(ctx);
             return i->get_selected_display(buf, size);
         }
+
 
         bool
         is_movement_allowed(void* ctx)
@@ -32,12 +39,14 @@ namespace wups::config {
             return i->is_movement_allowed();
         }
 
+
         void
         on_close(void* ctx)
         {
             auto i = static_cast<item*>(ctx);
             i->on_close();
         }
+
 
         void
         on_delete(void* ctx)
@@ -47,19 +56,46 @@ namespace wups::config {
             delete i;
         }
 
+
         void
         on_input(void* ctx, WUPSConfigSimplePadData input)
         {
+            // Here we implement a "repeat" function.
+            using clock = std::chrono::steady_clock;
+            using time_point = clock::time_point;
+
+            constexpr auto repeat_delay = 500ms;
+            static std::array<time_point, 16> pressed_time{};
+            auto now = clock::now();
+
+            unsigned repeat = 0;
+            for (unsigned b = 0; b < 16; ++b) {
+                unsigned mask = 1u << b;
+                if (input.buttons_d & mask)
+                    pressed_time[b] = now;
+
+                if (input.buttons_h & mask)
+                    // if button was held long enough, flag it as being on a repeat state
+                    if (now - pressed_time[b] >= repeat_delay)
+                        repeat |= mask;
+
+                if (input.buttons_r & mask)
+                    pressed_time[b] = {};
+            }
+
             auto i = static_cast<item*>(ctx);
-            i->on_input(input);
+            i->on_input(input, static_cast<WUPS_CONFIG_SIMPLE_INPUT>(repeat));
         }
+
 
         void
         on_input_ex(void* ctx, WUPSConfigComplexPadData input)
         {
+            // TODO: implement "repeat" functionality for extended input too
             auto i = static_cast<item*>(ctx);
             i->on_input(input);
         }
+
 
         void
         on_selected(void* ctx, bool is_selected)
@@ -67,6 +103,7 @@ namespace wups::config {
             auto i = static_cast<item*>(ctx);
             i->on_selected(is_selected);
         }
+
 
         void
         restore_default(void* ctx)
@@ -162,7 +199,8 @@ namespace wups::config {
 
 
     void
-    item::on_input(WUPSConfigSimplePadData input)
+    item::on_input(WUPSConfigSimplePadData input,
+                   WUPS_CONFIG_SIMPLE_INPUT /*repeat*/)
     {
         if (input.buttons_d & WUPS_CONFIG_BUTTON_X)
             restore();

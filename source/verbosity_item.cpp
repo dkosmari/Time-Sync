@@ -47,7 +47,7 @@ int
 verbosity_item::get_display(char* buf, std::size_t size)
     const
 {
-    std::snprintf(buf, size, "%s", value_to_str(variable));
+    std::snprintf(buf, size, "%s", value_to_str(*variable));
     return 0;
 }
 
@@ -59,7 +59,7 @@ verbosity_item::get_selected_display(char* buf, std::size_t size)
     const char* left = "";
     const char* right = "";
 
-    switch (variable) {
+    switch (*variable) {
     case 0:
         right = " " NIN_GLYPH_BTN_DPAD_RIGHT;
         break;
@@ -71,6 +71,6 @@ verbosity_item::get_selected_display(char* buf, std::size_t size)
         left = NIN_GLYPH_BTN_DPAD_LEFT " ";
         break;
     }
-    std::snprintf(buf, size, "%s%s%s", left, value_to_str(variable), right);
+    std::snprintf(buf, size, "%s%s%s", left, value_to_str(*variable), right);
     return 0;
 }

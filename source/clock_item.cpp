@@ -65,9 +65,10 @@ clock_item::create()
 
 
 void
-clock_item::on_input(WUPSConfigSimplePadData input)
+clock_item::on_input(WUPSConfigSimplePadData input,
+                     WUPS_CONFIG_SIMPLE_INPUT repeat)
 {
-    text_item::on_input(input);
+    text_item::on_input(input, repeat);
 
     if (input.buttons_d & WUPS_CONFIG_BUTTON_A) {
         try {
@@ -77,6 +78,16 @@ clock_item::on_input(WUPSConfigSimplePadData input)
             text = "Error: "s + e.what();
         }
     }
+
+    refresh_now_str();
+}
+
+
+void
+clock_item::refresh_now_str()
+{
+    now_str = core::local_clock_to_string();
+    text = now_str + stats_str;
 }
 
 
@@ -152,11 +163,11 @@ clock_item::run()
         }
     }
 
-    text = core::local_clock_to_string();
-
     if (num_values) {
         double avg = total / num_values;
-        text += ", needs "s + seconds_to_human(avg, true);
-    }
+        stats_str = ", needs "s + seconds_to_human(avg, true);
+    } else
+        stats_str = "";
 
+    refresh_now_str();
 }

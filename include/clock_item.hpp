@@ -19,6 +19,8 @@ struct clock_item : wups::config::text_item {
     };
 
 
+    std::string now_str;
+    std::string stats_str;
     std::map<std::string, server_info> server_infos;
 
     clock_item();
@@ -27,7 +29,11 @@ struct clock_item : wups::config::text_item {
     std::unique_ptr<clock_item> create();
 
 
-    void on_input(WUPSConfigSimplePadData input) override;
+    void on_input(WUPSConfigSimplePadData input,
+                  WUPS_CONFIG_SIMPLE_INPUT repeat) override;
+
+
+    void refresh_now_str();
 
     void run();
 

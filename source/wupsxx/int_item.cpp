@@ -46,7 +46,7 @@ namespace wups::config {
     int_item::get_display(char* buf, std::size_t size)
         const
     {
-        std::snprintf(buf, size, "%d", variable);
+        std::snprintf(buf, size, "%d", *variable);
         return 0;
     }
 
@@ -59,10 +59,10 @@ namespace wups::config {
         const char* slow_right = "";
         const char* fast_left = "";
         const char* fast_right = "";
-        if (variable > min_value) {
+        if (*variable > min_value) {
             slow_left = NIN_GLYPH_BTN_DPAD_LEFT " ";
             fast_left = NIN_GLYPH_BTN_L;
-        } if (variable < max_value) {
+        } if (*variable < max_value) {
             slow_right = " " NIN_GLYPH_BTN_DPAD_RIGHT;
             fast_right = NIN_GLYPH_BTN_R;
         }
@@ -70,7 +70,7 @@ namespace wups::config {
                       "%s%s%d%s%s",
                       fast_left,
                       slow_left,
-                      variable,
+                      *variable,
                       slow_right,
                       fast_right);
         return 0;
@@ -85,25 +85,29 @@ namespace wups::config {
     }
 
 
-    // TODO: handle held button
     void
-    int_item::on_input(WUPSConfigSimplePadData input)
+    int_item::on_input(WUPSConfigSimplePadData input,
+                       WUPS_CONFIG_SIMPLE_INPUT repeat)
     {
-        item::on_input(input);
+        item::on_input(input, repeat);
 
-        if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT)
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT ||
+            repeat & WUPS_CONFIG_BUTTON_LEFT)
             variable -= slow_increment;
 
-        if (input.buttons_d & WUPS_CONFIG_BUTTON_RIGHT)
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_RIGHT ||
+            repeat & WUPS_CONFIG_BUTTON_RIGHT)
             variable += slow_increment;
 
-        if (input.buttons_d & WUPS_CONFIG_BUTTON_L)
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_L ||
+            repeat & WUPS_CONFIG_BUTTON_L)
             variable -= fast_increment;
 
-        if (input.buttons_d & WUPS_CONFIG_BUTTON_R)
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_R ||
+            repeat & WUPS_CONFIG_BUTTON_R)
             variable += fast_increment;
 
-        variable = std::clamp(variable, min_value, max_value);
+        variable = std::clamp(*variable, min_value, max_value);
 
         on_changed();
     }
@@ -114,9 +118,12 @@ namespace wups::config {
     {
         if (!key)
             return;
+        if (!variable.changed())
+            return;
 
         try {
-            storage::store(*key, variable);
+            storage::store(*key, *variable);
+            variable.reset();
         }
         catch (std::exception& e) {
             logging::printf("Error storing int: %s", e.what());

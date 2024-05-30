@@ -7,11 +7,12 @@
 #include <memory>
 
 #include "wupsxx/item.hpp"
+#include "wupsxx/var_watch.hpp"
 
 
 struct timezone_offset_item : wups::config::item {
 
-    std::chrono::minutes& variable;
+    wups::config::var_watch<std::chrono::minutes> variable;
 
     timezone_offset_item(const std::string& key,
                          const std::string& label,
@@ -29,7 +30,8 @@ struct timezone_offset_item : wups::config::item {
 
     virtual void restore() override;
 
-    virtual void on_input(WUPSConfigSimplePadData input) override;
+    virtual void on_input(WUPSConfigSimplePadData input,
+                          WUPS_CONFIG_SIMPLE_INPUT repeat) override;
 
 private:
 

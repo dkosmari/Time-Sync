@@ -35,7 +35,8 @@ namespace wups::config {
 
         virtual void on_selected(bool is_selected) override;
 
-        virtual void on_input(WUPSConfigSimplePadData input) override;
+        virtual void on_input(WUPSConfigSimplePadData input,
+                              WUPS_CONFIG_SIMPLE_INPUT repeat) override;
 
     };
 

@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "item.hpp"
+#include "var_watch.hpp"
 
 
 namespace wups::config {
@@ -14,7 +15,7 @@ namespace wups::config {
 
     protected:
 
-        int& variable;
+        var_watch<int> variable;
         const int default_value;
         int min_value;
         int max_value;
@@ -45,7 +46,8 @@ namespace wups::config {
 
         virtual void restore() override;
 
-        virtual void on_input(WUPSConfigSimplePadData input) override;
+        virtual void on_input(WUPSConfigSimplePadData input,
+                              WUPS_CONFIG_SIMPLE_INPUT repeat) override;
 
     private:
 

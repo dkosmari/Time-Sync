@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-#include <algorithm>            // min()
+#include <algorithm>            // clamp(), min()
 #include <cstdio>               // snprintf()
-#include <stdexcept>
 
 #include "wupsxx/text_item.hpp"
 
@@ -55,28 +54,37 @@ namespace wups::config {
 
 
     void
-    text_item::on_input(WUPSConfigSimplePadData input)
+    text_item::on_input(WUPSConfigSimplePadData input,
+                        WUPS_CONFIG_SIMPLE_INPUT repeat)
     {
-        item::on_input(input);
+        item::on_input(input, repeat);
 
         if (text.empty())
             return;
 
         int tsize = static_cast<int>(text.size());
 
+        // If text is fully visible, no scrolling happens.
         if (tsize <= max_width)
             return;
 
-        if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT)
-            start -= 5;
+        // Handle text scrolling
 
-        if (input.buttons_d & WUPS_CONFIG_BUTTON_RIGHT)
-            start += 5;
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT ||
+            repeat & WUPS_CONFIG_BUTTON_LEFT)
+            --start;
 
-        if (start >= tsize - max_width)
-            start = tsize - max_width;
-        if (start < 0)
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_RIGHT ||
+            repeat & WUPS_CONFIG_BUTTON_RIGHT)
+            ++start;
+
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_L)
             start = 0;
+
+        if (input.buttons_d & WUPS_CONFIG_BUTTON_R)
+            start = tsize - max_width;
+
+        start = std::clamp(start, 0, tsize - max_width);
     }
 
 } // namespace wups::config

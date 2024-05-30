@@ -15,7 +15,8 @@ struct timezone_query_item : wups::config::text_item {
     static
     std::unique_ptr<timezone_query_item> create();
 
-    void on_input(WUPSConfigSimplePadData input) override;
+    void on_input(WUPSConfigSimplePadData input,
+                  WUPS_CONFIG_SIMPLE_INPUT repeat) override;
 
     void run();
 
