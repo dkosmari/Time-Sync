@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include <netinet/in.h> // sockaddr_in, in_addr_t, in_port_t
+#include <netinet/in.h>         // sockaddr_in, in_addr_t, in_port_t
 
 
 // Note: only IPv4 address families, the Wii U does not support IPv6

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-#include <cstring> // memset()
+#include <cstring>              // memset()
 #include <stdexcept>
 
-#include <arpa/inet.h> // htons(), inet_ntop()
-#include <sys/socket.h> // AF_INET
+#include <arpa/inet.h>          // htons(), inet_ntop()
+#include <sys/socket.h>         // AF_INET
 
 #include "net/address.hpp"
 

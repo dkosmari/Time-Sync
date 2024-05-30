@@ -1,20 +1,26 @@
 // SPDX-License-Identifier: MIT
 
 #include <cerrno>
-#include <cstddef> // byte
+#include <cstddef>              // byte
 #include <stdexcept>
 #include <thread>
 
-#include <sys/socket.h> // socket()
-#include <unistd.h> // close()
+#include <arpa/inet.h>          // ntohl()
+#include <sys/socket.h>         // socket()
+#include <unistd.h>             // close()
 
 #include "net/socket.hpp"
 
 #include "logging.hpp"
 
 
-namespace net {
+// Note: WUT doesn't have SOL_IP, but IPPROTO_IP seems to work.
+#ifndef SOL_IP
+#define SOL_IP IPPROTO_IP
+#endif
 
+
+namespace net {
 
     // bitwise operations for socket::msg_flags
 
@@ -37,7 +43,6 @@ namespace net {
     operator ~(socket::msg_flags a)
         noexcept
     { return socket::msg_flags{~static_cast<int>(a)}; }
-
 
 
     // bitwise operations for socket::poll_flags
@@ -64,14 +69,12 @@ namespace net {
 
 
 
-
-
     socket::socket(int fd) :
         fd{fd}
     {}
 
 
-    socket::socket(socket::type t)
+    socket::socket(type t)
     {
         switch (t) {
         case type::tcp:
@@ -127,14 +130,14 @@ namespace net {
     socket
     socket::make_tcp()
     {
-        return {type::tcp};
+        return socket{type::tcp};
     }
 
 
     socket
     socket::make_udp()
     {
-        return {type::udp};
+        return socket{type::udp};
     }
 
 
@@ -214,6 +217,250 @@ namespace net {
         if (status == -1)
             throw error{errno};
     }
+
+
+    std::expected<std::uint8_t, error>
+    socket::getsockopt(ip_option opt)
+        const noexcept
+    {
+        unsigned val = 0;
+        socklen_t len = sizeof val;
+        int status = ::getsockopt(fd, SOL_IP, static_cast<int>(opt),
+                                  &val, &len);
+        if (status == -1)
+            return std::unexpected{error{errno}};
+
+        return val;
+    }
+
+
+    template<typename T>
+    std::expected<T, error>
+    socket::getsockopt(socket_option opt)
+        const noexcept
+    {
+        T val = {};
+        socklen_t len = sizeof val;
+        int status = ::getsockopt(fd, SOL_SOCKET, static_cast<int>(opt),
+                                  &val, &len);
+        if (status == -1)
+            return std::unexpected{error{errno}};
+
+        return val;
+    }
+
+
+    std::expected<unsigned, error>
+    socket::getsockopt(tcp_option opt)
+        const noexcept
+    {
+        unsigned val = 0;
+        socklen_t len = sizeof val;
+        int status = ::getsockopt(fd, SOL_TCP, static_cast<int>(opt),
+                                  &val, &len);
+        if (status == -1)
+            return std::unexpected{error{errno}};
+
+        return val;
+    }
+
+
+    namespace {
+
+        // convenience function to convert between std::expected<> types.
+        template<typename Dst,
+                 typename Src>
+        std::expected<Dst, error>
+        convert(const std::expected<Src, error>& e)
+        {
+            if (!e)
+                return std::unexpected{e.error()};
+            return static_cast<Dst>(*e);
+        }
+
+    }
+
+    // getters for ip_option
+
+    std::expected<std::uint8_t, error>
+    socket::get_tos()
+        const noexcept
+    { return getsockopt(ip_option::tos); }
+
+    std::expected<std::uint8_t, error>
+    socket::get_ttl()
+        const noexcept
+    { return getsockopt(ip_option::ttl); }
+
+
+    // getters for socket_option
+
+    std::expected<bool, error>
+    socket::get_broadcast()
+        const noexcept
+    { return convert<bool>(getsockopt<unsigned>(socket_option::broadcast)); }
+
+    std::expected<bool, error>
+    socket::get_dontroute()
+        const noexcept
+    { return convert<bool>(getsockopt<unsigned>(socket_option::dontroute)); }
+
+    std::expected<error, error>
+    socket::get_error()
+        const noexcept
+    { return convert<error>(getsockopt<int>(socket_option::error)); }
+
+    std::expected<unsigned, error>
+    socket::get_hopcnt()
+        const noexcept
+    { return getsockopt<unsigned>(socket_option::hopcnt); }
+
+    std::expected<bool, error>
+    socket::get_keepalive()
+        const noexcept
+    { return convert<bool>(getsockopt<unsigned>(socket_option::keepalive)); }
+
+    std::expected<unsigned, error>
+    socket::get_keepcnt()
+        const noexcept
+    { return getsockopt<unsigned>(socket_option::keepcnt); }
+
+    std::expected<unsigned, error>
+    socket::get_keepidle()
+        const noexcept
+    { return getsockopt<unsigned>(socket_option::keepidle); }
+
+    std::expected<unsigned, error>
+    socket::get_keepintvl()
+        const noexcept
+    { return getsockopt<unsigned>(socket_option::keepintvl); }
+
+    std::expected<::linger, error>
+    socket::get_linger()
+        const noexcept
+    { return getsockopt<::linger>(socket_option::linger); }
+
+    std::expected<unsigned, error>
+    socket::get_maxmsg()
+        const noexcept
+    { return getsockopt<unsigned>(socket_option::maxmsg); }
+
+
+    std::expected<address, error>
+    socket::get_myaddr()
+        const noexcept
+    {
+        auto r = getsockopt<unsigned>(socket_option::myaddr);
+        if (!r)
+            return std::unexpected{r.error()};
+        ipv4_t ip = ntohl(*r);
+        return address{ip, 0};
+    }
+
+
+    std::expected<bool, error>
+    socket::get_nonblock()
+        const noexcept
+    { return convert<bool>(getsockopt<unsigned>(socket_option::nonblock)); }
+
+    std::expected<bool, error>
+    socket::get_oobinline()
+        const noexcept
+    { return convert<bool>(getsockopt<unsigned>(socket_option::oobinline)); }
+
+    std::expected<unsigned, error>
+    socket::get_rcvbuf()
+        const noexcept
+    { return getsockopt<unsigned>(socket_option::rcvbuf); }
+
+    std::expected<unsigned, error>
+    socket::get_rcvlowat()
+        const noexcept
+    { return getsockopt<unsigned>(socket_option::rcvlowat); }
+
+    std::expected<bool, error>
+    socket::get_reuseaddr()
+        const noexcept
+    { return convert<bool>(getsockopt<unsigned>(socket_option::reuseaddr)); }
+
+    std::expected<bool, error>
+    socket::get_rusrbuf()
+        const noexcept
+    { return convert<bool>(getsockopt<unsigned>(socket_option::rusrbuf)); }
+
+    std::expected<unsigned, error>
+    socket::get_rxdata()
+        const noexcept
+    { return getsockopt<unsigned>(socket_option::rxdata); }
+
+    std::expected<unsigned, error>
+    socket::get_sndbuf()
+        const noexcept
+    { return getsockopt<unsigned>(socket_option::sndbuf); }
+
+    std::expected<unsigned, error>
+    socket::get_sndlowat()
+        const noexcept
+    { return getsockopt<unsigned>(socket_option::sndlowat); }
+
+    std::expected<bool, error>
+    socket::get_tcpsack()
+        const noexcept
+    { return convert<bool>(getsockopt<unsigned>(socket_option::tcpsack)); }
+
+    std::expected<unsigned, error>
+    socket::get_txdata()
+        const noexcept
+    { return getsockopt<unsigned>(socket_option::txdata); }
+
+
+    std::expected<socket::type, error>
+    socket::get_type()
+        const noexcept
+    {
+        auto r = getsockopt<unsigned>(socket_option::type);
+        if (!r)
+            return std::unexpected{r.error()};
+        if (*r == SOCK_STREAM)
+            return type::tcp;
+        if (*r == SOCK_DGRAM)
+            return type::udp;
+        return std::unexpected{error{0}};
+    }
+
+
+    std::expected<bool, error>
+    socket::get_winscale()
+        const noexcept
+    { return convert<bool>(getsockopt<unsigned>(socket_option::winscale)); }
+
+
+    // getters for tcp_option
+
+    std::expected<std::chrono::milliseconds, error>
+    socket::get_ackdelaytime()
+        const noexcept
+    { return convert<std::chrono::milliseconds>(getsockopt(tcp_option::ackdelaytime)); }
+
+    std::expected<unsigned, error>
+    socket::get_ackfrequency()
+        const noexcept
+    { return getsockopt(tcp_option::ackfrequency); }
+
+    std::expected<unsigned, error>
+    socket::get_maxseg()
+        const noexcept
+    { return getsockopt(tcp_option::maxseg); }
+
+    std::expected<bool, error>
+    socket::get_noackdelay()
+        const noexcept
+    { return convert<bool>(getsockopt(tcp_option::noackdelay)); }
+
+    std::expected<bool, error>
+    socket::get_nodelay()
+        const noexcept
+    { return convert<bool>(getsockopt(tcp_option::nodelay)); }
 
 
     address
@@ -415,9 +662,10 @@ namespace net {
 
     void
     socket::setsockopt(ip_option opt,
-                       unsigned arg)
+                       std::uint8_t arg)
     {
-        int status = ::setsockopt(fd, IPPROTO_IP, static_cast<int>(opt), &arg, sizeof arg);
+        unsigned uarg = arg;
+        int status = ::setsockopt(fd, SOL_IP, static_cast<int>(opt), &uarg, sizeof uarg);
         if (status == -1)
             throw error{errno};
     }
@@ -465,11 +713,11 @@ namespace net {
     // IP
 
     void
-    socket::set_tos(unsigned t)
+    socket::set_tos(std::uint8_t t)
     { setsockopt(ip_option::tos, t); }
 
     void
-    socket::set_ttl(unsigned t)
+    socket::set_ttl(std::uint8_t t)
     { setsockopt(ip_option::ttl, t); }
 
 
@@ -518,6 +766,10 @@ namespace net {
     void
     socket::set_nonblock(bool enable)
     { setsockopt(socket_option::nonblock, enable); }
+
+    void
+    socket::set_noslowstart(bool enable)
+    { setsockopt(socket_option::noslowstart, enable); }
 
     void
     socket::set_oobinline(bool enable)
@@ -606,8 +858,7 @@ namespace net {
     }
 
 
-    std::expected<std::size_t,
-                  error>
+    std::expected<std::size_t, error>
     socket::try_recv(void* buf, std::size_t len,
                      msg_flags flags)
         noexcept
@@ -638,8 +889,7 @@ namespace net {
     }
 
 
-    std::expected<std::size_t,
-                  error>
+    std::expected<std::size_t, error>
     socket::try_send(const void* buf, std::size_t len,
                      msg_flags flags)
         noexcept
@@ -651,8 +901,7 @@ namespace net {
     }
 
 
-    std::expected<std::size_t,
-                  error>
+    std::expected<std::size_t, error>
     socket::try_sendto(const void* buf, std::size_t len,
                        address dst,
                        msg_flags flags)
@@ -668,7 +917,5 @@ namespace net {
             return std::unexpected{error{errno}};
         return status;
     }
-
-
 
 } // namespace net
