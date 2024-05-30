@@ -14,9 +14,6 @@ namespace utc {
 
     timestamp now() noexcept;
 
-
-    void update_offset(int hours, int minutes);
-
 } // namespace utc
 
 #endif
