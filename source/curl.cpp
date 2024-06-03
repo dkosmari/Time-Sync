@@ -129,6 +129,13 @@ namespace curl {
 
 
     void
+    handle::set_useragent(const std::string& agent)
+    {
+        setopt(CURLOPT_USERAGENT, agent);
+    }
+
+
+    void
     handle::perform()
     {
         check(curl_easy_perform(h));

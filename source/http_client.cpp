@@ -14,6 +14,7 @@ namespace http {
 
         curl::handle handle;
 
+        handle.set_useragent(PLUGIN_NAME "/" PLUGIN_VERSION " (Wii U; Aroma)");
         handle.set_followlocation(true);
         handle.set_url(url);
 

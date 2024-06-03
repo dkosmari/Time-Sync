@@ -68,7 +68,7 @@ namespace curl {
 
         void set_followlocation(bool enable);
         void set_url(const std::string& url);
-
+        void set_useragent(const std::string& agent);
 
         void perform();
 
