@@ -10,8 +10,8 @@
 
 namespace {
 
-    const std::string left_glyph = NIN_GLYPH_BTN_DPAD_LEFT;
-    const std::string right_glyph = NIN_GLYPH_BTN_DPAD_RIGHT;
+    const std::string left_glyph = NIN_GLYPH_BTN_DPAD_LEFT " ";
+    const std::string right_glyph = " " NIN_GLYPH_BTN_DPAD_RIGHT;
 
 }
 

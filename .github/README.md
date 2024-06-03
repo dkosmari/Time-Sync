@@ -29,7 +29,7 @@ is rebooted.**
 
 Note: options can be reset back to their default value by pressing **X**.
 
- - **Syncing Enabled**: Enables the plugin. Default is "**no**". That means the plugin
+ - **Syncing Enabled**: Enables the plugin. Default is "**off**". That means the plugin
    will not adjust the clock until you configure it, and set this option to "yes".
 
  - **Show Notifications**: Controls how notifications are shown while the plugin
