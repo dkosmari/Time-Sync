@@ -1,9 +1,7 @@
 # Time Sync
 
-**Time Sync** is a Wii U homebrew plugin for the [Aroma](https://aroma.foryour.cafe/)
-environment. It allows the console to automatically synchronize its date and time through
-the Internet, similar to the feature found on the Nintendo Switch and other modern
-devices.
+**Time Sync** is a NTP plugin for the Wii U [Aroma](https://aroma.foryour.cafe/)
+environment. It keeps the Wii U clock synchronized with Network Time Protocol services.
 
 
 ## Installation
@@ -30,36 +28,36 @@ is rebooted.**
 Note: options can be reset back to their default value by pressing **X**.
 
  - **Syncing Enabled**: Enables the plugin. Default is "**off**". That means the plugin
-   will not adjust the clock until you configure it, and set this option to "yes".
+   will not adjust the clock until you configure it, and set this option to "**on**".
 
  - **Show Notifications**: Controls how notifications are shown while the plugin
-   runs. Default is "**yes**". For more detailed notifications you can set this to
+   runs. Default is "**normal**". For more detailed notifications you can set this to
    "verbose".
 
- - **Notification Duration (seconds)**: How long notifications should remain on
-   screen. Default is **5** seconds.
+ - **Time Zone Offset**: The offset of your time zone. Use **L**/**R** to adjust the
+   hours, **🡸**/**🡺** to adjust the minutes.
 
- - **Timezone Offset**: The offset of your timezone. Use **L**/**R** to adjust by hour
-   increments, **🡸**/**🡺** to adjust by minute increments.
+ - **Detect Time Zone (press A)**: This is not a configuration option, but a button to
+   detect the time zone using [IP Geolocation from IP-API.com](https://ip-api.com). This
+   will update the **Time Zone Offset** option above.
 
- - **Detect Timezone (press A)**: This is not a configuration option, but a button to
-   detect the timezone using [IP Geolocation from IP-API.com](https://ip-api.com). This
-   will update the **Timezone Offset** option above.
+ - **Auto Update Time Zone Offset**: automatically update the time zone before
+   synchronizing the clock. Default is "**off**".
 
- - **Auto-update Timezone Offset**: automatically update the timezone before running a
-   synchronization task. Default is "**no**".
+ - **Notification Duration**: How long notifications should remain on screen. Default is
+   **5 s**.
 
- - **Tolerance (milliseconds)**: How many milliseconds of error will be tolerated until
-   the clock is adjusted. Default is **500** ms.
+ - **Tolerance**: How many milliseconds of error will be tolerated until
+   the clock is adjusted. Default is **500 ms**.
 
- - **Server**: Shows one or more NTP servers that will be contacted for
-   synchronization. Multiple servers can be specified, separated by spaces. Default is
-   `pool.ntp.org`. This option cannot be edited within the plugin, you must edit the JSON
-   configuration file manually to change it.
-
- - **Background threads**: Maximum number of background threads to use for NTP
+ - **Background Threads**: Maximum number of background threads to use for NTP
    queries. Default is **4**, because the default server (`pool.ntp.org`) returns 4
    different addresses, so all 4 servers will be queried at the same time.
+
+ - **NTP Servers**: Shows one or more NTP servers that will be contacted for
+   synchronization. Multiple servers can be specified, separated by spaces. Default is
+   `pool.ntp.org`. **This option cannot be edited within the plugin, you must edit the
+   JSON configuration file manually to change it.**
 
 
 ### Preview screen
@@ -67,24 +65,16 @@ Note: options can be reset back to their default value by pressing **X**.
 The **Preview** screen allows for testing the plugin, without modifying the clock.
 
 
-## Credits
+## About of this fork
 
-I hope that I am able to express my thanks as much as possible to those who made this
-repository possible.
+This is a fork of [Wii U Time Sync](https://github.com/Nightkingale/Wii-U-Time-Sync) (aka
+*WUTS*) meant to test significant plugin changes **before** they're polished enough to be
+merged into *WUTS*.
 
- - [dkosmari](https://github.com/dkosmari), for his excellent refactoring of Wii U Time
-   Sync, being used as our codebase ever since the release of v2.0.0.
+- Do not enable both this and *WUTS* at the same time, or the Wii U clock will get
+  double-adjusted, making it even more out of sync.
 
- - [GaryOderNichts](https://github.com/GaryOderNichts), for writing the network connection
-   code and figuring out how to set the console's date and time through homebrew (so
-   basically all the functionality).
+- This plugin uses a different config file from *WUTS*, so settings from one plugin don't
+  carry over to the other.
 
- - [Maschell](https://github.com/Maschell), for his work not only with figuring out
-   setting the date and time, but also his work on the Aroma environment.
-
- - [LumaTeam](https://github.com/LumaTeam), for the time syncing code in
-   [Luma3DS](https://github.com/LumaTeam/Luma3DS), which we based our code off of.
-
- - [Lettier](https://github.com/lettier), for his work on [NTP
-   Client](https://github.com/lettier/ntpclient), which in turn led to the code in both
-   Luma3DS and Wii U Time Sync.
+- Version number in this plugin does not correspond to version numbers in *WUTS*.
