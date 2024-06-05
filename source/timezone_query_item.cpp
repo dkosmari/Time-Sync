@@ -23,7 +23,7 @@ timezone_query_item::timezone_query_item(const std::string& key,
     wups::config::item{key, label},
     variable(variable),
     default_value{default_value},
-    text{utils::get_tz_service_name(variable)}
+    text{"Query "s + utils::get_tz_service_name(variable)}
 {}
 
 
@@ -101,7 +101,7 @@ timezone_query_item::on_changed()
     if (!variable.changed())
         return;
 
-    text = utils::get_tz_service_name(*variable);
+    text = "Query "s + utils::get_tz_service_name(*variable);
 
     try {
         wups::storage::store(*key, *variable);
