@@ -72,12 +72,7 @@ namespace curl {
 
         void perform();
 
-
     };
-
-
-
-
 
 } // namespace curl
 

@@ -23,4 +23,4 @@ namespace http {
         return handle.result;
     }
 
-}
+} // namespace http
