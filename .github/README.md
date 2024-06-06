@@ -10,8 +10,8 @@ You need to have the [Aroma](https://aroma.foryour.cafe/) environment installed 
 Sync** to work. Please visit the [hacking guide](https://wiiu.hacks.guide/) for
 instructions on how to install Aroma.
 
-A Wii U plugin file (.wps) can be downloaded from the [releases page](releases). It should
-be placed on your SD card, in `wiiu/environments/aroma/plugins`.
+To download the plugin, go to the [releases page](releases). The `.wps` should be placed
+on your SD card, in `sd:/wiiu/environments/aroma/plugins`.
 
 
 ## Usage
@@ -37,12 +37,14 @@ Note: options can be reset back to their default value by pressing **X**.
  - **Time Zone Offset**: The offset of your time zone. Use **L**/**R** to adjust the
    hours, **🡸**/**🡺** to adjust the minutes.
 
- - **Detect Time Zone (press A)**: This is not a configuration option, but a button to
-   detect the time zone using [IP Geolocation from IP-API.com](https://ip-api.com). This
-   will update the **Time Zone Offset** option above.
+ - **Detect Time Zone (press A)**: Selects an online service to guess the local time zone
+   offset. This is done using a free IP geolocation online service. If your time zone is
+   not being detected correctly, try changing this option to a different service. Pressing
+   **A** will query the selected online service, and update the time zone offset.
 
- - **Auto Update Time Zone Offset**: automatically update the time zone before
-   synchronizing the clock. Default is "**off**".
+ - **Auto Update Time Zone Offset**: Automatically query and update the time zone offset
+   before synchronizing the clock. Default is "**off**". This option is useful for
+   automatically adjusting for Daylight Saving Time changes.
 
  - **Notification Duration**: How long notifications should remain on screen. Default is
    **5 s**.
