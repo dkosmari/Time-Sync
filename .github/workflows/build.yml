@@ -15,7 +15,8 @@ jobs:
     - name: Setup Docker
       run: docker build --tag plugin-builder .
 
-    - uses: addnab/docker-run-action@v3
+    - name: Build
+      uses: addnab/docker-run-action@v3
       with:
         image: plugin-builder
         options: --rm --volume ${{ github.workspace }}:/project
@@ -24,7 +25,7 @@ jobs:
           ./configure --host=powerpc-eabi CXXFLAGS="-O2"
           make
 
-    - name: Upload plugin
+    - name: Upload
       uses: actions/upload-artifact@v4
       with:
         name: Time_Sync.wps
