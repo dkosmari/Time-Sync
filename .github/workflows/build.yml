@@ -3,20 +3,28 @@ name: Build Binary
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  build-binary:
+  build-plugin:
     runs-on: ubuntu-latest
+    name: Build plugin
     steps:
-    - name: Checkout Code
+    - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: Build Binary
-      run: |
-        docker build -t builder .
-        docker run --rm -v ${PWD}:/project builder make
+    - name: Setup Docker
+      run: docker build --tag plugin-builder .
 
-    - name: Upload Time_Sync.wps
+    - uses: addnab/docker-run-action@v3
+      with:
+        image: plugin-builder
+        options: --rm --volume ${{ github.workspace }}:/project
+        run: |
+          ./bootstrap
+          ./configure --host=powerpc-eabi CXXFLAGS="-O2"
+          make
+
+    - name: Upload plugin
       uses: actions/upload-artifact@v4
       with:
         name: Time_Sync.wps
