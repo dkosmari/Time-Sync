@@ -13,6 +13,10 @@
 #include "preview_screen.hpp"
 #include "wupsxx/category.hpp"
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 
 // Important plugin information.
 WUPS_PLUGIN_NAME(PLUGIN_NAME);

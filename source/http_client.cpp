@@ -4,6 +4,9 @@
 
 #include "curl.hpp"
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 namespace http {
 
@@ -14,7 +17,7 @@ namespace http {
 
         curl::handle handle;
 
-        handle.set_useragent(PLUGIN_NAME "/" PLUGIN_VERSION " (Wii U; Aroma)");
+        handle.set_useragent(PACKAGE_NAME "/" PACKAGE_VERSION " (Wii U; Aroma)");
         handle.set_followlocation(true);
         handle.set_url(url);
 

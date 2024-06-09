@@ -1,8 +1,22 @@
 syntax: glob
 
-compile_flags.txt
-*~
-*.json
-build
 *.elf
+*.json
+*.o
 *.wps
+*~
+.deps
+.dirstamp
+aclocal.m4
+autom4te.cache
+build
+build-aux
+compile_flags.txt
+config.h
+config.h.in
+config.log
+config.status
+configure
+Makefile
+Makefile.in
+stamp-h1
