@@ -29,7 +29,7 @@ jobs:
       uses: tj-actions/docker-cp@v2
       with:
         container: plugin-builder-container
-        source: Time_Sync.wps
+        source: /project/src/Time_Sync.wps
         destination: Time_Sync.wps
 
     - name: Upload
