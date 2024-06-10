@@ -6,7 +6,7 @@
 #include <arpa/inet.h>          // htons(), inet_ntop()
 #include <sys/socket.h>         // AF_INET
 
-#include "net/address.hpp"
+#include "address.hpp"
 
 
 namespace net {

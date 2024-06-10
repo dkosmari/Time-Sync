@@ -3,9 +3,9 @@
 #include <algorithm>            // clamp(), min()
 #include <cstdio>               // snprintf()
 
-#include "wupsxx/text_item.hpp"
+#include "text_item.hpp"
 
-#include "nintendo_glyphs.h"
+#include "../nintendo_glyphs.h"
 
 
 namespace {

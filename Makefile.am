@@ -7,8 +7,7 @@ AM_CPPFLAGS =			\
 	$(PORTLIBS_CPPFLAGS)	\
 	$(WUMS_CPPFLAGS)	\
 	$(WUPS_CPPFLAGS)	\
-	$(WUT_CPPFLAGS)		\
-	-I$(top_srcdir)/include
+	$(WUT_CPPFLAGS)
 
 AM_CXXFLAGS =			\
 	$(WUT_CFLAGS)		\
@@ -26,76 +25,58 @@ LIBS =			\
 	$(WUT_LIBS)
 
 
+
+noinst_LIBRARIES = libnet.a libwupsxx.a
+
+
+libnet_a_SOURCES =					\
+	src/net/address.cpp src/net/address.hpp		\
+	src/net/addrinfo.cpp src/net/addrinfo.hpp	\
+	src/net/error.cpp src/net/error.hpp		\
+	src/net/socket.cpp src/net/socket.hpp
+
+
+libwupsxx_a_SOURCES =							\
+	src/wupsxx/bool_item.cpp src/wupsxx/bool_item.hpp		\
+	src/wupsxx/category.cpp src/wupsxx/category.hpp			\
+	src/wupsxx/config_error.cpp src/wupsxx/config_error.hpp		\
+	src/wupsxx/duration_items.cpp src/wupsxx/duration_items.hpp	\
+	src/wupsxx/int_item.cpp src/wupsxx/int_item.hpp			\
+	src/wupsxx/item.cpp src/wupsxx/item.hpp				\
+	src/wupsxx/numeric_item.hpp src/wupsxx/numeric_item_impl.hpp	\
+	src/wupsxx/storage.cpp src/wupsxx/storage.hpp			\
+	src/wupsxx/storage_error.cpp src/wupsxx/storage_error.hpp	\
+	src/wupsxx/text_item.cpp src/wupsxx/text_item.hpp		\
+	src/wupsxx/var_watch.hpp
+
+
 PLUGIN_FILE = Time_Sync.wps
 bin_PROGRAMS = Time_Sync.elf
 
-Time_Sync_elf_SOURCES =				\
-	./include/async_queue.hpp		\
-	./include/cfg.hpp			\
-	./include/clock_item.hpp		\
-	./include/config_screen.hpp		\
-	./include/core.hpp			\
-	./include/curl.hpp			\
-	./include/http_client.hpp		\
-	./include/logging.hpp			\
-	./include/net/address.hpp		\
-	./include/net/addrinfo.hpp		\
-	./include/net/error.hpp			\
-	./include/net/socket.hpp		\
-	./include/nintendo_glyphs.h		\
-	./include/notify.hpp			\
-	./include/ntp.hpp			\
-	./include/preview_screen.hpp		\
-	./include/thread_pool.hpp		\
-	./include/time_utils.hpp		\
-	./include/timezone_offset_item.hpp	\
-	./include/timezone_query_item.hpp	\
-	./include/utc.hpp			\
-	./include/utils.hpp			\
-	./include/verbosity_item.hpp		\
-	./include/wupsxx/bool_item.hpp		\
-	./include/wupsxx/category.hpp		\
-	./include/wupsxx/config_error.hpp	\
-	./include/wupsxx/duration_items.hpp	\
-	./include/wupsxx/int_item.hpp		\
-	./include/wupsxx/item.hpp		\
-	./include/wupsxx/numeric_item.hpp	\
-	./include/wupsxx/storage.hpp		\
-	./include/wupsxx/storage_error.hpp	\
-	./include/wupsxx/text_item.hpp		\
-	./include/wupsxx/var_watch.hpp		\
-	./source/cfg.cpp			\
-	./source/clock_item.cpp			\
-	./source/config_screen.cpp		\
-	./source/core.cpp			\
-	./source/curl.cpp			\
-	./source/http_client.cpp		\
-	./source/logging.cpp			\
-	./source/main.cpp			\
-	./source/net/address.cpp		\
-	./source/net/addrinfo.cpp		\
-	./source/net/error.cpp			\
-	./source/net/socket.cpp			\
-	./source/notify.cpp			\
-	./source/ntp.cpp			\
-	./source/preview_screen.cpp		\
-	./source/thread_pool.cpp		\
-	./source/time_utils.cpp			\
-	./source/timezone_offset_item.cpp	\
-	./source/timezone_query_item.cpp	\
-	./source/utc.cpp			\
-	./source/utils.cpp			\
-	./source/verbosity_item.cpp		\
-	./source/wupsxx/bool_item.cpp		\
-	./source/wupsxx/category.cpp		\
-	./source/wupsxx/config_error.cpp	\
-	./source/wupsxx/duration_items.cpp	\
-	./source/wupsxx/int_item.cpp		\
-	./source/wupsxx/item.cpp		\
-	./source/wupsxx/numeric_item_impl.hpp	\
-	./source/wupsxx/storage.cpp		\
-	./source/wupsxx/storage_error.cpp	\
-	./source/wupsxx/text_item.cpp
+Time_Sync_elf_SOURCES =							\
+	src/async_queue.hpp						\
+	src/cfg.cpp src/cfg.hpp						\
+	src/clock_item.cpp src/clock_item.hpp				\
+	src/config_screen.cpp src/config_screen.hpp			\
+	src/core.cpp src/core.hpp					\
+	src/curl.cpp src/curl.hpp					\
+	src/http_client.cpp src/http_client.hpp				\
+	src/logging.cpp src/logging.hpp					\
+	src/main.cpp							\
+	src/nintendo_glyphs.h						\
+	src/notify.cpp src/notify.hpp					\
+	src/ntp.cpp src/ntp.hpp						\
+	src/preview_screen.cpp src/preview_screen.hpp			\
+	src/thread_pool.cpp src/thread_pool.hpp				\
+	src/time_utils.cpp src/time_utils.hpp				\
+	src/timezone_offset_item.cpp src/timezone_offset_item.hpp	\
+	src/timezone_query_item.cpp src/timezone_query_item.hpp		\
+	src/utc.cpp src/utc.hpp						\
+	src/utils.cpp src/utils.hpp					\
+	src/verbosity_item.cpp src/verbosity_item.hpp
+
+
+Time_Sync_elf_LDADD = libnet.a libwupsxx.a
 
 
 CLEANFILES = *.wps

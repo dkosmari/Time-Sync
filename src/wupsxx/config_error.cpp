@@ -2,7 +2,7 @@
 
 #include <wups/config_api.h>
 
-#include "wupsxx/config_error.hpp"
+#include "config_error.hpp"
 
 
 using namespace std::literals;

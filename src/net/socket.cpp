@@ -9,9 +9,9 @@
 #include <sys/socket.h>         // socket()
 #include <unistd.h>             // close()
 
-#include "net/socket.hpp"
+#include "socket.hpp"
 
-#include "logging.hpp"
+#include "../logging.hpp"
 
 
 // Note: WUT doesn't have SOL_IP, but IPPROTO_IP seems to work.

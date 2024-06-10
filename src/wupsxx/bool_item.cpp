@@ -3,11 +3,11 @@
 #include <cstdio>
 #include <exception>
 
-#include "wupsxx/bool_item.hpp"
+#include "bool_item.hpp"
 
-#include "logging.hpp"
-#include "nintendo_glyphs.h"
-#include "wupsxx/storage.hpp"
+#include "../logging.hpp"
+#include "../nintendo_glyphs.h"
+#include "storage.hpp"
 
 
 namespace wups::config {

@@ -6,7 +6,7 @@ AC_INIT([Time-Sync], [4.1+], [http://github.com/dkosmari/Time-Sync])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([source/main.cpp])
+AC_CONFIG_SRCDIR([src/main.cpp])
 
 WUPS_INIT
 WUMS_INIT
@@ -14,6 +14,8 @@ WUMS_INIT
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 AC_PROG_CXX
+AC_PROG_RANLIB
+
 AX_APPEND_COMPILE_FLAGS([-std=c++23], [CXXFLAGS])
 AC_LANG([C++])
 

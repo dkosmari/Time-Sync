@@ -9,12 +9,12 @@
 #include <exception>
 #include <string.h>             // BSD strlcpy()
 
-#include "wupsxx/numeric_item.hpp"
+#include "numeric_item.hpp"
 
-#include "logging.hpp"
-#include "nintendo_glyphs.h"
-#include "wupsxx/storage.hpp"
-#include "time_utils.hpp"
+#include "../logging.hpp"
+#include "../nintendo_glyphs.h"
+#include "../time_utils.hpp"
+#include "storage.hpp"
 
 
 using std::to_string;

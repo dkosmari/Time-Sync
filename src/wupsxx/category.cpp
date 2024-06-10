@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-#include "wupsxx/category.hpp"
-#include "wupsxx/config_error.hpp"
+#include "category.hpp"
+
+#include "config_error.hpp"
+
 
 namespace wups::config {
 

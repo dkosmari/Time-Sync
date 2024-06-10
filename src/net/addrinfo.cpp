@@ -4,7 +4,7 @@
 #include <memory>
 #include <stdexcept>
 
-#include "net/addrinfo.hpp"
+#include "addrinfo.hpp"
 
 
 namespace net::addrinfo {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-#include "wupsxx/storage_error.hpp"
+#include "storage_error.hpp"
 
 
 namespace wups::storage {

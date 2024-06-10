@@ -13,8 +13,8 @@
 #include <poll.h>
 #include <sys/socket.h>         // SO_*, MSG_*
 
-#include "net/address.hpp"
-#include "net/error.hpp"
+#include "address.hpp"
+#include "error.hpp"
 
 
 // Note: very simplified socket class, only what the Wii U supports.
