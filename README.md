@@ -103,7 +103,7 @@ If you downloaded a release tarball, you can skip step 0.
 If you don't have the environment variable `DEVKITPRO` pointing to your devkitPro
 installation, you will have to call `./configure` like this:
 
-1. `./configure --host=powerpc-eabi --with-devkitpro=/path/to/devkitpro/location`
+1. `./configure --host=powerpc-eabi --with-devkitpro=/path/to/devkitpro`
 
 This is a standard Automake package. See `./configure --help` for more options.
 
