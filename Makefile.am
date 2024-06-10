@@ -25,6 +25,7 @@ LIBS =			\
 	$(WUPS_LIBS)	\
 	$(WUT_LIBS)
 
+
 PLUGIN_FILE = Time_Sync.wps
 bin_PROGRAMS = Time_Sync.elf
 
@@ -119,4 +120,4 @@ PHONY += company
 company: compile_flags.txt
 
 compile_flags.txt: Makefile
-	echo "$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS)" | xargs -n1 | sort -u > $(srcdir)/compile_flags.txt
+	printf "%s\n" "$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS)" | xargs -n1 | sort -u > $(srcdir)/compile_flags.txt
