@@ -49,6 +49,9 @@ Note: options can be reset back to their default value by pressing **X**.
  - **Notification Duration**: How long notifications should remain on screen. Default is
    **5 s**.
 
+ - **Timeout**: How many seconds to wait for a NTP response from a server. Default is *5
+   s**.
+
  - **Tolerance**: How many milliseconds of error will be tolerated until
    the clock is adjusted. Default is **500 ms**.
 
@@ -65,6 +68,44 @@ Note: options can be reset back to their default value by pressing **X**.
 ### Preview screen
 
 The **Preview** screen allows for testing the plugin, without modifying the clock.
+
+
+## Build instructions
+
+### Prerequisites
+
+ - [devkitPro](https://devkitpro.org/) with the packages:
+
+   - devkitPPC
+   - wiiu-curl
+   - wut
+   - wut-tools
+
+ - The following libraries from Wii U Plugin System and Wii U Module System (need to be
+   installed manually from source):
+   - [Wii U Plugin System](https://github.com/wiiu-env/WiiUPluginSystem)
+   - [libcurlwrapper](https://github.com/wiiu-env/libcurlwrapper)
+   - [libnotifications](https://github.com/wiiu-env/libnotifications)
+
+If you're **building from a repository clone**, you will also need
+[Automake](https://www.gnu.org/software/automake/), available as a package from your
+distribution. This is **not necessary** when building the plugin from a release tarball.
+
+
+### Compilation steps
+
+If you downloaded a release tarball, you can skip step 0.
+
+0. `./bootstrap`
+1. `./configure --host=powerpc-eabi`
+2. `make`
+
+If you don't have the environment variable `DEVKITPRO` pointing to your devkitPro
+installation, you will have to call `./configure` like this:
+
+1. `./configure --host=powerpc-eabi --with-devkitpro=/path/to/devkitpro/location`
+
+This is a standard Automake package. See `./configure --help` for more options.
 
 
 ## About of this fork
