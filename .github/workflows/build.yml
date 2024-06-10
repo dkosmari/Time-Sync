@@ -25,12 +25,12 @@ jobs:
           ./configure --host=powerpc-eabi CXXFLAGS="-O2"
           make
 
-      - name: Copy from container to host
-        uses: tj-actions/docker-cp@v2
-        with:
-          container: plugin-builder-container
-          source: Time_Sync.wps
-          destination: Time_Sync.wps
+    - name: Copy from container to host
+      uses: tj-actions/docker-cp@v2
+      with:
+        container: plugin-builder-container
+        source: Time_Sync.wps
+        destination: Time_Sync.wps
 
     - name: Upload
       uses: actions/upload-artifact@v4
