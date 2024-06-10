@@ -11,7 +11,7 @@ AC_CONFIG_SRCDIR([src/main.cpp])
 WUPS_INIT
 WUMS_INIT
 
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_INIT_AUTOMAKE([foreign])
 
 AC_PROG_CXX
 AC_PROG_RANLIB
@@ -41,5 +41,23 @@ AC_DEFINE([PLUGIN_LICENSE],
           [The license.])
 
 
-AC_CONFIG_FILES([Makefile])
+# Join all flags into a single variable, we use them in all nested Makefiles
+
+AS_VAR_SET([ALL_CPPFLAGS], ["$PORTLIBS_CPPFLAGS $WUMS_CPPFLAGS $WUPS_CPPFLAGS $WUT_CPPFLAGS"])
+AC_SUBST([ALL_CPPFLAGS])
+
+AS_VAR_SET([ALL_CXXFLAGS], ["$WUT_CFLAGS -ffunction-sections -fipa-pta"])
+AC_SUBST([ALL_CXXFLAGS])
+
+AS_VAR_SET([ALL_LDFLAGS], ["$WUT_LDFLAGS $WUPS_LDFLAGS"])
+AC_SUBST([ALL_LDFLAGS])
+
+AS_VAR_SET([ALL_LIBS], ["$PORTLIBS_LIBS $WUMS_LIBS $WUPS_LIBS $WUT_LIBS"])
+AC_SUBST([ALL_LIBS])
+
+
+AC_CONFIG_FILES([Makefile
+                 src/Makefile
+                 src/net/Makefile
+                 src/wupsxx/Makefile])
 AC_OUTPUT
