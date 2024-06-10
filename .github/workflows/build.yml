@@ -19,7 +19,7 @@ jobs:
       uses: addnab/docker-run-action@v3
       with:
         image: plugin-builder
-        options: --rm --name plugin-builder-container
+        options: --name plugin-builder-container
         run: |
           ./bootstrap
           ./configure --host=powerpc-eabi CXXFLAGS="-O2"
