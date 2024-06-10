@@ -108,6 +108,13 @@ installation, you will have to call `./configure` like this:
 This is a standard Automake package. See `./configure --help` for more options.
 
 
+## Build with Docker
+
+If you have [Docker](https://www.docker.com) set up, you can run a fully automated build
+by running the `docker-build.sh` script. When it finishes successfully, it will generated
+the .wps file on the top level directory.
+
+
 ## About of this fork
 
 This is a fork of [Wii U Time Sync](https://github.com/Nightkingale/Wii-U-Time-Sync) (aka

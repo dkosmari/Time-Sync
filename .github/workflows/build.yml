@@ -19,15 +19,22 @@ jobs:
       uses: addnab/docker-run-action@v3
       with:
         image: plugin-builder
-        options: --rm --volume ${{ github.workspace }}:/project
+        options: --rm --name plugin-builder-container
         run: |
           ./bootstrap
           ./configure --host=powerpc-eabi CXXFLAGS="-O2"
           make
 
+      - name: Copy from container to host
+        uses: tj-actions/docker-cp@v2
+        with:
+          container: plugin-builder-container
+          source: Time_Sync.wps
+          destination: Time_Sync.wps
+
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
         name: Time_Sync.wps
-        path: "src/*.wps"
+        path: "*.wps"
         if-no-files-found: error
