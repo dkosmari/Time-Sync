@@ -7,11 +7,14 @@ environment. It keeps the Wii U clock synchronized with Network Time Protocol se
 ## Installation
 
 You need to have the [Aroma](https://aroma.foryour.cafe/) environment installed for **Time
-Sync** to work. Please visit the [hacking guide](https://wiiu.hacks.guide/) for
-instructions on how to install Aroma.
+Sync** to work. Visit the [hacking guide](https://wiiu.hacks.guide/) for instructions on
+how to install Aroma.
 
-To download the plugin, go to the [releases page](releases). The `.wps` should be placed
-on your SD card, in `sd:/wiiu/environments/aroma/plugins`.
+The [latest version of the
+ plugin](https://github.com/dkosmari/Time-Sync/releases/latest/download/Time_Sync.wps) can
+ be found in the [releases page](https://github.com/dkosmari/Time-Sync/releases).
+
+ The `.wps` file should be placed on your SD card, in `sd:/wiiu/environments/aroma/plugins`.
 
 
 ## Usage
@@ -110,8 +113,8 @@ This is a standard Automake package. See `./configure --help` for more options.
 
 ## Build with Docker
 
-If you have [Docker](https://www.docker.com) set up, you can run a fully automated build
-by running the `docker-build.sh` script. When it finishes successfully, it will generated
+If you have [Docker](https://www.docker.com/) set up, you can run a fully automated build
+by running the `./docker-build.sh` script. When it finishes successfully, it will generate
 the .wps file on the top level directory.
 
 
