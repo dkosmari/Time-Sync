@@ -22,7 +22,7 @@ jobs:
         options: --name plugin-builder-container
         run: |
           ./bootstrap
-          ./configure --host=powerpc-eabi CXXFLAGS="-O2"
+          ./configure --host=powerpc-eabi CXXFLAGS="-O2 -ffunction-sections -fipa-pta"
           make
 
     - name: Copy from container to host
