@@ -31,7 +31,20 @@ AC_DEFUN([WIIU_WUPS_INIT],[
     AX_PREPEND_FLAG([-T$WIIU_WUPS_ROOT/share/wups.ld],         [DEVKITPRO_LDFLAGS])
     AX_PREPEND_FLAG([-specs=$WIIU_WUPS_ROOT/share/wups.specs], [DEVKITPRO_LDFLAGS])
 
-    AX_PREPEND_FLAG([-L$WIIU_WUPS_ROOT/lib -lwups], [DEVKITPRO_LIBS])
+    AX_PREPEND_FLAG([-L$WIIU_WUPS_ROOT/lib], [DEVKITPRO_LIBS])
+
+    # check for header and lib
+    AX_VAR_PUSHVALUE([CPPFLAGS], [$DEVKITPRO_CPPFLAGS $CPPFLAGS])
+    AX_VAR_PUSHVALUE([LIBS], [$DEVKITPRO_LIBS $LIBS])
+
+    AX_CHECK_LIBRARY([WIIU_WUPS_LIB],
+                     [wups.h],
+                     [wups],
+                     [AX_PREPEND_FLAG([-lwups], [DEVKITPRO_LIBS])],
+                     [AC_MSG_ERROR([WUPS not found in $WIIU_WUPS_ROOT; get it from https://github.com/wiiu-env/WiiUPluginSystem])])
+
+    AX_VAR_POPVALUE([LIBS])
+    AX_VAR_POPVALUE([CPPFLAGS])
 
 
     # custom Makefile rules
