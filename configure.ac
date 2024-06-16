@@ -2,7 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([Time-Sync], [4.2], [http://github.com/dkosmari/Time-Sync])
+AC_INIT([Time-Sync], [4.2], [https://github.com/dkosmari/Time-Sync/issues],
+        [], [https://github.com/dkosmari/Time-Sync])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
