@@ -1,7 +1,7 @@
 # src/wupsxx/Makefile.am
 
 AM_CPPFLAGS = $(DEVKITPRO_CPPFLAGS)
-AM_CXXFLAGS = $(DEVKITPRO_CXXFLAGS)
+AM_CXXFLAGS = $(DEVKITPRO_CFLAGS)
 
 
 noinst_LIBRARIES = libwupsxx.a
