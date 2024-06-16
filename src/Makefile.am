@@ -3,10 +3,10 @@
 SUBDIRS = net wupsxx
 
 
-AM_CPPFLAGS = $(ALL_CPPFLAGS)
-AM_CXXFLAGS = $(ALL_CXXFLAGS)
-AM_LDFLAGS = $(ALL_LDFLAGS)
-LIBS = $(ALL_LIBS)
+AM_CPPFLAGS = $(DEVKITPRO_CPPFLAGS)
+AM_CXXFLAGS = $(DEVKITPRO_CXXFLAGS)
+AM_LDFLAGS = $(DEVKITPRO_LDFLAGS)
+LIBS = $(DEVKITPRO_LIBS)
 
 
 PLUGIN_FILE = Time_Sync.wps
@@ -39,28 +39,19 @@ Time_Sync_elf_SOURCES = \
 Time_Sync_elf_LDADD = net/libnet.a wupsxx/libwupsxx.a
 
 
-CLEANFILES = *.wps
-
 all-local: $(PLUGIN_FILE)
 
-%.strip.elf: %.elf
-	$(STRIP) -g $< -o $@
 
-%.wps: %.strip.elf
-	$(ELF2RPL) $< $@
-
-
-PHONY = upload
-
-PLUGIN_PATH = /fs/vol/external01/wiiu/environments/aroma/plugins/
-
+PHONY: upload
 upload: $(PLUGIN_FILE)
-	curl --upload-file $< ftp://wiiu:$(PLUGIN_PATH)
+	curl --upload-file $< ftp://wiiu:/fs/vol/external01/wiiu/environments/aroma/plugins/
 
 
-PHONY += company
-
+PHONY: company
 company: compile_flags.txt
-
 compile_flags.txt: Makefile
 	printf "%s\n" "$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS)" | xargs -n1 | sort -u > $(srcdir)/compile_flags.txt
+
+
+@INC_AMINCLUDE@
+

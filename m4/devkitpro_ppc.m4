@@ -1,10 +1,28 @@
-# Macro to set up devkitPPC
+# -*- mode: autoconf -*-
+# devkitpro_ppc.m4 - Macros to handle PPC toolchains.
+
+# Copyright (c) 2024 Daniel K. O. <dkosmari>
+#
+# Copying and distribution of this file, with or without modification, are permitted in
+# any medium without royalty provided the copyright notice and this notice are
+# preserved. This file is offered as-is, without any warranty.
 
 #serial 1
 
-AC_DEFUN([DKP_PPC_INIT],[
+# DEVKITPRO_PPC_INIT
+# ------------------
+# This macro adjuts the environment for PPC-based targets. It must be called before
+# `AM_INIT_AUTOMAKE', and before any cross-compilation tool is checked.
+#
+# Output variables:
+#   - `DEVKITPPC': path to devkitPPC
+#   - `DEVKITPRO_CPPFLAGS': prepends include paths for PPC portlibs.
+#   - `DEVKITPRO_LIBS': prepends library paths for PPC portlibs.
+#   - `PATH': appends `devkitPPC/bin' if necessary.
 
-    AC_REQUIRE([DKP_INIT])
+AC_DEFUN([DEVKITPRO_PPC_INIT],[
+
+    AC_REQUIRE([DEVKITPRO_INIT])
 
     # Make sure macros that look up programs don't appear before this, since we may need
     # to adjust PATH.
@@ -35,9 +53,10 @@ AC_DEFUN([DKP_PPC_INIT],[
     AC_SUBST([DEVKITPPC])
 
 
-    # See if we can find GCC in PATH already; if not, append $DEVKITPPC/bin to PATH
+    # See if we can find cross tools in PATH already; if not, append $DEVKITPPC/bin to
+    # PATH
     AC_MSG_CHECKING([if $DEVKITPPC/bin is in PATH])
-    AS_IF([! which powerpc-eabi-gcc 1>/dev/null 2>/dev/null],
+    AS_IF([! which powerpc-eabi-nm 1>/dev/null 2>/dev/null],
           [
               AC_MSG_RESULT([no, will append to PATH])
               AS_VAR_APPEND([PATH], [":$DEVKITPPC/bin"])
@@ -46,14 +65,18 @@ AC_DEFUN([DKP_PPC_INIT],[
           [AC_MSG_RESULT([yes])])
 
 
-    # set PORTLIBS_PPC_ROOT
     AS_VAR_SET([PORTLIBS_PPC_ROOT], [$PORTLIBS_ROOT/ppc])
-    AC_SUBST([PORTLIBS_PPC_ROOT])
+
+    AX_PREPEND_FLAG([-I$PORTLIBS_PPC_ROOT/include], [DEVKITPRO_CPPFLAGS])
+    AX_PREPEND_FLAG([-L$PORTLIBS_PPC_ROOT/lib], [DEVKITPRO_LIBS])
+
+    # custom Makefile rules
+    AX_ADD_AM_MACRO([
+CLEANFILES ?=
+CLEANFILES = *.strip.elf
+%.strip.elf: %.elf
+	\$(STRIP) -g \$< -o \$[@]
+])
 
 
-    # prepend to PORTLIBS_ vars
-    AS_VAR_SET([PORTLIBS_CPPFLAGS], ["-I$PORTLIBS_PPC_ROOT/include $PORTLIBS_CPPFLAGS"])
-    AS_VAR_SET([PORTLIBS_LIBS],     ["-L$PORTLIBS_PPC_ROOT/lib $PORTLIBS_LIBS"])
-
-
-])dnl DKP_PPC_INIT
+])
