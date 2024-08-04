@@ -1,5 +1,6 @@
 # -*- mode: autoconf -*-
-# wiiu-wups.m4 - Macros to handle Wii U Plugin System
+# wiiu_wups.m4 - Macros to handle Wii U Plugin System
+# URL: https://github.com/dkosmari/devkitpro-autoconf/
 
 # Copyright (c) 2024 Daniel K. O. <dkosmari>
 #
@@ -7,7 +8,7 @@
 # any medium without royalty provided the copyright notice and this notice are
 # preserved. This file is offered as-is, without any warranty.
 
-#serial 1
+#serial 2
 
 # WIIU_WUPS_INIT
 # --------------
@@ -34,25 +35,21 @@ AC_DEFUN([WIIU_WUPS_INIT],[
     AX_PREPEND_FLAG([-L$WIIU_WUPS_ROOT/lib], [DEVKITPRO_LIBS])
 
     # check for header and lib
-    AX_VAR_PUSHVALUE([CPPFLAGS], [$DEVKITPRO_CPPFLAGS $CPPFLAGS])
-    AX_VAR_PUSHVALUE([LIBS], [$DEVKITPRO_LIBS $LIBS])
-
-    AX_CHECK_LIBRARY([WIIU_WUPS_LIB],
-                     [wups.h],
-                     [wups],
-                     [AX_PREPEND_FLAG([-lwups], [DEVKITPRO_LIBS])],
-                     [AC_MSG_ERROR([WUPS not found in $WIIU_WUPS_ROOT; get it from https://github.com/wiiu-env/WiiUPluginSystem])])
-
-    AX_VAR_POPVALUE([LIBS])
-    AX_VAR_POPVALUE([CPPFLAGS])
+    DEVKITPRO_CHECK_LIBRARY([WIIU_WUPS_LIBWUPS],
+                            [wups.h],
+                            [wups],
+                            [],
+                            [AC_MSG_ERROR([WUPS not found in $WIIU_WUPS_ROOT; get it from https://github.com/wiiu-env/WiiUPluginSystem])])
 
 
     # custom Makefile rules
     AX_ADD_AM_MACRO([
-CLEANFILES ?=
-CLEANFILES += *.wps
+clean: clean-wps
+.PHONY: clean-wps
+clean-wps:; \$(RM) *.wps
 %.wps: %.strip.elf
 	\$(ELF2RPL) \$< \$[@]
+	printf 'PL' | dd of=\$[@] bs=1 seek=9 count=2 conv=notrunc status=none
 ])
 
 ])

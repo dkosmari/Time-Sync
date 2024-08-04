@@ -74,8 +74,7 @@ AC_DEFUN([DEVKITPRO_PPC_INIT],[
     AX_ADD_AM_MACRO([
 CLEANFILES ?=
 CLEANFILES = *.strip.elf
-%.strip.elf: %.elf
-	\$(STRIP) -g \$< -o \$[@]
+%.strip.elf: %.elf; \$(STRIP) -g \$< -o \$[@]
 ])
 
 

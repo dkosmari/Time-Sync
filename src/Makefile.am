@@ -9,8 +9,8 @@ AM_LDFLAGS = $(DEVKITPRO_LDFLAGS)
 LIBS = $(DEVKITPRO_LIBS)
 
 
-PLUGIN_FILE = Time_Sync.wps
-bin_PROGRAMS = Time_Sync.elf
+WPS_FILE = Time_Sync.wps
+noinst_PROGRAMS = Time_Sync.elf
 
 
 Time_Sync_elf_SOURCES = \
@@ -39,12 +39,18 @@ Time_Sync_elf_SOURCES = \
 Time_Sync_elf_LDADD = net/libnet.a wupsxx/libwupsxx.a
 
 
-all-local: $(PLUGIN_FILE)
+all-local: $(WPS_FILE)
 
 
-PHONY: upload
-upload: $(PLUGIN_FILE)
-	curl --upload-file $< ftp://wiiu:/fs/vol/external01/wiiu/environments/aroma/plugins/
+install-exec-local: $(WPS_FILE)
+	curl "ftp://wiiu:/fs/vol/external01/wiiu/environments/aroma/plugins/" --upload-file $<
+
+uninstall-local:
+	curl "ftp://wiiu" --quote "DELE /fs/vol/external01/wiiu/environments/aroma/plugins/$(WPS_FILE)"
+
+
+run-local: all
+	WIILOAD=tcp:wiiu wiiload $(WPS_FILE)
 
 
 PHONY: company

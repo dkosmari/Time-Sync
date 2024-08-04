@@ -75,10 +75,8 @@ AC_DEFUN([DEVKITPRO_WUT_INIT],[
     AX_ADD_AM_MACRO([
 CLEANFILES ?=
 CLEANFILES += *.rpx *.rpl
-%.rpx: %.strip.elf
-	\$(ELF2RPL) \$< \$[@]
-%.rpl: %.strip.elf
-	\$(ELF2RPL) --rpl \$< \$[@]
+%.rpx: %.strip.elf; \$(ELF2RPL) \$< \$[@]
+%.rpl: %.strip.elf; \$(ELF2RPL) --rpl \$< \$[@]
 ])
 
 ])
