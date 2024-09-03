@@ -1,4 +1,10 @@
-// SPDX-License-Identifier: MIT
+/*
+ * Time Sync - A NTP client plugin for the Wii U.
+ *
+ * Copyright (C) 2024  Daniel K. O.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
 #include <cmath>                // max(), min()
 #include <exception>
@@ -8,16 +14,19 @@
 
 #include "cfg.hpp"
 #include "core.hpp"
-#include "logging.hpp"
+#include "logger.hpp"
 #include "net/addrinfo.hpp"
-#include "nintendo_glyphs.h"
 #include "time_utils.hpp"
 #include "utils.hpp"
 
+// we borrow libwupsxx's cafe_glyphs.h private header
+#include <wupsxx/../../src/cafe_glyphs.h>
+
+
 using namespace std::literals;
+using namespace wups::config;
 
 using time_utils::dbl_seconds;
-using wups::config::text_item;
 
 
 namespace {
@@ -56,7 +65,9 @@ namespace {
 
 
 clock_item::clock_item() :
-    text_item{{}, "Clock (press " NIN_GLYPH_BTN_A ")", "", 48}
+    text_item{"Clock",
+              "(press " CAFE_GLYPH_BTN_A ")",
+              48}
 {}
 
 
@@ -67,12 +78,9 @@ clock_item::create()
 }
 
 
-void
-clock_item::on_input(WUPSConfigSimplePadData input,
-                     WUPS_CONFIG_SIMPLE_INPUT repeat)
+focus_status
+clock_item::on_input(const simple_pad_data& input)
 {
-    text_item::on_input(input, repeat);
-
     if (input.buttons_d & WUPS_CONFIG_BUTTON_A) {
         try {
             run();
@@ -80,9 +88,12 @@ clock_item::on_input(WUPSConfigSimplePadData input,
         catch (std::exception& e) {
             text = "Error: "s + e.what();
         }
+        return focus_status::lose;
     }
 
     refresh_now_str();
+
+    return text_item::on_input(input);
 }
 
 
@@ -132,15 +143,15 @@ clock_item::run()
                     server_latencies.push_back(latency);
                     total += correction;
                     ++num_values;
-                    logging::printf("%s (%s): correction = %s, latency = %s",
-                                    server.c_str(),
-                                    to_string(info.addr).c_str(),
-                                    seconds_to_human(correction, true).c_str(),
-                                    seconds_to_human(latency).c_str());
+                    logger::printf("%s (%s): correction = %s, latency = %s",
+                                   server.c_str(),
+                                   to_string(info.addr).c_str(),
+                                   seconds_to_human(correction, true).c_str(),
+                                   seconds_to_human(latency).c_str());
                 }
                 catch (std::exception& e) {
                     ++errors;
-                    logging::printf("Error: %s", e.what());
+                    logger::printf("Error: %s", e.what());
                 }
             }
 

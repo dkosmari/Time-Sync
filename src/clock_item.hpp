@@ -1,4 +1,10 @@
-// SPDX-License-Identifier: MIT
+/*
+ * Time Sync - A NTP client plugin for the Wii U.
+ *
+ * Copyright (C) 2024  Daniel K. O.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
 #ifndef CLOCK_ITEM_HPP
 #define CLOCK_ITEM_HPP
@@ -7,7 +13,7 @@
 #include <memory>               // unique_ptr<>
 #include <string>
 
-#include "wupsxx/text_item.hpp"
+#include <wupsxx/text_item.hpp>
 
 
 struct clock_item : wups::config::text_item {
@@ -26,11 +32,13 @@ struct clock_item : wups::config::text_item {
     clock_item();
 
     static
-    std::unique_ptr<clock_item> create();
+    std::unique_ptr<clock_item>
+    create();
 
 
-    void on_input(WUPSConfigSimplePadData input,
-                  WUPS_CONFIG_SIMPLE_INPUT repeat) override;
+    virtual
+    wups::config::focus_status
+    on_input(const wups::config::simple_pad_data& input) override;
 
 
     void refresh_now_str();

@@ -1,12 +1,21 @@
 # src/Makefile.am
 
-SUBDIRS = net wupsxx
+SUBDIRS = net
 
 
-AM_CPPFLAGS = $(DEVKITPRO_CPPFLAGS)
-AM_CXXFLAGS = $(DEVKITPRO_CFLAGS)
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/external/libwupsxx/include \
+	$(DEVKITPRO_CPPFLAGS)
+
+AM_CXXFLAGS = \
+	-Wall -Wextra \
+	$(DEVKITPRO_CFLAGS)
+
 AM_LDFLAGS = $(DEVKITPRO_LDFLAGS)
-LIBS = $(DEVKITPRO_LIBS)
+
+LIBS = \
+	$(top_builddir)/external/libwupsxx/src/libwupsxx.a \
+	$(DEVKITPRO_LIBS)
 
 
 WPS_FILE = Time_Sync.wps
@@ -21,9 +30,8 @@ Time_Sync_elf_SOURCES = \
 	core.cpp core.hpp					\
 	curl.cpp curl.hpp					\
 	http_client.cpp http_client.hpp				\
-	logging.cpp logging.hpp					\
+	logger.cpp logger.hpp					\
 	main.cpp						\
-	nintendo_glyphs.h					\
 	notify.cpp notify.hpp					\
 	ntp.cpp ntp.hpp						\
 	preview_screen.cpp preview_screen.hpp			\
@@ -36,7 +44,7 @@ Time_Sync_elf_SOURCES = \
 	verbosity_item.cpp verbosity_item.hpp
 
 
-Time_Sync_elf_LDADD = net/libnet.a wupsxx/libwupsxx.a
+Time_Sync_elf_LDADD = net/libnet.a
 
 
 all-local: $(WPS_FILE)
@@ -53,10 +61,12 @@ run-local: all
 	WIILOAD=tcp:wiiu wiiload $(WPS_FILE)
 
 
-PHONY: company
+.PHONY: company
 company: compile_flags.txt
+
 compile_flags.txt: Makefile
-	printf "%s\n" "$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS)" | xargs -n1 | sort -u > $(srcdir)/compile_flags.txt
+	printf "%s" "$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS)" | xargs -n1 | sort -u > $(srcdir)/compile_flags.txt
+	$(CPP) -xc++ /dev/null -E -Wp,-v 2>&1 | sed -n 's,^ ,-I,p' >> $(srcdir)/compile_flags.txt
 
 
 @INC_AMINCLUDE@

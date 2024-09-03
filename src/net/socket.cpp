@@ -11,7 +11,7 @@
 
 #include "socket.hpp"
 
-#include "../logging.hpp"
+#include "../logger.hpp"
 
 
 // Note: WUT doesn't have SOL_IP, but IPPROTO_IP seems to work.
@@ -109,7 +109,7 @@ namespace net {
                 other.fd = -1;
             }
             catch (std::exception& e) {
-                logging::printf("socket::operator=() failed: %s", e.what());
+                logger::printf("socket::operator=() failed: %s", e.what());
             }
         }
         return *this;
@@ -122,7 +122,7 @@ namespace net {
             close();
         }
         catch (std::exception& e) {
-            logging::printf("socket::~socket() failed: %s", e.what());
+            logger::printf("socket::~socket() failed: %s", e.what());
         }
     }
 

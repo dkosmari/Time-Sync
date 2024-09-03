@@ -1,7 +1,10 @@
 # src/net/Makefile.am
 
 AM_CPPFLAGS = $(DEVKITPRO_CPPFLAGS)
-AM_CXXFLAGS = $(DEVKITPRO_CFLAGS)
+
+AM_CXXFLAGS = \
+	-Wall -Wextra \
+	$(DEVKITPRO_CFLAGS)
 
 
 noinst_LIBRARIES = libnet.a

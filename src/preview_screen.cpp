@@ -1,13 +1,20 @@
-// SPDX-License-Identifier: MIT
+/*
+ * Time Sync - A NTP client plugin for the Wii U.
+ *
+ * Copyright (C) 2024  Daniel K. O.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
 #include <utility>              // move()
+
+#include <wupsxx/text_item.hpp>
 
 #include "preview_screen.hpp"
 
 #include "cfg.hpp"
 #include "clock_item.hpp"
 #include "utils.hpp"
-#include "wupsxx/text_item.hpp"
 
 
 using wups::config::text_item;
@@ -32,15 +39,15 @@ make_preview_screen()
         if (!server_infos.contains(server)) {
             auto& si = server_infos[server];
 
-            auto name = text_item::create({}, server + ":");
+            auto name = text_item::create(server + ":");
             si.name = name.get();
             cat.add(std::move(name));
 
-            auto correction = text_item::create({}, "┣ Correction:", "", 48);
+            auto correction = text_item::create("┣ Correction:", "", 48);
             si.correction = correction.get();
             cat.add(std::move(correction));
 
-            auto latency = text_item::create({}, "┗ Latency:");
+            auto latency = text_item::create("┗ Latency:");
             si.latency = latency.get();
             cat.add(std::move(latency));
         }

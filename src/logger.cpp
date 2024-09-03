@@ -1,4 +1,10 @@
-// SPDX-License-Identifier: MIT
+/*
+ * Time Sync - A NTP client plugin for the Wii U.
+ *
+ * Copyright (C) 2024  Daniel K. O.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
 #include <atomic>
 #include <cstdarg>
@@ -10,7 +16,7 @@
 #include <whb/log_module.h>
 #include <whb/log_udp.h>
 
-#include "logging.hpp"
+#include "logger.hpp"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -20,7 +26,7 @@
 using namespace std::literals;
 
 
-namespace logging {
+namespace logger {
 
     std::atomic_uint refs = 0;
 
@@ -68,7 +74,7 @@ namespace logging {
     printf(const char* fmt, ...)
     {
         std::string buf(256, '\0');
-        std::string xfmt = std::string("[" PLUGIN_NAME "] ") + fmt;
+        std::string xfmt = std::string("[" PACKAGE_NAME "] ") + fmt;
 
         std::va_list args;
 
@@ -88,4 +94,4 @@ namespace logging {
             WHBLogPrint(buf.c_str());
     }
 
-} // namespace logging
+} // namespace logger

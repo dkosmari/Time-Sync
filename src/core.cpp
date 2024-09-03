@@ -1,4 +1,10 @@
-// SPDX-License-Identifier: MIT
+/*
+ * Time Sync - A NTP client plugin for the Wii U.
+ *
+ * Copyright (C) 2024  Daniel K. O.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
 #include <atomic>
 #include <chrono>
@@ -18,7 +24,7 @@
 #include "core.hpp"
 
 #include "cfg.hpp"
-#include "logging.hpp"
+#include "logger.hpp"
 #include "net/addrinfo.hpp"
 #include "net/socket.hpp"
 #include "notify.hpp"
@@ -236,14 +242,14 @@ namespace core {
 
         nn::pdm::NotifySetTimeEndEvent();
 
-        // logging::printf("CCRSysSetSystemTime() took %f ms",
-        //                 1000.0 * (ccr_finish - ccr_start) / OSTimerClockSpeed);
-        // logging::printf("__OSSetAbsoluteSystemTime() took %f ms",
-        //                 1000.0 * (abs_finish - abs_start) / OSTimerClockSpeed);
+        // logger::printf("CCRSysSetSystemTime() took %f ms",
+        //                1000.0 * (ccr_finish - ccr_start) / OSTimerClockSpeed);
+        // logger::printf("__OSSetAbsoluteSystemTime() took %f ms",
+        //                1000.0 * (abs_finish - abs_start) / OSTimerClockSpeed);
 
         // OSTime after = OSGetSystemTime();
-        // logging::printf("Total time: %f ms",
-        //                 1000.0 * (after - before) / OSTimerClockSpeed);
+        // logger::printf("Total time: %f ms",
+        //                1000.0 * (after - before) / OSTimerClockSpeed);
 
         return success1 && success2;
     }

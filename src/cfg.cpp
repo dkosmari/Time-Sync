@@ -1,9 +1,15 @@
-// SPDX-License-Identifier: MIT
+/*
+ * Time Sync - A NTP client plugin for the Wii U.
+ *
+ * Copyright (C) 2024  Daniel K. O.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
 #include "cfg.hpp"
 
-#include "logging.hpp"
-#include "nintendo_glyphs.h"
+#include "logger.hpp"
+
 #include "time_utils.hpp"
 #include "utils.hpp"
 #include "wupsxx/storage.hpp"
@@ -42,7 +48,7 @@ namespace cfg {
         const char* threads      = "Background Threads";
         const char* timeout      = "Timeout";
         const char* tolerance    = "Tolerance";
-        const char* tz_service   = "Detect Time Zone (press " NIN_GLYPH_BTN_A ")";
+        const char* tz_service   = "Detect Time Zone";
         const char* utc_offset   = "Time Offset (UTC)";
     }
 
@@ -99,10 +105,10 @@ namespace cfg {
             load_or_init(key::tolerance,    tolerance);
             load_or_init(key::tz_service,   tz_service);
             load_or_init(key::utc_offset,   utc_offset);
-            // logging::printf("Loaded settings.");
+            // logger::printf("Loaded settings.");
         }
         catch (std::exception& e) {
-            logging::printf("Error loading config: %s", e.what());
+            logger::printf("Error loading config: %s", e.what());
         }
     }
 
@@ -115,7 +121,7 @@ namespace cfg {
             load();
         }
         catch (std::exception& e) {
-            logging::printf("Error reloading config: %s", e.what());
+            logger::printf("Error reloading config: %s", e.what());
         }
     }
 
@@ -125,10 +131,10 @@ namespace cfg {
     {
         try {
             wups::storage::save();
-            // logging::printf("Saved settings");
+            // logger::printf("Saved settings");
         }
         catch (std::exception& e) {
-            logging::printf("Error saving config: %s", e.what());
+            logger::printf("Error saving config: %s", e.what());
         }
     }
 
@@ -147,7 +153,7 @@ namespace cfg {
             WUPSStorageAPI::DeleteItem("hours");
             WUPSStorageAPI::DeleteItem("minutes");
             save();
-            logging::printf("Migrated old config: %s + %s -> %s.",
+            logger::printf("Migrated old config: %s + %s -> %s.",
                             time_utils::to_string(h).c_str(),
                             time_utils::to_string(m).c_str(),
                             time_utils::tz_offset_to_string(utc_offset).c_str());
@@ -169,7 +175,7 @@ namespace cfg {
             wups::storage::save();
         }
         catch (std::exception& e) {
-            logging::printf("Error storing utc_offset: %s", e.what());
+            logger::printf("Error storing utc_offset: %s", e.what());
         }
     }
 

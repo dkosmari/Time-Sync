@@ -1,8 +1,14 @@
-// SPDX-License-Identifier: MIT
+/*
+ * Time Sync - A NTP client plugin for the Wii U.
+ *
+ * Copyright (C) 2024  Daniel K. O.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
 #include "curl.hpp"
 
-#include "logging.hpp"
+#include "logger.hpp"
 
 
 namespace curl {
@@ -83,7 +89,7 @@ namespace curl {
             return h->on_recv(buffer, nmemb);
         }
         catch (std::exception& e) {
-            logging::printf("curl::handle::write_callback(): %s", e.what());
+            logger::printf("curl::handle::write_callback(): %s", e.what());
             return CURL_WRITEFUNC_ERROR;
         }
     }

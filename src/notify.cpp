@@ -1,4 +1,10 @@
-// SPDX-License-Identifier: MIT
+/*
+ * Time Sync - A NTP client plugin for the Wii U.
+ *
+ * Copyright (C) 2024  Daniel K. O.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
 #include <atomic>
 
@@ -7,7 +13,7 @@
 #include "notify.hpp"
 
 #include "cfg.hpp"
-#include "logging.hpp"
+#include "logger.hpp"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -47,12 +53,12 @@ namespace notify {
     void
     error(level lvl, const std::string& arg)
     {
-        logging::printf("ERROR: %s", arg.c_str());
+        logger::printf("ERROR: %s", arg.c_str());
 
         if (static_cast<int>(lvl) > cfg::notify)
             return;
 
-        std::string msg = "[" PLUGIN_NAME "] " + arg;
+        std::string msg = "[" PACKAGE_NAME "] " + arg;
         NotificationModule_AddErrorNotificationEx(msg.c_str(),
                                                   cfg::msg_duration.count(),
                                                   1,
@@ -67,12 +73,12 @@ namespace notify {
     void
     info(level lvl, const std::string& arg)
     {
-        logging::printf("INFO: %s", arg.c_str());
+        logger::printf("INFO: %s", arg.c_str());
 
         if (static_cast<int>(lvl) > cfg::notify)
             return;
 
-        std::string msg = "[" PLUGIN_NAME "] " + arg;
+        std::string msg = "[" PACKAGE_NAME "] " + arg;
         NotificationModule_AddInfoNotificationEx(msg.c_str(),
                                                  cfg::msg_duration.count(),
                                                  {255, 255, 255, 255},
@@ -86,12 +92,12 @@ namespace notify {
     void
     success(level lvl, const std::string& arg)
     {
-        logging::printf("SUCCESS: %s", arg.c_str());
+        logger::printf("SUCCESS: %s", arg.c_str());
 
         if (static_cast<int>(lvl) > cfg::notify)
             return;
 
-        std::string msg = "[" PLUGIN_NAME "] " + arg;
+        std::string msg = "[" PACKAGE_NAME "] " + arg;
         NotificationModule_AddInfoNotificationEx(msg.c_str(),
                                                  cfg::msg_duration.count(),
                                                  {255, 255, 255, 255},

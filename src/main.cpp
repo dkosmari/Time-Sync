@@ -1,4 +1,10 @@
-// SPDX-License-Identifier: MIT
+/*
+ * Time Sync - A NTP client plugin for the Wii U.
+ *
+ * Copyright (C) 2024  Daniel K. O.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
 #include <exception>
 #include <thread>
@@ -8,7 +14,7 @@
 #include "cfg.hpp"
 #include "config_screen.hpp"
 #include "core.hpp"
-#include "logging.hpp"
+#include "logger.hpp"
 #include "notify.hpp"
 #include "preview_screen.hpp"
 #include "wupsxx/category.hpp"
@@ -19,14 +25,14 @@
 
 
 // Important plugin information.
-WUPS_PLUGIN_NAME(PLUGIN_NAME);
-WUPS_PLUGIN_DESCRIPTION(PLUGIN_DESCRIPTION);
-WUPS_PLUGIN_VERSION(PLUGIN_VERSION);
-WUPS_PLUGIN_AUTHOR(PLUGIN_AUTHOR);
-WUPS_PLUGIN_LICENSE(PLUGIN_LICENSE);
+WUPS_PLUGIN_NAME(PACKAGE_NAME);
+WUPS_PLUGIN_DESCRIPTION("A plugin that synchronizes the system clock to the Internet.");
+WUPS_PLUGIN_VERSION(PACKAGE_VERSION);
+WUPS_PLUGIN_AUTHOR("Nightkingale, Daniel K. O.");
+WUPS_PLUGIN_LICENSE("MIT");
 
 WUPS_USE_WUT_DEVOPTAB();
-WUPS_USE_STORAGE(PLUGIN_NAME);
+WUPS_USE_STORAGE(PACKAGE_TARNAME);
 
 
 static WUPSConfigAPICallbackStatus open_config(WUPSConfigCategoryHandle root_handle);
@@ -35,13 +41,13 @@ static void close_config();
 
 INITIALIZE_PLUGIN()
 {
-    logging::initialize();
+    logger::initialize();
 
-    auto status = WUPSConfigAPI_Init({ .name = PLUGIN_NAME },
+    auto status = WUPSConfigAPI_Init({ .name = PACKAGE_NAME },
                                      open_config,
                                      close_config);
     if (status != WUPSCONFIG_API_RESULT_SUCCESS) {
-        logging::printf("Init error: %s", WUPSConfigAPI_GetStatusStr(status));
+        logger::printf("Init error: %s", WUPSConfigAPI_GetStatusStr(status));
         return;
     }
 
@@ -55,7 +61,7 @@ INITIALIZE_PLUGIN()
 
 DEINITIALIZE_PLUGIN()
 {
-    logging::finalize();
+    logger::finalize();
 }
 
 
@@ -74,7 +80,7 @@ open_config(WUPSConfigCategoryHandle root_handle)
         return WUPSCONFIG_API_CALLBACK_RESULT_SUCCESS;
     }
     catch (std::exception& e) {
-        logging::printf("Error opening config: %s", e.what());
+        logger::printf("Error opening config: %s", e.what());
         return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
     }
 }
