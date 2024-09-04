@@ -21,10 +21,11 @@
 #include <nn/ccr.h>             // CCRSysSetSystemTime()
 #include <nn/pdm.h>             // __OSSetAbsoluteSystemTime()
 
+#include <wupsxx/logger.hpp>
+
 #include "core.hpp"
 
 #include "cfg.hpp"
-#include "logger.hpp"
 #include "net/addrinfo.hpp"
 #include "net/socket.hpp"
 #include "notify.hpp"
@@ -38,6 +39,8 @@
 using namespace std::literals;
 
 using time_utils::dbl_seconds;
+
+namespace logger = wups::logger;
 
 
 namespace {
@@ -242,13 +245,13 @@ namespace core {
 
         nn::pdm::NotifySetTimeEndEvent();
 
-        // logger::printf("CCRSysSetSystemTime() took %f ms",
+        // logger::printf("CCRSysSetSystemTime() took %f ms\n",
         //                1000.0 * (ccr_finish - ccr_start) / OSTimerClockSpeed);
-        // logger::printf("__OSSetAbsoluteSystemTime() took %f ms",
+        // logger::printf("__OSSetAbsoluteSystemTime() took %f ms\n",
         //                1000.0 * (abs_finish - abs_start) / OSTimerClockSpeed);
 
         // OSTime after = OSGetSystemTime();
-        // logger::printf("Total time: %f ms",
+        // logger::printf("Total time: %f ms\n",
         //                1000.0 * (after - before) / OSTimerClockSpeed);
 
         return success1 && success2;
@@ -257,6 +260,7 @@ namespace core {
 
     void
     run()
+        noexcept
     {
         using time_utils::seconds_to_human;
 

@@ -6,9 +6,12 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <wupsxx/logger.hpp>
+
 #include "curl.hpp"
 
-#include "logger.hpp"
+
+namespace logger = wups::logger;
 
 
 namespace curl {
@@ -89,7 +92,7 @@ namespace curl {
             return h->on_recv(buffer, nmemb);
         }
         catch (std::exception& e) {
-            logger::printf("curl::handle::write_callback(): %s", e.what());
+            logger::printf("curl::handle::write_callback(): %s\n", e.what());
             return CURL_WRITEFUNC_ERROR;
         }
     }

@@ -17,6 +17,7 @@
 #include "utils.hpp"
 
 
+using wups::config::category;
 using wups::config::text_item;
 
 
@@ -24,10 +25,10 @@ using wups::config::text_item;
  * Note: the clock item needs to know about the server items added later.
  * It's a bit ugly, because we can't manage it from the category object.
  */
-wups::config::category
+category
 make_preview_screen()
 {
-    wups::config::category cat{"Preview Time"};
+    category cat{"Preview Time"};
 
     auto clock = clock_item::create();
     auto& server_infos = clock->server_infos;

@@ -25,16 +25,18 @@ using namespace wups::config;
 
 
 timezone_offset_item::timezone_offset_item(const std::string& label,
-                                           std::chrono::minutes& variable) :
-    var_item{label, variable, 0min}
+                                           std::chrono::minutes& variable,
+                                           std::chrono::minutes default_value) :
+    var_item{label, variable, default_value}
 {}
 
 
 std::unique_ptr<timezone_offset_item>
 timezone_offset_item::create(const std::string& label,
-                             std::chrono::minutes& variable)
+                             std::chrono::minutes& variable,
+                             std::chrono::minutes default_value)
 {
-    return std::make_unique<timezone_offset_item>(label, variable);
+    return std::make_unique<timezone_offset_item>(label, variable, default_value);
 }
 
 

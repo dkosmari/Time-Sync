@@ -8,10 +8,9 @@
 #include <arpa/inet.h>          // ntohl()
 #include <sys/socket.h>         // socket()
 #include <unistd.h>             // close()
+#include <whb/log.h>
 
 #include "socket.hpp"
-
-#include "../logger.hpp"
 
 
 // Note: WUT doesn't have SOL_IP, but IPPROTO_IP seems to work.
@@ -109,7 +108,7 @@ namespace net {
                 other.fd = -1;
             }
             catch (std::exception& e) {
-                logger::printf("socket::operator=() failed: %s", e.what());
+                WHBLogPrintf("socket::operator=() failed: %s", e.what());
             }
         }
         return *this;
@@ -122,7 +121,7 @@ namespace net {
             close();
         }
         catch (std::exception& e) {
-            logger::printf("socket::~socket() failed: %s", e.what());
+            WHBLogPrintf("socket::~socket() failed: %s", e.what());
         }
     }
 

@@ -26,15 +26,14 @@ Time_Sync_elf_SOURCES = \
 	async_queue.hpp						\
 	cfg.cpp cfg.hpp						\
 	clock_item.cpp clock_item.hpp				\
-	config_screen.cpp config_screen.hpp			\
 	core.cpp core.hpp					\
 	curl.cpp curl.hpp					\
 	http_client.cpp http_client.hpp				\
-	logger.cpp logger.hpp					\
 	main.cpp						\
 	notify.cpp notify.hpp					\
 	ntp.cpp ntp.hpp						\
 	preview_screen.cpp preview_screen.hpp			\
+	synchronize_item.cpp synchronize_item.hpp		\
 	thread_pool.cpp thread_pool.hpp				\
 	time_utils.cpp time_utils.hpp				\
 	timezone_offset_item.cpp timezone_offset_item.hpp	\

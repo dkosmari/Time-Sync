@@ -10,11 +10,12 @@
 #include <exception>
 #include <vector>
 
+#include <wupsxx/logger.hpp>
+
 #include "clock_item.hpp"
 
 #include "cfg.hpp"
 #include "core.hpp"
-#include "logger.hpp"
 #include "net/addrinfo.hpp"
 #include "time_utils.hpp"
 #include "utils.hpp"
@@ -27,6 +28,8 @@ using namespace std::literals;
 using namespace wups::config;
 
 using time_utils::dbl_seconds;
+
+namespace logger = wups::logger;
 
 
 namespace {
@@ -61,7 +64,7 @@ namespace {
         return result;
     }
 
-}
+} // namespace
 
 
 clock_item::clock_item() :

@@ -11,13 +11,10 @@
 
 #include <wups.h>
 
+#include <wupsxx/logger.hpp>
+
 #include "cfg.hpp"
-#include "config_screen.hpp"
 #include "core.hpp"
-#include "logger.hpp"
-#include "notify.hpp"
-#include "preview_screen.hpp"
-#include "wupsxx/category.hpp"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -35,64 +32,20 @@ WUPS_USE_WUT_DEVOPTAB();
 WUPS_USE_STORAGE(PACKAGE_TARNAME);
 
 
-static WUPSConfigAPICallbackStatus open_config(WUPSConfigCategoryHandle root_handle);
-static void close_config();
-
-
 INITIALIZE_PLUGIN()
 {
-    logger::initialize();
+    wups::logger::guard guard{PACKAGE_NAME};
 
-    auto status = WUPSConfigAPI_Init({ .name = PACKAGE_NAME },
-                                     open_config,
-                                     close_config);
-    if (status != WUPSCONFIG_API_RESULT_SUCCESS) {
-        logger::printf("Init error: %s", WUPSConfigAPI_GetStatusStr(status));
-        return;
+    cfg::init();
+
+    if (cfg::sync) {
+        std::jthread t{core::run};
+        t.detach();
     }
-
-    cfg::load();
-    cfg::migrate_old_config();
-
-    if (cfg::sync)
-        core::run(); // Update clock when plugin is loaded.
 }
 
 
 DEINITIALIZE_PLUGIN()
 {
-    logger::finalize();
-}
-
-
-static
-WUPSConfigAPICallbackStatus
-open_config(WUPSConfigCategoryHandle root_handle)
-{
-    try {
-        cfg::reload();
-
-        wups::config::category root{root_handle};
-
-        root.add(make_config_screen());
-        root.add(make_preview_screen());
-
-        return WUPSCONFIG_API_CALLBACK_RESULT_SUCCESS;
-    }
-    catch (std::exception& e) {
-        logger::printf("Error opening config: %s", e.what());
-        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
-    }
-}
-
-
-static
-void
-close_config()
-{
-    cfg::save();
-
-    // Update time when settings are closed.
-    std::jthread update_time_thread{core::run};
-    update_time_thread.detach();
+    // TODO: should clean up any worker thread
 }

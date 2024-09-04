@@ -10,14 +10,18 @@
 
 #include <notifications/notifications.h>
 
+#include <wupsxx/logger.hpp>
+
 #include "notify.hpp"
 
 #include "cfg.hpp"
-#include "logger.hpp"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+
+namespace logger = wups::logger;
 
 
 namespace notify {
@@ -53,7 +57,7 @@ namespace notify {
     void
     error(level lvl, const std::string& arg)
     {
-        logger::printf("ERROR: %s", arg.c_str());
+        logger::printf("ERROR: %s\n", arg.c_str());
 
         if (static_cast<int>(lvl) > cfg::notify)
             return;
@@ -73,7 +77,7 @@ namespace notify {
     void
     info(level lvl, const std::string& arg)
     {
-        logger::printf("INFO: %s", arg.c_str());
+        logger::printf("INFO: %s\n", arg.c_str());
 
         if (static_cast<int>(lvl) > cfg::notify)
             return;
@@ -92,7 +96,7 @@ namespace notify {
     void
     success(level lvl, const std::string& arg)
     {
-        logger::printf("SUCCESS: %s", arg.c_str());
+        logger::printf("SUCCESS: %s\n", arg.c_str());
 
         if (static_cast<int>(lvl) > cfg::notify)
             return;

@@ -10,12 +10,13 @@
 #include <exception>
 #include <string.h>             // BSD strlcpy()
 
+#include <wupsxx/logger.hpp>
+#include <wupsxx/storage.hpp>
+
 #include "timezone_query_item.hpp"
 
 #include "cfg.hpp"
-#include "logger.hpp"
 #include "utils.hpp"
-#include "wupsxx/storage.hpp"
 
 // we borrow libwupsxx's cafe_glyphs.h private header
 #include <wupsxx/../../src/cafe_glyphs.h>
@@ -23,13 +24,23 @@
 
 using namespace std::literals;
 using namespace wups::config;
+namespace logger = wups::logger;
+
+
+namespace {
+    std::string
+    make_query_text(int idx)
+    {
+        return "Query "s + utils::get_tz_service_name(idx);
+    }
+} // namespace
 
 
 timezone_query_item::timezone_query_item(const std::string& label,
                                          int& variable,
                                          const int default_value) :
     var_item{label, variable, default_value},
-    text{"Query "s + utils::get_tz_service_name(variable)}
+    text{make_query_text(variable)}
 {}
 
 
@@ -57,7 +68,7 @@ timezone_query_item::get_focused_display(char* buf, std::size_t size)
     std::snprintf(buf, size,
                   "%s %s %s",
                   CAFE_GLYPH_BTN_LEFT,
-                  text.c_str(),
+                  make_query_text(variable).c_str(),
                   CAFE_GLYPH_BTN_RIGHT);
 }
 
@@ -67,7 +78,7 @@ timezone_query_item::on_input(const simple_pad_data& input)
 {
 
     const int n = utils::get_num_tz_services();
-    auto prev_variable = variable;
+    // auto prev_variable = variable;
 
     if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT)
         --variable;
@@ -81,13 +92,11 @@ timezone_query_item::on_input(const simple_pad_data& input)
     if (variable >= n)
         variable -= n;
 
-    if (prev_variable != variable)
-        text = "Query "s + utils::get_tz_service_name(variable);
+    if (!(input.buttons_d & WUPS_CONFIG_BUTTON_B))
+        text = make_query_text(variable);
 
-    if (input.buttons_d & WUPS_CONFIG_BUTTON_A) {
+    if (input.buttons_d & WUPS_CONFIG_BUTTON_A)
         run();
-        return focus_status::lose;
-    }
 
     return var_item::on_input(input);
 }
