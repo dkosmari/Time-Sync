@@ -25,6 +25,6 @@ docker run $ARGS sh -c "./bootstrap && ./configure --host=powerpc-eabi CXXFLAGS=
 echo "Compilation finished."
 
 # Copy the wps file out.
-docker cp "$CONTAINER:/project/src/Time_Sync.wps" .
+docker cp "$CONTAINER:/project/src/time-sync.wps" .
 
 cleanup 0

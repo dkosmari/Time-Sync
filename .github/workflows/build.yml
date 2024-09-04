@@ -10,7 +10,8 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 1
+        submodules: true
 
     - name: Setup Docker
       run: docker build --tag plugin-builder .
@@ -29,12 +30,12 @@ jobs:
       uses: tj-actions/docker-cp@v2
       with:
         container: plugin-builder-container
-        source: /project/src/Time_Sync.wps
-        destination: Time_Sync.wps
+        source: /project/src/time-sync.wps
+        destination: time-sync.wps
 
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: Time_Sync.wps
+        name: time-sync.wps
         path: "*.wps"
         if-no-files-found: error

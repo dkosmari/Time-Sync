@@ -18,11 +18,11 @@ LIBS = \
 	$(DEVKITPRO_LIBS)
 
 
-WPS_FILE = Time_Sync.wps
-noinst_PROGRAMS = Time_Sync.elf
+WPS_FILE = time-sync.wps
+noinst_PROGRAMS = time-sync.elf
 
 
-Time_Sync_elf_SOURCES = \
+time_sync_elf_SOURCES = \
 	async_queue.hpp						\
 	cfg.cpp cfg.hpp						\
 	clock_item.cpp clock_item.hpp				\
@@ -43,7 +43,7 @@ Time_Sync_elf_SOURCES = \
 	verbosity_item.cpp verbosity_item.hpp
 
 
-Time_Sync_elf_LDADD = net/libnet.a
+time_sync_elf_LDADD = net/libnet.a
 
 
 all-local: $(WPS_FILE)
