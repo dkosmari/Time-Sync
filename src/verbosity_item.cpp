@@ -10,10 +10,9 @@
 #include <array>
 #include <string.h>             // BSD strlcpy()
 
-#include "verbosity_item.hpp"
+#include <wupsxx/cafe_glyphs.h>
 
-// we borrow libwupsxx's cafe_glyphs.h private header
-#include <wupsxx/../../src/cafe_glyphs.h>
+#include "verbosity_item.hpp"
 
 
 using namespace wups::config;
@@ -59,7 +58,6 @@ verbosity_item::get_display(char* buf, std::size_t size)
     const
 {
     ::strlcpy(buf, value_to_str(variable), size);
-
 }
 
 
@@ -82,5 +80,7 @@ verbosity_item::get_focused_display(char* buf, std::size_t size)
         left = CAFE_GLYPH_BTN_LEFT " ";
         break;
     }
-    std::snprintf(buf, size, "%s%s%s", left, value_to_str(variable), right);
+    std::snprintf(buf, size,
+                  "%s%s%s",
+                  left, value_to_str(variable), right);
 }

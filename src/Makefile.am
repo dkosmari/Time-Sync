@@ -8,7 +8,7 @@ AM_CPPFLAGS = \
 	$(DEVKITPRO_CPPFLAGS)
 
 AM_CXXFLAGS = \
-	-Wall -Wextra \
+	-Wall -Wextra -Werror \
 	$(DEVKITPRO_CFLAGS)
 
 AM_LDFLAGS = $(DEVKITPRO_LDFLAGS)

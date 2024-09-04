@@ -11,13 +11,12 @@
 #include <cstdio>               // snprintf()
 #include <string.h>             // BSD strlcpy()
 
+#include <wupsxx/cafe_glyphs.h>
+
 #include "timezone_offset_item.hpp"
 
 #include "time_utils.hpp"
 #include "utils.hpp"
-
-// we borrow libwupsxx's cafe_glyphs.h private header
-#include <wupsxx/../../src/cafe_glyphs.h>
 
 
 using namespace std::literals;

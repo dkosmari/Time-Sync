@@ -10,6 +10,7 @@
 #include <exception>
 #include <string.h>             // BSD strlcpy()
 
+#include <wupsxx/cafe_glyphs.h>
 #include <wupsxx/logger.hpp>
 #include <wupsxx/storage.hpp>
 
@@ -17,9 +18,6 @@
 
 #include "cfg.hpp"
 #include "utils.hpp"
-
-// we borrow libwupsxx's cafe_glyphs.h private header
-#include <wupsxx/../../src/cafe_glyphs.h>
 
 
 using namespace std::literals;

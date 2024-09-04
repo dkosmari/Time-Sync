@@ -8,22 +8,22 @@
 
 #include <cstdio>
 
+#include <wupsxx/cafe_glyphs.h>
 #include <wupsxx/logger.hpp>
 
 #include "synchronize_item.hpp"
 
-#include <wupsxx/../../src/cafe_glyphs.h>
-
 #include "core.hpp"
 
+
+using namespace std::literals;
 
 using namespace wups::config;
 namespace logger = wups::logger;
 
 
 synchronize_item::synchronize_item() :
-    text_item{"Synchronize now!"},
-    worker_status{status::idle}
+    button_item{"Synchronize now!"}
 {}
 
 
@@ -35,71 +35,42 @@ synchronize_item::create()
 
 
 void
-synchronize_item::get_display(char* buf, std::size_t size)
-    const
+synchronize_item::on_started()
 {
-    auto st = worker_status.load();
-    switch (st) {
-    case status::idle:
-        std::snprintf(buf, size, "Press " CAFE_GLYPH_BTN_A " to synchronize.");
-        break;
-    case status::started:
-        std::snprintf(buf, size, "Synchronizing...");
-        break;
-    case status::finished:
-        std::snprintf(buf, size, "Finished! Press "
-                      CAFE_GLYPH_BTN_A " or " CAFE_GLYPH_BTN_B
-                      " to continue.");
-        break;
-    }
-
-}
-
-
-void
-synchronize_item::get_focused_display(char* buf, std::size_t size)
-    const
-{
-    get_display(buf, size);
-}
-
-
-bool
-synchronize_item::on_focus_request(bool)
-    const
-{
-    return true;
-}
-
-
-void
-synchronize_item::on_focus_changed()
-{
-    text_item::on_focus_changed();
-
-    if (has_focus()) {
-        run();
-    } else {
-        cancel();
-    }
-}
-
-
-void
-synchronize_item::run()
-{
+    status_msg = "Synchronizing...";
     worker_thread = std::jthread{[this]()
     {
-        worker_status = status::started;
-        core::run();
-        worker_status = status::finished;
+        try {
+            core::run(true, true);
+            current_state = state::finished;
+        }
+        catch (...) {
+            current_state = state::finished;
+            throw;
+        }
     }};
 }
 
 
 void
-synchronize_item::cancel()
+synchronize_item::on_finished()
+{
+    if (worker_thread.joinable()) {
+        try {
+            worker_thread.join();
+            status_msg = "Success!";
+        }
+        catch (std::exception& e) {
+            status_msg = e.what();
+        }
+    }
+}
+
+
+void
+synchronize_item::on_cancel()
 {
     worker_thread = {};
-    worker_status = status::idle;
+    current_state = state::finished;
+    status_msg = "Canceled.";
 }

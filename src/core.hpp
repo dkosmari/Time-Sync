@@ -22,7 +22,7 @@ namespace core {
 
     std::pair<dbl_seconds, dbl_seconds> ntp_query(net::address address);
 
-    void run() noexcept;
+    void run(bool update_clock, bool silent);
 
     std::string local_clock_to_string();
 

@@ -13,21 +13,23 @@
 #include <memory>               // unique_ptr<>
 #include <string>
 
+#include <wupsxx/button_item.hpp>
 #include <wupsxx/text_item.hpp>
 
 
-struct clock_item : wups::config::text_item {
+struct clock_item : wups::config::button_item {
 
     struct server_info {
-        text_item* name = nullptr;
-        text_item* correction = nullptr;
-        text_item* latency = nullptr;
+        wups::config::text_item* name = nullptr;
+        wups::config::text_item* correction = nullptr;
+        wups::config::text_item* latency = nullptr;
     };
 
 
     std::string now_str;
-    std::string stats_str;
+    std::string diff_str;
     std::map<std::string, server_info> server_infos;
+
 
     clock_item();
 
@@ -37,13 +39,16 @@ struct clock_item : wups::config::text_item {
 
 
     virtual
-    wups::config::focus_status
-    on_input(const wups::config::simple_pad_data& input) override;
+    void
+    on_started() override;
 
 
-    void refresh_now_str();
+    void
+    update_status_msg();
 
-    void run();
+
+    void
+    run();
 
 };
 

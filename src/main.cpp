@@ -15,6 +15,7 @@
 
 #include "cfg.hpp"
 #include "core.hpp"
+#include "notify.hpp"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -39,7 +40,18 @@ INITIALIZE_PLUGIN()
     cfg::init();
 
     if (cfg::sync) {
-        std::jthread t{core::run};
+        std::jthread t{
+            []
+            {
+                notify::guard guard;
+                try {
+                    core::run(true, false);
+                }
+                catch (std::exception& e) {
+                    notify::error(notify::level::normal, e.what());
+                }
+            }
+        };
         t.detach();
     }
 }

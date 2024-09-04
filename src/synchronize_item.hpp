@@ -9,23 +9,15 @@
 #ifndef SYNCHRONIZE_ITEM_HPP
 #define  SYNCHRONIZE_ITEM_HPP
 
-#include <atomic>
 #include <memory>
 #include <thread>
 
-#include <wupsxx/text_item.hpp>
+#include <wupsxx/button_item.hpp>
 
 
-struct synchronize_item : wups::config::text_item {
-
-    enum status {
-        idle,
-        started,
-        finished,
-    };
+struct synchronize_item : wups::config::button_item {
 
     std::jthread worker_thread;
-    std::atomic<status> worker_status;
 
 
     synchronize_item();
@@ -37,20 +29,18 @@ struct synchronize_item : wups::config::text_item {
 
 
     virtual
-    void get_display(char* buf, std::size_t size) const override;
+    void
+    on_started() override;
+
 
     virtual
-    void get_focused_display(char* buf, std::size_t size) const override;
+    void
+    on_finished() override;
+
 
     virtual
-    bool on_focus_request(bool new_focus) const override;
-
-    virtual
-    void on_focus_changed() override;
-
-
-    void run();
-    void cancel();
+    void
+    on_cancel() override;
 
 };
 

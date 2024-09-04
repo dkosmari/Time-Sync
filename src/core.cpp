@@ -37,10 +37,12 @@
 
 
 using namespace std::literals;
+using std::runtime_error;
+
+namespace logger = wups::logger;
 
 using time_utils::dbl_seconds;
 
-namespace logger = wups::logger;
 
 
 namespace {
@@ -123,7 +125,7 @@ namespace core {
                 std::this_thread::sleep_for(100ms);
                 goto try_again_send;
             } else
-                throw std::runtime_error{"No resources for send(), too many retries!"};
+                throw runtime_error{"No resources for send(), too many retries!"};
         }
 
 
@@ -141,35 +143,35 @@ namespace core {
                 std::this_thread::sleep_for(10ms);
                 goto try_again_poll;
             } else
-                throw std::runtime_error{"No resources for poll(), too many retries!"};
+                throw runtime_error{"No resources for poll(), too many retries!"};
         }
 
         if (!*readable_status)
-            throw std::runtime_error{"Timeout reached!"};
+            throw runtime_error{"Timeout reached!"};
 
         // Measure the arrival time as soon as possible.
         auto t4 = to_ntp(utc::now());
 
         if (sock.recv(&packet, sizeof packet) < 48)
-            throw std::runtime_error{"Invalid NTP response!"};
+            throw runtime_error{"Invalid NTP response!"};
 
         sock.close(); // close it early
 
         auto v = packet.version();
         if (v < 3 || v > 4)
-            throw std::runtime_error{"Unsupported NTP version: "s + to_string(v)};
+            throw runtime_error{"Unsupported NTP version: "s + to_string(v)};
 
         auto m = packet.mode();
         if (m != ntp::packet::mode_flag::server)
-            throw std::runtime_error{"Invalid NTP packet mode: "s + to_string(m)};
+            throw runtime_error{"Invalid NTP packet mode: "s + to_string(m)};
 
         auto l = packet.leap();
         if (l == ntp::packet::leap_flag::unknown)
-            throw std::runtime_error{"Unknown value for leap flag."};
+            throw runtime_error{"Unknown value for leap flag."};
 
         ntp::timestamp t1_received = packet.origin_time;
         if (t1 != t1_received)
-            throw std::runtime_error{"NTP response mismatch: ["s
+            throw runtime_error{"NTP response mismatch: ["s
                                      + ::to_string(t1) + "] vs ["s
                                      + ::to_string(t1_received) + "]"s};
 
@@ -180,7 +182,7 @@ namespace core {
 
         // Zero is not a valid timestamp.
         if (!t2 || !t3)
-            throw std::runtime_error{"NTP response has invalid timestamps."};
+            throw runtime_error{"NTP response has invalid timestamps."};
 
         /*
          * We do all calculations in double precision to never worry about overflows. Since
@@ -259,13 +261,9 @@ namespace core {
 
 
     void
-    run()
-        noexcept
+    run(bool update_clock, bool silent)
     {
         using time_utils::seconds_to_human;
-
-        if (!cfg::sync)
-            return;
 
         // ensure notification is initialized if needed
         notify::guard notify_guard{cfg::notify > 0};
@@ -274,9 +272,7 @@ namespace core {
         utils::exec_guard exec_guard{executing};
         if (!exec_guard.guarded) {
             // Another thread is already executing this function.
-            notify::info(notify::level::verbose,
-                         "Skipping NTP task: operation already in progress.");
-            return;
+            throw runtime_error{"Skipping NTP task: operation already in progress."};
         }
 
 
@@ -285,14 +281,17 @@ namespace core {
                 auto [name, offset] = utils::fetch_timezone(cfg::tz_service);
                 if (offset != cfg::utc_offset) {
                     cfg::set_and_store_utc_offset(offset);
-                    notify::info(notify::level::verbose,
-                                 "Updated time zone to " + name +
-                                 "(" + time_utils::tz_offset_to_string(offset) + ")");
+                    if (!silent)
+                        notify::info(notify::level::verbose,
+                                     "Updated time zone to " + name +
+                                     "(" + time_utils::tz_offset_to_string(offset) + ")");
                 }
             }
             catch (std::exception& e) {
-                notify::error(notify::level::verbose,
-                              "Failed to update time zone: "s + e.what());
+                if (!silent)
+                    notify::error(notify::level::verbose,
+                                  "Failed to update time zone: "s + e.what());
+                // Note: not a fatal error, we just keep using the previous time zone.
             }
         }
 
@@ -321,14 +320,17 @@ namespace core {
                         addresses.insert(info.addr);
                 }
                 catch (std::exception& e) {
-                    notify::error(notify::level::verbose, e.what());
+                    if (!silent)
+                        notify::error(notify::level::verbose, e.what());
                 }
         }
 
         if (addresses.empty()) {
             // Probably a mistake in config, or network failure.
-            notify::error(notify::level::normal, "No NTP address could be used.");
-            return;
+            if (!silent)
+                notify::error(notify::level::normal,
+                              "No NTP address could be used.");
+            throw runtime_error{"No NTP address could be used."};
         }
 
         // Launch NTP queries asynchronously.
@@ -343,22 +345,22 @@ namespace core {
             try {
                 auto [correction, latency] = fut.get();
                 corrections.push_back(correction);
-                notify::info(notify::level::verbose,
-                             to_string(address)
-                             + ": correction = "s + seconds_to_human(correction, true)
-                             + ", latency = "s + seconds_to_human(latency));
+                if (!silent)
+                    notify::info(notify::level::verbose,
+                                 to_string(address)
+                                 + ": correction = "s + seconds_to_human(correction, true)
+                                 + ", latency = "s + seconds_to_human(latency));
             }
             catch (std::exception& e) {
-                notify::error(notify::level::verbose,
-                              to_string(address) + ": "s + e.what());
+                if (!silent)
+                    notify::error(notify::level::verbose,
+                                  to_string(address) + ": "s + e.what());
             }
 
 
-        if (corrections.empty()) {
-            notify::error(notify::level::normal,
-                          "No NTP server could be used!");
-            return;
-        }
+        if (corrections.empty())
+            throw runtime_error{"No NTP server could be used!"};
+
 
         dbl_seconds total = std::accumulate(corrections.begin(),
                                             corrections.end(),
@@ -366,21 +368,20 @@ namespace core {
         dbl_seconds avg = total / static_cast<double>(corrections.size());
 
         if (abs(avg) <= cfg::tolerance) {
-            notify::success(notify::level::verbose,
-                            "Tolerating clock drift (correction is only "
-                            + seconds_to_human(avg, true) + ")."s);
+            if (!silent)
+                notify::success(notify::level::verbose,
+                                "Tolerating clock drift (correction is only "
+                                + seconds_to_human(avg, true) + ")."s);
             return;
         }
 
-        if (cfg::sync) {
-            if (!apply_clock_correction(avg)) {
-                // This error woudl be so bad, the user should always know about it.
-                notify::error(notify::level::quiet,
-                              "Failed to set system clock!");
-                return;
-            }
-            notify::success(notify::level::normal,
-                            "Clock corrected by " + seconds_to_human(avg, true));
+        if (update_clock) {
+            if (!apply_clock_correction(avg))
+                throw runtime_error{"Failed to set system clock!"};
+
+            if (!silent)
+                notify::success(notify::level::normal,
+                                "Clock corrected by " + seconds_to_human(avg, true));
         }
 
     }

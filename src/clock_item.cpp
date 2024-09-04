@@ -10,6 +10,7 @@
 #include <exception>
 #include <vector>
 
+#include <wupsxx/cafe_glyphs.h>
 #include <wupsxx/logger.hpp>
 
 #include "clock_item.hpp"
@@ -20,8 +21,6 @@
 #include "time_utils.hpp"
 #include "utils.hpp"
 
-// we borrow libwupsxx's cafe_glyphs.h private header
-#include <wupsxx/../../src/cafe_glyphs.h>
 
 
 using namespace std::literals;
@@ -68,9 +67,7 @@ namespace {
 
 
 clock_item::clock_item() :
-    text_item{"Clock",
-              "(press " CAFE_GLYPH_BTN_A ")",
-              48}
+    button_item{"Clock"}
 {}
 
 
@@ -81,33 +78,32 @@ clock_item::create()
 }
 
 
-focus_status
-clock_item::on_input(const simple_pad_data& input)
+void
+clock_item::on_started()
 {
-    if (input.buttons_d & WUPS_CONFIG_BUTTON_A) {
-        try {
-            run();
-        }
-        catch (std::exception& e) {
-            text = "Error: "s + e.what();
-        }
-        return focus_status::lose;
+    try {
+        status_msg = "";
+        run();
+        update_status_msg();
     }
-
-    refresh_now_str();
-
-    return text_item::on_input(input);
+    catch (std::exception& e) {
+        status_msg = e.what();
+    }
+    current_state = state::finished;
 }
 
 
 void
-clock_item::refresh_now_str()
+clock_item::update_status_msg()
 {
     now_str = core::local_clock_to_string();
-    text = now_str + stats_str;
+    status_msg = now_str + diff_str;
 }
 
 
+/*
+ * Note: this code is very similar to core::run(), but runs in a single thread.
+ */
 void
 clock_item::run()
 {
@@ -182,9 +178,7 @@ clock_item::run()
 
     if (num_values) {
         dbl_seconds avg = total / num_values;
-        stats_str = ", needs "s + seconds_to_human(avg, true);
+        diff_str = ", needs "s + seconds_to_human(avg, true);
     } else
-        stats_str = "";
-
-    refresh_now_str();
+        diff_str = "";
 }
