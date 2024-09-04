@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef TIMEZONE_OFFSET_ITEM_HPP
-#define TIMEZONE_OFFSET_ITEM_HPP
+#ifndef TIME_ZONE_OFFSET_ITEM_HPP
+#define TIME_ZONE_OFFSET_ITEM_HPP
 
 #include <chrono>
 #include <memory>
@@ -15,14 +15,14 @@
 #include <wupsxx/var_item.hpp>
 
 
-struct timezone_offset_item : wups::config::var_item<std::chrono::minutes> {
+struct time_zone_offset_item : wups::config::var_item<std::chrono::minutes> {
 
-    timezone_offset_item(const std::string& label,
-                         std::chrono::minutes& variable,
-                         std::chrono::minutes default_value);
+    time_zone_offset_item(const std::string& label,
+                          std::chrono::minutes& variable,
+                          std::chrono::minutes default_value);
 
     static
-    std::unique_ptr<timezone_offset_item>
+    std::unique_ptr<time_zone_offset_item>
     create(const std::string& label,
            std::chrono::minutes& variable,
            std::chrono::minutes default_value);

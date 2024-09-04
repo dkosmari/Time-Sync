@@ -19,8 +19,8 @@
 #include "preview_screen.hpp"
 #include "synchronize_item.hpp"
 #include "time_utils.hpp"
-#include "timezone_offset_item.hpp"
-#include "timezone_query_item.hpp"
+#include "time_zone_offset_item.hpp"
+#include "time_zone_query_item.hpp"
 #include "utils.hpp"
 #include "verbosity_item.hpp"
 
@@ -109,13 +109,13 @@ namespace cfg {
                                        cfg::notify,
                                        cfg::defaults::notify));
 
-        cat.add(timezone_offset_item::create(cfg::labels::utc_offset,
-                                             cfg::utc_offset,
-                                             cfg::defaults::utc_offset));
+        cat.add(time_zone_offset_item::create(cfg::labels::utc_offset,
+                                              cfg::utc_offset,
+                                              cfg::defaults::utc_offset));
 
-        cat.add(timezone_query_item::create(cfg::labels::tz_service,
-                                            cfg::tz_service,
-                                            cfg::defaults::tz_service));
+        cat.add(time_zone_query_item::create(cfg::labels::tz_service,
+                                             cfg::tz_service,
+                                             cfg::defaults::tz_service));
 
         cat.add(bool_item::create(cfg::labels::auto_tz,
                                   cfg::auto_tz,

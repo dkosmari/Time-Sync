@@ -14,7 +14,7 @@
 #include <wupsxx/logger.hpp>
 #include <wupsxx/storage.hpp>
 
-#include "timezone_query_item.hpp"
+#include "time_zone_query_item.hpp"
 
 #include "cfg.hpp"
 #include "utils.hpp"
@@ -34,25 +34,25 @@ namespace {
 } // namespace
 
 
-timezone_query_item::timezone_query_item(const std::string& label,
-                                         int& variable,
-                                         const int default_value) :
+time_zone_query_item::time_zone_query_item(const std::string& label,
+                                           int& variable,
+                                           const int default_value) :
     var_item{label, variable, default_value},
     text{make_query_text(variable)}
 {}
 
 
-std::unique_ptr<timezone_query_item>
-timezone_query_item::create(const std::string& label,
-                            int& variable,
-                            const int default_value)
+std::unique_ptr<time_zone_query_item>
+time_zone_query_item::create(const std::string& label,
+                             int& variable,
+                             const int default_value)
 {
-    return std::make_unique<timezone_query_item>(label, variable, default_value);
+    return std::make_unique<time_zone_query_item>(label, variable, default_value);
 }
 
 
 void
-timezone_query_item::get_display(char* buf, std::size_t size)
+time_zone_query_item::get_display(char* buf, std::size_t size)
     const
 {
     ::strlcpy(buf, text.c_str(), size);
@@ -60,7 +60,7 @@ timezone_query_item::get_display(char* buf, std::size_t size)
 
 
 void
-timezone_query_item::get_focused_display(char* buf, std::size_t size)
+time_zone_query_item::get_focused_display(char* buf, std::size_t size)
     const
 {
     std::snprintf(buf, size,
@@ -72,7 +72,7 @@ timezone_query_item::get_focused_display(char* buf, std::size_t size)
 
 
 focus_status
-timezone_query_item::on_input(const simple_pad_data& input)
+time_zone_query_item::on_input(const simple_pad_data& input)
 {
 
     const int n = utils::get_num_tz_services();
@@ -101,7 +101,7 @@ timezone_query_item::on_input(const simple_pad_data& input)
 
 
 void
-timezone_query_item::run()
+time_zone_query_item::run()
 {
     try {
         auto [name, offset] = utils::fetch_timezone(variable);

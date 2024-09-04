@@ -36,8 +36,8 @@ time_sync_elf_SOURCES = \
 	synchronize_item.cpp synchronize_item.hpp		\
 	thread_pool.cpp thread_pool.hpp				\
 	time_utils.cpp time_utils.hpp				\
-	timezone_offset_item.cpp timezone_offset_item.hpp	\
-	timezone_query_item.cpp timezone_query_item.hpp		\
+	time_zone_offset_item.cpp time_zone_offset_item.hpp	\
+	time_zone_query_item.cpp time_zone_query_item.hpp	\
 	utc.cpp utc.hpp						\
 	utils.cpp utils.hpp					\
 	verbosity_item.cpp verbosity_item.hpp
