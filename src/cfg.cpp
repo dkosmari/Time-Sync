@@ -46,7 +46,7 @@ namespace cfg {
         const char* msg_duration = "msg_duration";
         const char* notify       = "notify";
         const char* server       = "server";
-        const char* sync         = "sync";
+        const char* sync_on_boot = "sync_on_boot";
         const char* threads      = "threads";
         const char* timeout      = "timeout";
         const char* tolerance    = "tolerance";
@@ -60,7 +60,7 @@ namespace cfg {
         const char* msg_duration = "Notification Duration";
         const char* notify       = "Show Notifications";
         const char* server       = "NTP Servers";
-        const char* sync         = "Syncing Enabled";
+        const char* sync_on_boot = "Synchronize On Boot";
         const char* threads      = "Background Threads";
         const char* timeout      = "Timeout";
         const char* tolerance    = "Tolerance";
@@ -74,7 +74,7 @@ namespace cfg {
         const seconds      msg_duration = 5s;
         const int          notify       = 1;
         const std::string  server       = "pool.ntp.org";
-        const bool         sync         = false;
+        const bool         sync_on_boot = false;
         const int          threads      = 4;
         const seconds      timeout      = 5s;
         const milliseconds tolerance    = 500ms;
@@ -87,7 +87,7 @@ namespace cfg {
     seconds      msg_duration = defaults::msg_duration;
     int          notify       = defaults::notify;
     std::string  server       = defaults::server;
-    bool         sync         = defaults::sync;
+    bool         sync_on_boot = defaults::sync_on_boot;
     int          threads      = defaults::threads;
     seconds      timeout      = defaults::timeout;
     milliseconds tolerance    = defaults::tolerance;
@@ -100,9 +100,9 @@ namespace cfg {
     {
         category cat{"Configuration"};
 
-        cat.add(bool_item::create(cfg::labels::sync,
-                                  cfg::sync,
-                                  cfg::defaults::sync,
+        cat.add(bool_item::create(cfg::labels::sync_on_boot,
+                                  cfg::sync_on_boot,
+                                  cfg::defaults::sync_on_boot,
                                   "on", "off"));
 
         cat.add(verbosity_item::create(cfg::labels::notify,
@@ -200,10 +200,10 @@ namespace cfg {
         try {
 #define LOAD(x) wups::storage::load_or_init(keys::x, x, defaults::x)
             LOAD(auto_tz);
+            LOAD(sync_on_boot);
             LOAD(msg_duration);
             LOAD(notify);
             LOAD(server);
-            LOAD(sync);
             LOAD(threads);
             LOAD(timeout);
             LOAD(tolerance);
@@ -237,10 +237,10 @@ namespace cfg {
         try {
 #define STORE(x) wups::storage::store(keys::x, x)
             STORE(auto_tz);
+            STORE(sync_on_boot);
             STORE(msg_duration);
             STORE(notify);
             STORE(server);
-            STORE(sync);
             STORE(threads);
             STORE(timeout);
             STORE(tolerance);
@@ -270,10 +270,19 @@ namespace cfg {
             WUPSStorageAPI::DeleteItem("hours");
             WUPSStorageAPI::DeleteItem("minutes");
             save();
-            logger::printf("Migrated old config: %s + %s -> %s.\n",
+            logger::printf("Migrated old config: hours=%s, minutes=%s -> utc_offset=%s.\n",
                             time_utils::to_string(h).c_str(),
                             time_utils::to_string(m).c_str(),
                             time_utils::tz_offset_to_string(utc_offset).c_str());
+        }
+        auto sync = wups::storage::load<bool>("sync");
+        if (sync) {
+            WUPSStorageAPI::DeleteItem("sync");
+            sync_on_boot = *sync;
+            save();
+            logger::printf("Migrated old config: sync=%s -> sync_on_boot=%s\n",
+                           (*sync ? "true" : "false"),
+                           (sync_on_boot ? "true" : "false"));
         }
     }
 

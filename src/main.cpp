@@ -39,7 +39,7 @@ INITIALIZE_PLUGIN()
 
     cfg::init();
 
-    if (cfg::sync) {
+    if (cfg::sync_on_boot) {
         std::jthread t{
             [](std::stop_token token)
             {
