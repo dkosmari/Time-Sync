@@ -41,11 +41,12 @@ INITIALIZE_PLUGIN()
 
     if (cfg::sync) {
         std::jthread t{
-            []
+            [](std::stop_token token)
             {
-                notify::guard guard;
+                wups::logger::guard lguard{PACKAGE_NAME};
+                notify::guard nguard;
                 try {
-                    core::run(true, false);
+                    core::run(token, true, false);
                 }
                 catch (std::exception& e) {
                     notify::error(notify::level::normal, e.what());

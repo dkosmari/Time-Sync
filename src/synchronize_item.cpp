@@ -38,31 +38,36 @@ void
 synchronize_item::on_started()
 {
     status_msg = "Synchronizing...";
-    worker_thread = std::jthread{[this]()
+
+    sync_stopper = {};
+
+    auto task = [this](std::stop_token token)
     {
         try {
-            core::run(true, true);
+            logger::guard lguard;
+            core::run(token, true, true);
             current_state = state::finished;
         }
-        catch (...) {
+        catch (std::exception& e) {
             current_state = state::finished;
             throw;
         }
-    }};
+    };
+
+    sync_result = std::async(task, sync_stopper.get_token());
 }
 
 
 void
 synchronize_item::on_finished()
 {
-    if (worker_thread.joinable()) {
-        try {
-            worker_thread.join();
-            status_msg = "Success!";
-        }
-        catch (std::exception& e) {
-            status_msg = e.what();
-        }
+    try {
+        sync_result.get();
+        status_msg = "Success!";
+    }
+    catch (std::exception& e) {
+        logger::printf("ERROR: %s\n", e.what());
+        status_msg = e.what();
     }
 }
 
@@ -70,7 +75,5 @@ synchronize_item::on_finished()
 void
 synchronize_item::on_cancel()
 {
-    worker_thread = {};
-    current_state = state::finished;
-    status_msg = "Canceled.";
+    sync_stopper.request_stop();
 }

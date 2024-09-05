@@ -9,15 +9,17 @@
 #ifndef SYNCHRONIZE_ITEM_HPP
 #define  SYNCHRONIZE_ITEM_HPP
 
+#include <future>
 #include <memory>
-#include <thread>
+#include <stop_token>
 
 #include <wupsxx/button_item.hpp>
 
 
 struct synchronize_item : wups::config::button_item {
 
-    std::jthread worker_thread;
+    std::future<void> sync_result;
+    std::stop_source sync_stopper;
 
 
     synchronize_item();

@@ -155,10 +155,10 @@ namespace cfg {
     {
         logger::initialize(PACKAGE_NAME);
 
-        logger::printf("reloading configs\n");
+        // logger::printf("reloading configs\n");
         cfg::reload();
 
-        logger::printf("building config items\n");
+        // logger::printf("building config items\n");
         root.add(make_config_screen());
         root.add(make_preview_screen());
         root.add(synchronize_item::create());
@@ -168,7 +168,7 @@ namespace cfg {
     void
     menu_close()
     {
-        logger::printf("saving config\n");
+        // logger::printf("saving config\n");
         cfg::save();
         logger::finalize();
     }
@@ -210,10 +210,10 @@ namespace cfg {
             LOAD(tz_service);
             LOAD(utc_offset);
 #undef LOAD
-            // logger::printf("Loaded settings.");
+            // logger::printf("Loaded settings.\n");
         }
         catch (std::exception& e) {
-            logger::printf("Error loading config: %s", e.what());
+            logger::printf("Error loading config: %s\n", e.what());
         }
     }
 
@@ -226,7 +226,7 @@ namespace cfg {
             load();
         }
         catch (std::exception& e) {
-            logger::printf("Error reloading config: %s", e.what());
+            logger::printf("Error reloading config: %s\n", e.what());
         }
     }
 
@@ -248,10 +248,10 @@ namespace cfg {
             STORE(utc_offset);
 #undef STORE
             wups::storage::save();
-            // logger::printf("Saved settings");
+            // logger::printf("Saved settings\n");
         }
         catch (std::exception& e) {
-            logger::printf("Error saving config: %s", e.what());
+            logger::printf("Error saving config: %s\n", e.what());
         }
     }
 
@@ -270,7 +270,7 @@ namespace cfg {
             WUPSStorageAPI::DeleteItem("hours");
             WUPSStorageAPI::DeleteItem("minutes");
             save();
-            logger::printf("Migrated old config: %s + %s -> %s.",
+            logger::printf("Migrated old config: %s + %s -> %s.\n",
                             time_utils::to_string(h).c_str(),
                             time_utils::to_string(m).c_str(),
                             time_utils::tz_offset_to_string(utc_offset).c_str());
@@ -292,7 +292,7 @@ namespace cfg {
             wups::storage::save();
         }
         catch (std::exception& e) {
-            logger::printf("Error storing utc_offset: %s", e.what());
+            logger::printf("Error storing utc_offset: %s\n", e.what());
         }
     }
 

@@ -9,6 +9,7 @@
 #ifndef CORE_HPP
 #define CORE_HPP
 
+#include <stop_token>
 #include <string>
 #include <utility>              // pair<>
 
@@ -20,9 +21,13 @@ namespace core {
 
     using time_utils::dbl_seconds;
 
-    std::pair<dbl_seconds, dbl_seconds> ntp_query(net::address address);
+    std::pair<dbl_seconds, dbl_seconds> ntp_query(std::stop_token token,
+                                                  net::address address);
 
-    void run(bool update_clock, bool silent);
+    void
+    run(std::stop_token token,
+        bool update_clock,
+        bool silent);
 
     std::string local_clock_to_string();
 

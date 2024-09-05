@@ -96,9 +96,24 @@ namespace {
 
 namespace core {
 
+
+    struct canceled_error : runtime_error {
+        canceled_error() : runtime_error{"Operation canceled."} {}
+    };
+
+
+    void
+    check_stop(std::stop_token token)
+    {
+        if (token.stop_requested())
+            throw canceled_error{};
+    }
+
+
     // Note: hardcoded for IPv4, the Wii U doesn't have IPv6.
     std::pair<dbl_seconds, dbl_seconds>
-    ntp_query(net::address address)
+    ntp_query(std::stop_token token,
+              net::address address)
     {
         using std::to_string;
 
@@ -112,7 +127,10 @@ namespace core {
 
         unsigned send_attempts = 0;
         const unsigned max_send_attempts = 4;
+
     try_again_send:
+        // cancellation point: before sending
+        check_stop(token);
         auto t1 = to_ntp(utc::now());
         packet.transmit_time = t1;
 
@@ -122,6 +140,8 @@ namespace core {
             if (e.code() != std::errc::not_enough_memory)
                 throw e;
             if (++send_attempts < max_send_attempts) {
+                // cancellation point: before sleeping
+                check_stop(token);
                 std::this_thread::sleep_for(100ms);
                 goto try_again_send;
             } else
@@ -132,6 +152,8 @@ namespace core {
         unsigned poll_attempts = 0;
         const unsigned max_poll_attempts = 4;
     try_again_poll:
+        // cancellation point: before polling
+        check_stop(token);
         auto readable_status = sock.try_is_readable(cfg::timeout);
         if (!readable_status) {
             // Wii U OS can only handle 16 concurrent select()/poll() calls,
@@ -140,6 +162,8 @@ namespace core {
             if (e.code() != std::errc::not_enough_memory)
                 throw e;
             if (++poll_attempts < max_poll_attempts) {
+                // cancellation point: before sleeping
+                check_stop(token);
                 std::this_thread::sleep_for(10ms);
                 goto try_again_poll;
             } else
@@ -261,7 +285,9 @@ namespace core {
 
 
     void
-    run(bool update_clock, bool silent)
+    run(std::stop_token token,
+        bool update_clock,
+        bool silent)
     {
         using time_utils::seconds_to_human;
 
@@ -274,7 +300,6 @@ namespace core {
             // Another thread is already executing this function.
             throw runtime_error{"Skipping NTP task: operation already in progress."};
         }
-
 
         if (cfg::auto_tz) {
             try {
@@ -295,8 +320,10 @@ namespace core {
             }
         }
 
-        thread_pool pool(cfg::threads);
+        // cancellation point: after the time zone update
+        check_stop(token);
 
+        thread_pool pool{static_cast<unsigned>(cfg::threads)};
 
         std::vector<std::string> servers = utils::split(cfg::server, " \t,;");
 
@@ -312,6 +339,9 @@ namespace core {
             // Launch DNS queries asynchronously.
             for (auto [fut, server] : std::views::zip(futures, servers))
                 fut = pool.submit(net::addrinfo::lookup, server, "123"s, opts);
+
+            // cancellation point: after submitting the DNS queries
+            check_stop(token);
 
             // Collect all future results.
             for (auto& fut : futures)
@@ -333,16 +363,24 @@ namespace core {
             throw runtime_error{"No NTP address could be used."};
         }
 
+        // cancellation point: before the NTP queries are submitted
+        check_stop(token);
+
         // Launch NTP queries asynchronously.
         std::vector<std::future<std::pair<dbl_seconds, dbl_seconds>>>
             futures(addresses.size());
         for (auto [fut, address] : std::views::zip(futures, addresses))
-            fut = pool.submit(ntp_query, address);
+            fut = pool.submit(ntp_query, token, address);
+
+        // cancellation point: after NTP queries are submited
+        check_stop(token);
 
         // Collect all future results.
         std::vector<dbl_seconds> corrections;
         for (auto [address, fut] : std::views::zip(addresses, futures))
             try {
+                // cancellation point: before blocking waiting for a NTP result
+                check_stop(token);
                 auto [correction, latency] = fut.get();
                 corrections.push_back(correction);
                 if (!silent)
@@ -350,6 +388,9 @@ namespace core {
                                  to_string(address)
                                  + ": correction = "s + seconds_to_human(correction, true)
                                  + ", latency = "s + seconds_to_human(latency));
+            }
+            catch (canceled_error&) {
+                throw;
             }
             catch (std::exception& e) {
                 if (!silent)
@@ -374,6 +415,9 @@ namespace core {
                                 + seconds_to_human(avg, true) + ")."s);
             return;
         }
+
+        // cancellation point: before modifying the clock
+        check_stop(token);
 
         if (update_clock) {
             if (!apply_clock_correction(avg))

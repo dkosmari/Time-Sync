@@ -137,12 +137,12 @@ clock_item::run()
 
             for (const auto& info : infos) {
                 try {
-                    auto [correction, latency] = core::ntp_query(info.addr);
+                    auto [correction, latency] = core::ntp_query({}, info.addr);
                     server_corrections.push_back(correction);
                     server_latencies.push_back(latency);
                     total += correction;
                     ++num_values;
-                    logger::printf("%s (%s): correction = %s, latency = %s",
+                    logger::printf("%s (%s): correction = %s, latency = %s\n",
                                    server.c_str(),
                                    to_string(info.addr).c_str(),
                                    seconds_to_human(correction, true).c_str(),
@@ -150,7 +150,7 @@ clock_item::run()
                 }
                 catch (std::exception& e) {
                     ++errors;
-                    logger::printf("Error: %s", e.what());
+                    logger::printf("Error: %s\n", e.what());
                 }
             }
 
