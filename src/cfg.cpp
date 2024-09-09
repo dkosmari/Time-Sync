@@ -16,6 +16,8 @@
 
 #include "cfg.hpp"
 
+#include "core.hpp"
+#include "notify.hpp"
 #include "preview_screen.hpp"
 #include "synchronize_item.hpp"
 #include "time_utils.hpp"
@@ -42,57 +44,90 @@ namespace logger = wups::logger;
 namespace cfg {
 
     namespace keys {
-        const char* auto_tz      = "auto_tz";
-        const char* msg_duration = "msg_duration";
-        const char* notify       = "notify";
-        const char* server       = "server";
-        const char* sync_on_boot = "sync_on_boot";
-        const char* threads      = "threads";
-        const char* timeout      = "timeout";
-        const char* tolerance    = "tolerance";
-        const char* tz_service   = "tz_service";
-        const char* utc_offset   = "utc_offset";
+        const char* auto_tz         = "auto_tz";
+        const char* msg_duration    = "msg_duration";
+        const char* notify          = "notify";
+        const char* server          = "server";
+        const char* sync_on_boot    = "sync_on_boot";
+        const char* sync_on_changes = "sync_on_changes";
+        const char* threads         = "threads";
+        const char* timeout         = "timeout";
+        const char* tolerance       = "tolerance";
+        const char* tz_service      = "tz_service";
+        const char* utc_offset      = "utc_offset";
     }
 
 
     namespace labels {
-        const char* auto_tz      = "Auto Update Time Zone";
-        const char* msg_duration = "Notification Duration";
-        const char* notify       = "Show Notifications";
-        const char* server       = "NTP Servers";
-        const char* sync_on_boot = "Synchronize On Boot";
-        const char* threads      = "Background Threads";
-        const char* timeout      = "Timeout";
-        const char* tolerance    = "Tolerance";
-        const char* tz_service   = "Detect Time Zone";
-        const char* utc_offset   = "Time Offset (UTC)";
+        const char* auto_tz         = "Auto update time zone";
+        const char* msg_duration    = "Notification duration";
+        const char* notify          = "Show notifications";
+        const char* server          = "NTP servers";
+        const char* sync_on_boot    = "Synchronize on boot";
+        const char* sync_on_changes = "Synchronize after changing configuration";
+        const char* threads         = "Background threads";
+        const char* timeout         = "Timeout";
+        const char* tolerance       = "Tolerance";
+        const char* tz_service      = "Detect time zone";
+        const char* utc_offset      = "Time offset (UTC)";
     }
 
 
     namespace defaults {
-        const bool         auto_tz      = false;
-        const seconds      msg_duration = 5s;
-        const int          notify       = 1;
-        const std::string  server       = "pool.ntp.org";
-        const bool         sync_on_boot = false;
-        const int          threads      = 4;
-        const seconds      timeout      = 5s;
-        const milliseconds tolerance    = 500ms;
-        const int          tz_service   = 0;
-        const minutes      utc_offset   = 0min;
+        const bool         auto_tz         = false;
+        const seconds      msg_duration    = 5s;
+        const int          notify          = 1;
+        const std::string  server          = "pool.ntp.org";
+        const bool         sync_on_boot    = false;
+        const bool         sync_on_changes = true;
+        const int          threads         = 4;
+        const seconds      timeout         = 5s;
+        const milliseconds tolerance       = 500ms;
+        const int          tz_service      = 0;
+        const minutes      utc_offset      = 0min;
     }
 
 
-    bool         auto_tz      = defaults::auto_tz;
-    seconds      msg_duration = defaults::msg_duration;
-    int          notify       = defaults::notify;
-    std::string  server       = defaults::server;
-    bool         sync_on_boot = defaults::sync_on_boot;
-    int          threads      = defaults::threads;
-    seconds      timeout      = defaults::timeout;
-    milliseconds tolerance    = defaults::tolerance;
-    int          tz_service   = defaults::tz_service;
-    minutes      utc_offset   = 0min;
+    bool         auto_tz         = defaults::auto_tz;
+    seconds      msg_duration    = defaults::msg_duration;
+    int          notify          = defaults::notify;
+    std::string  server          = defaults::server;
+    bool         sync_on_boot    = defaults::sync_on_boot;
+    bool         sync_on_changes = defaults::sync_on_changes;
+    int          threads         = defaults::threads;
+    seconds      timeout         = defaults::timeout;
+    milliseconds tolerance       = defaults::tolerance;
+    int          tz_service      = defaults::tz_service;
+    minutes      utc_offset      = 0min;
+
+
+    // variables that, if changed, may affect the sync
+    namespace previous {
+        bool         auto_tz;
+        milliseconds tolerance;
+        int          tz_service;
+        minutes      utc_offset;
+    }
+
+
+    void
+    save_important_vars()
+    {
+        previous::auto_tz = auto_tz;
+        previous::tolerance = tolerance;
+        previous::tz_service = tz_service;
+        previous::utc_offset = utc_offset;
+    }
+
+
+    bool
+    important_vars_changed()
+    {
+        return previous::auto_tz != auto_tz
+            || previous::tolerance != tolerance
+            || previous::tz_service != tz_service
+            || previous::utc_offset != utc_offset;
+    }
 
 
     category
@@ -103,6 +138,11 @@ namespace cfg {
         cat.add(bool_item::create(cfg::labels::sync_on_boot,
                                   cfg::sync_on_boot,
                                   cfg::defaults::sync_on_boot,
+                                  "on", "off"));
+
+        cat.add(bool_item::create(cfg::labels::sync_on_changes,
+                                  cfg::sync_on_changes,
+                                  cfg::defaults::sync_on_changes,
                                   "on", "off"));
 
         cat.add(verbosity_item::create(cfg::labels::notify,
@@ -162,17 +202,36 @@ namespace cfg {
         root.add(make_config_screen());
         root.add(make_preview_screen());
         root.add(synchronize_item::create());
+
+        save_important_vars();
     }
 
 
     void
     menu_close()
     {
+        if (cfg::sync_on_changes && important_vars_changed()) {
+            std::jthread t{
+                [](std::stop_token token)
+                {
+                    logger::guard lguard{PACKAGE_NAME};
+                    notify::guard nguard;
+                    try {
+                        core::run(token, true, false);
+                    }
+                    catch (std::exception& e) {
+                        notify::error(notify::level::normal, e.what());
+                    }
+                }
+            };
+            t.detach();
+        }
+
         // logger::printf("saving config\n");
         cfg::save();
+
         logger::finalize();
     }
-
 
 
     void migrate_old_config();
@@ -200,10 +259,11 @@ namespace cfg {
         try {
 #define LOAD(x) wups::storage::load_or_init(keys::x, x, defaults::x)
             LOAD(auto_tz);
-            LOAD(sync_on_boot);
             LOAD(msg_duration);
             LOAD(notify);
             LOAD(server);
+            LOAD(sync_on_boot);
+            LOAD(sync_on_changes);
             LOAD(threads);
             LOAD(timeout);
             LOAD(tolerance);
@@ -237,10 +297,11 @@ namespace cfg {
         try {
 #define STORE(x) wups::storage::store(keys::x, x)
             STORE(auto_tz);
-            STORE(sync_on_boot);
             STORE(msg_duration);
             STORE(notify);
             STORE(server);
+            STORE(sync_on_boot);
+            STORE(sync_on_changes);
             STORE(threads);
             STORE(timeout);
             STORE(tolerance);

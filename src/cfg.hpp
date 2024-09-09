@@ -20,6 +20,7 @@ namespace cfg {
     extern int                       notify;
     extern std::string               server;
     extern bool                      sync_on_boot;
+    extern bool                      sync_on_changes;
     extern int                       threads;
     extern std::chrono::seconds      timeout;
     extern std::chrono::milliseconds tolerance;
