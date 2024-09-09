@@ -27,6 +27,7 @@ namespace cfg {
     extern int                       tz_service;
     extern std::chrono::minutes      utc_offset;
 
+    void save_important_vars();
 
     void init();
 

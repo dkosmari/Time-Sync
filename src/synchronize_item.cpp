@@ -13,6 +13,7 @@
 
 #include "synchronize_item.hpp"
 
+#include "cfg.hpp"
 #include "core.hpp"
 
 
@@ -64,6 +65,7 @@ synchronize_item::on_finished()
     try {
         sync_result.get();
         status_msg = "Success!";
+        cfg::save_important_vars();
     }
     catch (std::exception& e) {
         logger::printf("ERROR: %s\n", e.what());
