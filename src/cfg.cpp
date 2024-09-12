@@ -2,6 +2,7 @@
  * Time Sync - A NTP client plugin for the Wii U.
  *
  * Copyright (C) 2024  Daniel K. O.
+ * Copyright (C) 2024  Nightkingale
  *
  * SPDX-License-Identifier: MIT
  */
@@ -320,6 +321,8 @@ namespace cfg {
     void
     migrate_old_config()
     {
+        using std::to_string;
+
         // check for leftovers from old versions
         auto hrs = wups::storage::load<hours>("hours");
         auto min = wups::storage::load<minutes>("minutes");
@@ -332,9 +335,9 @@ namespace cfg {
             WUPSStorageAPI::DeleteItem("minutes");
             save();
             logger::printf("Migrated old config: hours=%s, minutes=%s -> utc_offset=%s.\n",
-                            time_utils::to_string(h).c_str(),
-                            time_utils::to_string(m).c_str(),
-                            time_utils::tz_offset_to_string(utc_offset).c_str());
+                           to_string(h.count()).c_str(),
+                           to_string(m.count()).c_str(),
+                           time_utils::tz_offset_to_string(utc_offset).c_str());
         }
         auto sync = wups::storage::load<bool>("sync");
         if (sync) {

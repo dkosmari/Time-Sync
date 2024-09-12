@@ -22,29 +22,6 @@ using namespace std::literals;
 
 namespace time_utils {
 
-    // to_string() functions that show the time unit
-
-    template<>
-    std::string
-    to_string<milliseconds>(milliseconds t)
-    { return std::to_string(t.count()) + " ms"; }
-
-    template<>
-    std::string
-    to_string<seconds>(seconds t)
-    { return std::to_string(t.count()) + " s"; }
-
-    template<>
-    std::string
-    to_string<minutes>(minutes t)
-    { return std::to_string(t.count()) + " min"; }
-
-    template<>
-    std::string
-    to_string<hours>(hours t)
-    { return std::to_string(t.count()) + " h"; }
-
-
     std::string
     seconds_to_human(dbl_seconds s, bool show_positive)
     {
