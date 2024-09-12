@@ -30,39 +30,40 @@ is rebooted.**
 
 Note: options can be reset back to their default value by pressing **X**.
 
- - **Syncing Enabled**: Enables the plugin. Default is "**off**". That means the plugin
-   will not adjust the clock until you configure it, and set this option to "**on**".
+ - **Synchronize on boot**: Synchronizes the clock on every boot. Default is **off**.
 
- - **Show Notifications**: Controls how notifications are shown while the plugin
+ - **Synchronize after changing configuration**: Synchronizes the clock when closing the
+   configuration menu, if any change was made. Default is **on**.
+
+ - **Show notifications**: Controls how notifications are shown while the plugin
    runs. Default is "**normal**". For more detailed notifications you can set this to
-   "verbose".
+   "**verbose**".
 
- - **Time Zone Offset**: The offset of your time zone. Use **L**/**R** to adjust the
-   hours, **🡸**/**🡺** to adjust the minutes.
-
- - **Detect Time Zone (press A)**: Selects an online service to guess the local time zone
-   offset. This is done using a free IP geolocation online service. If your time zone is
-   not being detected correctly, try changing this option to a different service. Pressing
-   **A** will query the selected online service, and update the time zone offset.
-
- - **Auto Update Time Zone Offset**: Automatically query and update the time zone offset
-   before synchronizing the clock. Default is "**off**". This option is useful for
-   automatically adjusting for Daylight Saving Time changes.
-
- - **Notification Duration**: How long notifications should remain on screen. Default is
+ - **Notification duration**: How long notifications should remain on screen. Default is
    **5 s**.
 
- - **Timeout**: How many seconds to wait for a NTP response from a server. Default is *5
+ - **Time offset**: The offset of your time zone.
+
+ - **Detect time zone offset**: Selects an online service to guess the local time zone
+   offset. This is done using a free IP geolocation online service. If your time zone is
+   not being detected correctly, try changing this option to a different service. Pressing
+   **A** will query the selected online service, and update the **Time offset** option.
+
+ - **Auto update time zone**: Automatically query and update the time zone offset before
+   synchronizing the clock. Default is "**off**". This option is useful for automatically
+   adjusting for Daylight Saving Time changes.
+
+ - **Timeout**: How many seconds to wait for a NTP response from a server. Default is **5
    s**.
 
- - **Tolerance**: How many milliseconds of error will be tolerated until
-   the clock is adjusted. Default is **500 ms**.
+ - **Tolerance**: How many milliseconds of error will be tolerated until the clock is
+   adjusted. Default is **500 ms**.
 
- - **Background Threads**: Maximum number of background threads to use for NTP
+ - **Background threads**: Maximum number of background threads to use for NTP
    queries. Default is **4**, because the default server (`pool.ntp.org`) returns 4
    different addresses, so all 4 servers will be queried at the same time.
 
- - **NTP Servers**: Shows one or more NTP servers that will be contacted for
+ - **NTP servers**: Shows one or more NTP servers that will be contacted for
    synchronization. Multiple servers can be specified, separated by spaces. Default is
    `pool.ntp.org`. **This option cannot be edited within the plugin, you must edit the
    JSON configuration file manually to change it.**
@@ -71,6 +72,11 @@ Note: options can be reset back to their default value by pressing **X**.
 ### Preview screen
 
 The **Preview** screen allows for testing the plugin, without modifying the clock.
+
+### Synchronize now!
+
+Press **A** on this option to run the synchronization immediately, **B** to cancel the
+operation.
 
 
 ## Build instructions
