@@ -286,7 +286,6 @@ namespace core {
 
     void
     run(std::stop_token token,
-        bool update_clock,
         bool silent)
     {
         using time_utils::seconds_to_human;
@@ -419,14 +418,12 @@ namespace core {
         // cancellation point: before modifying the clock
         check_stop(token);
 
-        if (update_clock) {
-            if (!apply_clock_correction(avg))
-                throw runtime_error{"Failed to set system clock!"};
+        if (!apply_clock_correction(avg))
+            throw runtime_error{"Failed to set system clock!"};
 
-            if (!silent)
-                notify::success(notify::level::normal,
-                                "Clock corrected by " + seconds_to_human(avg, true));
-        }
+        if (!silent)
+            notify::success(notify::level::normal,
+                            "Clock corrected by " + seconds_to_human(avg, true));
 
     }
 

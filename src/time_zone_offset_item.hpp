@@ -17,6 +17,15 @@
 
 struct time_zone_offset_item : wups::config::var_item<std::chrono::minutes> {
 
+    enum field_id : unsigned {
+        hours,
+        minutes,
+    };
+
+
+    field_id editing;
+
+
     time_zone_offset_item(const std::string& label,
                           std::chrono::minutes& variable,
                           std::chrono::minutes default_value);

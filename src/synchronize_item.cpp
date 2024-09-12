@@ -46,7 +46,7 @@ synchronize_item::on_started()
     {
         try {
             logger::guard lguard;
-            core::run(token, true, true);
+            core::run(token, true);
             current_state = state::finished;
         }
         catch (std::exception& e) {

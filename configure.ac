@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([Time-Sync],
+AC_INIT([Time Sync],
         [4.2+],
         [https://github.com/dkosmari/Time-Sync/issues],
         [time-sync],

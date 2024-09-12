@@ -59,8 +59,8 @@ namespace cfg {
 
 
     namespace labels {
-        const char* auto_tz         = "Auto update time zone";
-        const char* msg_duration    = "Notification duration";
+        const char* auto_tz         = "   └ Auto update time zone";
+        const char* msg_duration    = " └ Notification duration";
         const char* notify          = "Show notifications";
         const char* server          = "NTP servers";
         const char* sync_on_boot    = "Synchronize on boot";
@@ -68,7 +68,7 @@ namespace cfg {
         const char* threads         = "Background threads";
         const char* timeout         = "Timeout";
         const char* tolerance       = "Tolerance";
-        const char* tz_service      = "Detect time zone";
+        const char* tz_service      = " └ Detect time zone offset";
         const char* utc_offset      = "Time offset (UTC)";
     }
 
@@ -149,6 +149,11 @@ namespace cfg {
                                        cfg::notify,
                                        cfg::defaults::notify));
 
+        cat.add(seconds_item::create(cfg::labels::msg_duration,
+                                     cfg::msg_duration,
+                                     cfg::defaults::msg_duration,
+                                     1s, 30s, 5s));
+
         cat.add(time_zone_offset_item::create(cfg::labels::utc_offset,
                                               cfg::utc_offset,
                                               cfg::defaults::utc_offset));
@@ -161,11 +166,6 @@ namespace cfg {
                                   cfg::auto_tz,
                                   cfg::defaults::auto_tz,
                                   "on", "off"));
-
-        cat.add(seconds_item::create(cfg::labels::msg_duration,
-                                     cfg::msg_duration,
-                                     cfg::defaults::msg_duration,
-                                     1s, 30s, 5s));
 
         cat.add(seconds_item::create(cfg::labels::timeout,
                                      cfg::timeout,
@@ -217,7 +217,7 @@ namespace cfg {
                     logger::guard lguard{PACKAGE_NAME};
                     notify::guard nguard;
                     try {
-                        core::run(token, true, false);
+                        core::run(token, false);
                     }
                     catch (std::exception& e) {
                         notify::error(notify::level::normal, e.what());

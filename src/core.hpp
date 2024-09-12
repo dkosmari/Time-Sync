@@ -26,7 +26,6 @@ namespace core {
 
     void
     run(std::stop_token token,
-        bool update_clock,
         bool silent);
 
     std::string local_clock_to_string();

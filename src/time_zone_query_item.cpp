@@ -76,7 +76,8 @@ time_zone_query_item::on_input(const simple_pad_data& input)
 {
 
     const int n = utils::get_num_tz_services();
-    // auto prev_variable = variable;
+
+    auto prev_variable = variable;
 
     if (input.buttons_d & WUPS_CONFIG_BUTTON_LEFT)
         --variable;
@@ -90,13 +91,28 @@ time_zone_query_item::on_input(const simple_pad_data& input)
     if (variable >= n)
         variable -= n;
 
-    if (!(input.buttons_d & WUPS_CONFIG_BUTTON_B))
+    if (prev_variable != variable)
         text = make_query_text(variable);
 
-    if (input.buttons_d & WUPS_CONFIG_BUTTON_A)
-        run();
+    if (input.buttons_d & WUPS_CONFIG_BUTTON_X) {
+        restore_default();
+        text = make_query_text(variable);
+        return focus_status::lose;
+    }
 
-    return var_item::on_input(input);
+    if (input.buttons_d & WUPS_CONFIG_BUTTON_B) {
+        cancel_change();
+        text = make_query_text(variable);
+        return focus_status::lose;
+    }
+
+    if (input.buttons_d & WUPS_CONFIG_BUTTON_A) {
+        confirm_change();
+        run();
+        return focus_status::lose;
+    }
+
+    return focus_status::keep;
 }
 
 

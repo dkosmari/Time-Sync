@@ -46,7 +46,7 @@ INITIALIZE_PLUGIN()
                 wups::logger::guard lguard{PACKAGE_NAME};
                 notify::guard nguard;
                 try {
-                    core::run(token, true, false);
+                    core::run(token, false);
                 }
                 catch (std::exception& e) {
                     notify::error(notify::level::normal, e.what());
