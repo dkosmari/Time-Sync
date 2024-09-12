@@ -45,7 +45,6 @@ namespace logger = wups::logger;
 using time_utils::dbl_seconds;
 
 
-
 namespace {
 
     // Difference from NTP (1900) to Wii U (2000) epochs.
@@ -152,6 +151,7 @@ namespace core {
 
         unsigned poll_attempts = 0;
         const unsigned max_poll_attempts = 4;
+
     try_again_poll:
         // cancellation point: before polling
         check_stop(token);
@@ -197,8 +197,8 @@ namespace core {
         ntp::timestamp t1_received = packet.origin_time;
         if (t1 != t1_received)
             throw runtime_error{"NTP response mismatch: ["s
-                                     + ::to_string(t1) + "] vs ["s
-                                     + ::to_string(t1_received) + "]"s};
+                                + ::to_string(t1) + "] vs ["s
+                                + ::to_string(t1_received) + "]"s};
 
         // when our request arrived at the server
         auto t2 = packet.receive_time;
@@ -357,9 +357,6 @@ namespace core {
 
         if (addresses.empty()) {
             // Probably a mistake in config, or network failure.
-            if (!silent)
-                notify::error(notify::level::normal,
-                              "No NTP address could be used.");
             throw runtime_error{"No NTP address could be used."};
         }
 

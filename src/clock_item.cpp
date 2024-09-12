@@ -23,7 +23,6 @@
 #include "utils.hpp"
 
 
-
 using namespace std::literals;
 using namespace wups::config;
 
