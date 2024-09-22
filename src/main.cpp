@@ -23,9 +23,6 @@
 #endif
 
 
-using namespace std::literals;
-
-
 // Important plugin information.
 WUPS_PLUGIN_NAME(PACKAGE_NAME);
 WUPS_PLUGIN_DESCRIPTION("A plugin that synchronizes the system clock to the Internet.");
