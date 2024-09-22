@@ -11,7 +11,6 @@
 
 #include <chrono>
 #include <string>
-#include <type_traits>
 
 
 namespace time_utils {
