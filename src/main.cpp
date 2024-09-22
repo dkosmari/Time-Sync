@@ -7,9 +7,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <exception>
-#include <thread>
-
 #include <wups.h>
 
 #include <wupsxx/logger.hpp>
