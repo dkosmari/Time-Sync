@@ -196,10 +196,8 @@ namespace cfg {
     {
         logger::initialize(PACKAGE_NAME);
 
-        // logger::printf("reloading configs\n");
         cfg::reload();
 
-        // logger::printf("building config items\n");
         root.add(make_config_screen());
         root.add(make_preview_screen());
         root.add(synchronize_item::create());
@@ -211,24 +209,9 @@ namespace cfg {
     void
     menu_close()
     {
-        if (cfg::sync_on_changes && important_vars_changed()) {
-            std::jthread t{
-                [](std::stop_token token)
-                {
-                    logger::guard lguard{PACKAGE_NAME};
-                    notify::guard nguard;
-                    try {
-                        core::run(token, false);
-                    }
-                    catch (std::exception& e) {
-                        notify::error(notify::level::normal, e.what());
-                    }
-                }
-            };
-            t.detach();
-        }
+        if (cfg::sync_on_changes && important_vars_changed())
+            core::background::run();
 
-        // logger::printf("saving config\n");
         cfg::save();
 
         logger::finalize();
@@ -271,7 +254,6 @@ namespace cfg {
             LOAD(tz_service);
             LOAD(utc_offset);
 #undef LOAD
-            // logger::printf("Loaded settings.\n");
         }
         catch (std::exception& e) {
             logger::printf("Error loading config: %s\n", e.what());
@@ -310,7 +292,6 @@ namespace cfg {
             STORE(utc_offset);
 #undef STORE
             wups::storage::save();
-            // logger::printf("Saved settings\n");
         }
         catch (std::exception& e) {
             logger::printf("Error saving config: %s\n", e.what());
