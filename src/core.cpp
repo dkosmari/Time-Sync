@@ -95,7 +95,7 @@ namespace {
         return ticks_to_string(ticks);
     }
 
-}
+} // namespace
 
 
 namespace core {
@@ -295,6 +295,10 @@ namespace core {
     {
         using time_utils::seconds_to_human;
 
+        utils::network_guard net_guard;
+        if (!net_guard)
+            throw runtime_error{"Network not available."};
+
         // ensure notification is initialized if needed
         notify::guard notify_guard{cfg::notify > 0};
 
@@ -492,8 +496,5 @@ namespace core {
 
 
     } // namespace background
-
-
-
 
 } // namespace core

@@ -9,12 +9,17 @@
 #include <iterator>             // distance()
 #include <stdexcept>            // logic_error, runtime_error
 
+#include <nn/ac.h>
+
 #include "utils.hpp"
 
 #include "http_client.hpp"
 
 
 using namespace std::literals;
+
+using std::logic_error;
+using std::runtime_error;
 
 
 namespace utils {
@@ -123,7 +128,7 @@ namespace utils {
         case 2:
             return "https://ipapi.co";
         default:
-            throw std::logic_error{"invalid tz service"};
+            throw logic_error{"invalid tz service"};
         }
     }
 
@@ -132,7 +137,7 @@ namespace utils {
     fetch_timezone(int idx)
     {
         if (idx < 0 || idx >= num_tz_services)
-            throw std::logic_error{"invalid service"};
+            throw logic_error{"invalid service"};
 
         const char* service = get_tz_service_name(idx);
 
@@ -142,6 +147,10 @@ namespace utils {
             "https://ipapi.co/csv"
         };
 
+        network_guard net_guard;
+        if (!net_guard)
+            throw runtime_error{"Network not available."};
+
         std::string response = http::get(urls[idx]);
 
         switch (idx) {
@@ -150,7 +159,7 @@ namespace utils {
             {
                 auto tokens = csv_split(response);
                 if (size(tokens) != 2)
-                    throw std::runtime_error{"Could not parse response from "s + service};
+                    throw runtime_error{"Could not parse response from "s + service};
                 std::string name = tokens[0];
                 auto offset = std::chrono::seconds{std::stoi(tokens[1])};
                 return {name, duration_cast<std::chrono::minutes>(offset)};
@@ -163,18 +172,18 @@ namespace utils {
                 // returned as +HHMM, not seconds.
                 auto lines = split(response, "\r\n");
                 if (size(lines) != 2)
-                    throw std::runtime_error{"Could not parse response from "s + service};
+                    throw runtime_error{"Could not parse response from "s + service};
 
                 auto keys = csv_split(lines[0]);
                 auto values = csv_split(lines[1]);
                 if (size(keys) != size(values))
-                    throw std::runtime_error{"Incoherent response from "s + service};
+                    throw runtime_error{"Incoherent response from "s + service};
 
                 auto tz_it = std::ranges::find(keys, "timezone");
                 auto offset_it = std::ranges::find(keys, "utc_offset");
                 if (tz_it == keys.end() || offset_it == keys.end())
-                    throw std::runtime_error{"Could not find timezone or utc_offset fields"
-                                             " in response."};
+                    throw runtime_error{"Could not find timezone or utc_offset fields"
+                                        " in response."};
 
                 auto tz_idx = std::distance(keys.begin(), tz_it);;
                 auto offset_idx = std::distance(keys.begin(), offset_it);
@@ -182,7 +191,7 @@ namespace utils {
                 std::string name = values[tz_idx];
                 std::string hhmm = values[offset_idx];
                 if (empty(hhmm))
-                    throw std::runtime_error{"Invalid UTC offset string."};
+                    throw runtime_error{"Invalid UTC offset string."};
 
                 char sign = hhmm[0];
                 std::string hh = hhmm.substr(1, 2);
@@ -196,9 +205,31 @@ namespace utils {
             }
 
         default:
-            throw std::logic_error{"invalid tz service"};
+            throw logic_error{"invalid tz service"};
         }
 
+    }
+
+
+    network_guard::network_guard() :
+        initialized{nn::ac::Initialize()},
+        connected{initialized && nn::ac::Connect()}
+    {}
+
+
+    network_guard::~network_guard()
+    {
+        if (connected)
+            nn::ac::Close();
+        if (initialized)
+            nn::ac::Finalize();
+    }
+
+
+    network_guard::operator bool()
+        const noexcept
+    {
+        return initialized && connected;
     }
 
 } // namespace utils

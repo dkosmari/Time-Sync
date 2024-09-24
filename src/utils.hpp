@@ -56,6 +56,17 @@ namespace utils {
               std::chrono::minutes>
     fetch_timezone(int idx);
 
+
+    struct network_guard {
+        bool initialized;
+        bool connected;
+
+        network_guard();
+        ~network_guard();
+
+        operator bool() const noexcept;
+    };
+
 } // namespace utils
 
 #endif
