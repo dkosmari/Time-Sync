@@ -59,7 +59,6 @@ namespace utils {
 
     // RAII class to ensure network is working.
     // It blocks until the network is available, of throws std::runtime_error.
-
     class network_guard {
 
         struct init_guard {

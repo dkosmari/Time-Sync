@@ -128,7 +128,7 @@ namespace utils {
         case 2:
             return "https://ipapi.co";
         default:
-            throw logic_error{"invalid tz service"};
+            throw logic_error{"Invalid tz service."};
         }
     }
 
@@ -136,9 +136,6 @@ namespace utils {
     std::pair<std::string, std::chrono::minutes>
     fetch_timezone(int idx)
     {
-        if (idx < 0 || idx >= num_tz_services)
-            throw logic_error{"invalid service"};
-
         const char* service = get_tz_service_name(idx);
 
         static const char* urls[num_tz_services] = {
@@ -203,7 +200,7 @@ namespace utils {
             }
 
         default:
-            throw logic_error{"invalid tz service"};
+            throw logic_error{"Invalid tz service."};
         }
 
     }
@@ -212,7 +209,7 @@ namespace utils {
     network_guard::init_guard::init_guard()
     {
         if (!nn::ac::Initialize())
-            throw runtime_error{"network error (nn::ac::Initialize() failed)"};
+            throw runtime_error{"Network error (nn::ac::Initialize() failed)"};
     }
 
 
@@ -225,7 +222,7 @@ namespace utils {
     network_guard::connect_guard::connect_guard()
     {
         if (!nn::ac::Connect())
-            throw runtime_error{"network error (nn::ac::Connect() failed)"};
+            throw runtime_error{"Network error (nn::ac::Connect() failed)"};
     }
 
 
