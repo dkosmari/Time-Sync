@@ -148,8 +148,6 @@ namespace utils {
         };
 
         network_guard net_guard;
-        if (!net_guard)
-            throw runtime_error{"Network not available."};
 
         std::string response = http::get(urls[idx]);
 
@@ -211,25 +209,29 @@ namespace utils {
     }
 
 
-    network_guard::network_guard() :
-        initialized{nn::ac::Initialize()},
-        connected{initialized && nn::ac::Connect()}
-    {}
-
-
-    network_guard::~network_guard()
+    network_guard::init_guard::init_guard()
     {
-        if (connected)
-            nn::ac::Close();
-        if (initialized)
-            nn::ac::Finalize();
+        if (!nn::ac::Initialize())
+            throw runtime_error{"network error (nn::ac::Initialize() failed)"};
     }
 
 
-    network_guard::operator bool()
-        const noexcept
+    network_guard::init_guard::~init_guard()
     {
-        return initialized && connected;
+        nn::ac::Finalize();
+    }
+
+
+    network_guard::connect_guard::connect_guard()
+    {
+        if (!nn::ac::Connect())
+            throw runtime_error{"network error (nn::ac::Connect() failed)"};
+    }
+
+
+    network_guard::connect_guard::~connect_guard()
+    {
+        nn::ac::Close();
     }
 
 } // namespace utils

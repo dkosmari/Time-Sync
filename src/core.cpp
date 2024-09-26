@@ -296,8 +296,6 @@ namespace core {
         using time_utils::seconds_to_human;
 
         utils::network_guard net_guard;
-        if (!net_guard)
-            throw runtime_error{"Network not available."};
 
         // ensure notification is initialized if needed
         notify::guard notify_guard{cfg::notify > 0};

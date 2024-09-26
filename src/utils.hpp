@@ -57,14 +57,24 @@ namespace utils {
     fetch_timezone(int idx);
 
 
-    struct network_guard {
-        bool initialized;
-        bool connected;
+    // RAII class to ensure network is working.
+    // It blocks until the network is available, of throws std::runtime_error.
 
-        network_guard();
-        ~network_guard();
+    class network_guard {
 
-        operator bool() const noexcept;
+        struct init_guard {
+            init_guard();
+            ~init_guard();
+        };
+
+        struct connect_guard {
+            connect_guard();
+            ~connect_guard();
+        };
+
+        init_guard init;
+        connect_guard conn;
+
     };
 
 } // namespace utils
