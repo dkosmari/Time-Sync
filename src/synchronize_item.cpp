@@ -7,6 +7,7 @@
  */
 
 #include <cstdio>
+#include <utility>
 
 #include <wupsxx/cafe_glyphs.h>
 #include <wupsxx/logger.hpp>
@@ -40,7 +41,7 @@ synchronize_item::on_started()
 {
     status_msg = "Synchronizing...";
 
-    sync_stopper = {};
+    task_stopper = {};
 
     auto task = [this](std::stop_token token)
     {
@@ -55,9 +56,9 @@ synchronize_item::on_started()
         }
     };
 
-    sync_result = std::async(std::launch::async,
-                             task,
-                             sync_stopper.get_token());
+    task_result = std::async(std::launch::async,
+                             std::move(task),
+                             task_stopper.get_token());
 }
 
 
@@ -65,7 +66,7 @@ void
 synchronize_item::on_finished()
 {
     try {
-        sync_result.get();
+        task_result.get();
         status_msg = "Success!";
         cfg::save_important_vars();
     }
@@ -79,5 +80,5 @@ synchronize_item::on_finished()
 void
 synchronize_item::on_cancel()
 {
-    sync_stopper.request_stop();
+    task_stopper.request_stop();
 }
