@@ -55,7 +55,9 @@ synchronize_item::on_started()
         }
     };
 
-    sync_result = std::async(task, sync_stopper.get_token());
+    sync_result = std::async(std::launch::async,
+                             task,
+                             sync_stopper.get_token());
 }
 
 
