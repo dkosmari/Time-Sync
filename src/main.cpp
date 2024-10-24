@@ -22,8 +22,8 @@
 
 // Important plugin information.
 WUPS_PLUGIN_NAME(PACKAGE_NAME);
-WUPS_PLUGIN_DESCRIPTION("A plugin that synchronizes the system clock to the Internet.");
 WUPS_PLUGIN_VERSION(PACKAGE_VERSION);
+WUPS_PLUGIN_DESCRIPTION("A plugin that synchronizes the system clock to the Internet.");
 WUPS_PLUGIN_AUTHOR("Nightkingale, Daniel K. O.");
 WUPS_PLUGIN_LICENSE("MIT");
 
@@ -36,13 +36,23 @@ INITIALIZE_PLUGIN()
     wups::logger::guard guard{PACKAGE_NAME};
 
     cfg::init();
-
-    if (cfg::sync_on_boot)
-        core::background::run();
 }
 
 
 DEINITIALIZE_PLUGIN()
+{
+    core::background::stop();
+}
+
+
+ON_APPLICATION_START()
+{
+    if (cfg::sync_on_boot)
+        core::background::run_once();
+}
+
+
+ON_APPLICATION_REQUESTS_EXIT()
 {
     core::background::stop();
 }
