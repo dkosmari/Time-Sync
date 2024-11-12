@@ -1,10 +1,11 @@
 name: Build Binary
 
-on: [push, pull_request, workflow_dispatch]
+# on: [push, pull_request, workflow_dispatch]
+on: [workflow_dispatch]
 
 jobs:
   build-plugin:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Build plugin
     steps:
     - name: Checkout
@@ -14,13 +15,13 @@ jobs:
         submodules: true
 
     - name: Setup Docker
-      run: docker build --tag plugin-builder .
+      run: docker build --tag plugin-image .
 
     - name: Build
       uses: addnab/docker-run-action@v3
       with:
-        image: plugin-builder
-        options: --name plugin-builder-container
+        image: plugin-image
+        options: --name plugin-container
         run: |
           ./bootstrap
           ./configure --host=powerpc-eabi CXXFLAGS="-Os -ffunction-sections -fipa-pta"
@@ -29,7 +30,7 @@ jobs:
     - name: Copy from container to host
       uses: tj-actions/docker-cp@v2
       with:
-        container: plugin-builder-container
+        container: plugin-container
         source: /project/src/time-sync.wps
         destination: time-sync.wps
 
@@ -37,5 +38,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: time-sync.wps
-        path: "*.wps"
+        path: time-sync.wps
         if-no-files-found: error
