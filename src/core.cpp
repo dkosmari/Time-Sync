@@ -473,8 +473,8 @@ namespace core {
             std::jthread t{
                 [](std::stop_token token)
                 {
-                    wups::logger::guard lguard{PACKAGE_NAME};
-                    notify::guard nguard;
+                    wups::logger::guard logger_guard{PACKAGE_NAME};
+                    notify::guard notify_guard;
                     try {
                         // Note: we wait 5 seconds, to minimize spurious network errors.
                         sleep_for(5s, token);
