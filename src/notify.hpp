@@ -1,7 +1,7 @@
 /*
  * Time Sync - A NTP client plugin for the Wii U.
  *
- * Copyright (C) 2024  Daniel K. O.
+ * Copyright (C) 2025  Daniel K. O.
  *
  * SPDX-License-Identifier: MIT
  */
