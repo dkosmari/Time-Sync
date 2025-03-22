@@ -331,7 +331,8 @@ namespace core {
             }
             catch (std::exception& e) {
                 if (!silent)
-                    notify::error("Failed to update time zone: %s",
+                    notify::error(notify::level::verbose,
+                                  "Failed to update time zone: %s",
                                   e.what());
                 // Note: not a fatal error, we just keep using the previous time zone.
             }
@@ -348,7 +349,7 @@ namespace core {
         // Some IP addresses might be duplicated when we use "pool.ntp.org".
         std::set<net::address> addresses;
         {
-            // nested scope so the futures vector is destroyed
+            // nested scope so the futures vector is destroyed early
             using info_vec = std::vector<net::addrinfo::result>;
             std::vector<std::future<info_vec>> futures(servers.size());
 
@@ -368,7 +369,7 @@ namespace core {
                 }
                 catch (std::exception& e) {
                     if (!silent)
-                        notify::error("%s", e.what());
+                        notify::error(notify::level::verbose, "%s", e.what());
                 }
         }
 
@@ -409,7 +410,8 @@ namespace core {
             }
             catch (std::exception& e) {
                 if (!silent)
-                    notify::error("%s: %s",
+                    notify::error(notify::level::verbose,
+                                  "%s: %s",
                                   to_string(address).data(),
                                   e.what());
             }
@@ -486,7 +488,7 @@ namespace core {
                         state = state_t::canceled;
                     }
                     catch (std::exception& e) {
-                        notify::error("%s", e.what());
+                        notify::error(notify::level::normal, "%s", e.what());
                         state = state_t::finished;
                     }
                 }

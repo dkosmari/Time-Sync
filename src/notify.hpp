@@ -37,9 +37,10 @@ namespace notify {
     set_duration(std::chrono::milliseconds dur)
         noexcept;
 
-    __attribute__(( __format__ (__printf__, 1, 2)))
+    __attribute__(( __format__ (__printf__, 2, 3)))
     void
-    error(const char* fmt,
+    error(level lvl,
+          const char* fmt,
           ...)
         noexcept;
 

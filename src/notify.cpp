@@ -66,9 +66,10 @@ namespace notify {
     }
 
 
-    __attribute__(( __format__ (__printf__, 1, 2)))
+    __attribute__(( __format__ (__printf__, 2, 3)))
     void
-    error(const char* fmt,
+    error(level lvl,
+          const char* fmt,
           ...)
         noexcept
     {
@@ -81,7 +82,8 @@ namespace notify {
         catch (...) {}
         va_end(logger_args);
 
-        // Note: errors are always shown, regardless of the max verbosity level.
+        if (lvl > max_level)
+            return;
 
         std::va_list notify_args;
         va_start(notify_args, fmt);

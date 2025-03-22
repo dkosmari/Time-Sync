@@ -11,7 +11,7 @@ Sync** to work. Visit the [hacking guide](https://wiiu.hacks.guide/) for instruc
 how to install Aroma.
 
 The [latest version of the
- plugin](https://github.com/dkosmari/Time-Sync/releases/latest/download/Time_Sync.wps) can
+ plugin](https://github.com/dkosmari/Time-Sync/releases/latest/download/time-sync.wps) can
  be found in the [releases page](https://github.com/dkosmari/Time-Sync/releases).
 
  The `.wps` file should be placed on your SD card, in `sd:/wiiu/environments/aroma/plugins`.
@@ -28,7 +28,7 @@ is rebooted.**
 
 ### Configuration screen
 
-Note: options can be reset back to their default value by pressing **X**.
+> Note: options can be reset back to their default value by pressing **X**.
 
  - **Synchronize on boot**: Synchronizes the clock on every boot. Default is **off**.
 
@@ -37,7 +37,7 @@ Note: options can be reset back to their default value by pressing **X**.
 
  - **Show notifications**: Controls how notifications are shown while the plugin
    runs. Default is "**normal**". For more detailed notifications you can set this to
-   "**verbose**".
+   "**verbose**". To hide all notifications (except errors) set it to **quiet**.
 
  - **Notification duration**: How long notifications should remain on screen. Default is
    **5 s**.
@@ -51,13 +51,13 @@ Note: options can be reset back to their default value by pressing **X**.
 
  - **Auto update time zone**: Automatically query and update the time zone offset before
    synchronizing the clock. Default is "**off**". This option is useful for automatically
-   adjusting for Daylight Saving Time changes.
+   adjusting for **Daylight Saving Time** changes.
 
  - **Timeout**: How many seconds to wait for a NTP response from a server. Default is **5
    s**.
 
  - **Tolerance**: How many milliseconds of error will be tolerated until the clock is
-   adjusted. Default is **500 ms**.
+   adjusted. Default is **1000 ms**.
 
  - **Background threads**: Maximum number of background threads to use for NTP
    queries. Default is **4**, because the default server (`pool.ntp.org`) returns 4
@@ -72,6 +72,7 @@ Note: options can be reset back to their default value by pressing **X**.
 ### Preview screen
 
 The **Preview** screen allows for testing the plugin, without modifying the clock.
+
 
 ### Synchronize now!
 
