@@ -13,7 +13,6 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/main.cpp])
 
 WIIU_WUPS_INIT
-WIIU_WUMS_INIT
 
 AM_INIT_AUTOMAKE([foreign])
 
@@ -30,7 +29,7 @@ WIIU_WUMS_CHECK_LIBNOTIFICATIONS
 
 AM_EXTRA_RECURSIVE_TARGETS([run])
 
-AC_CONFIG_SUBDIRS([external/libwupsxx])
+AX_SUBDIRS_CONFIGURE([external/libwupsxx], [--enable-notify])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile

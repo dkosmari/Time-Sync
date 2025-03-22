@@ -1,20 +1,17 @@
 /*
  * Time Sync - A NTP client plugin for the Wii U.
  *
- * Copyright (C) 2024  Daniel K. O.
+ * Copyright (C) 2025  Daniel K. O.
  *
  * SPDX-License-Identifier: MIT
  */
 
-#include <atomic>
-
-#include <notifications/notifications.h>
+#include <cstdarg>
 
 #include <wupsxx/logger.hpp>
+#include <wupsxx/notify.hpp>
 
 #include "notify.hpp"
-
-#include "cfg.hpp"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -26,112 +23,123 @@ namespace logger = wups::logger;
 
 namespace notify {
 
-    std::atomic_uint refs = 0;
+    level max_level = level::quiet;
 
 
     void
     initialize()
     {
-        // don't initialize again if refs was already positive
-        if (refs++)
-            return;
+        wups::notify::initialize(PACKAGE_NAME);
 
-        NotificationModule_InitLibrary();
+        wups::notify::info::set_text_color(255, 255, 255, 255);
+        wups::notify::info::set_bg_color(32, 32, 160, 255);
+
+        wups::notify::error::set_text_color(255, 255, 255, 255);
+        wups::notify::error::set_bg_color(160, 32, 32, 255);
     }
 
 
     void
     finalize()
     {
-        if (!refs)
-            return;
-
-        // don't finalize if refs is still positive
-        if (--refs)
-            return;
-
-        NotificationModule_DeInitLibrary();
+        wups::notify::finalize();
     }
 
 
     void
-    error(level lvl, const std::string& arg)
+    set_max_level(level lvl)
     {
-        logger::printf("ERROR: %s\n", arg.c_str());
-
-        if (static_cast<int>(lvl) > cfg::notify)
-            return;
-
-        std::string msg = "[" PACKAGE_NAME "] " + arg;
-        NotificationModule_AddErrorNotificationEx(msg.c_str(),
-                                                  cfg::msg_duration.count(),
-                                                  1,
-                                                  {255, 255, 255, 255},
-                                                  {160, 32, 32, 255},
-                                                  nullptr,
-                                                  nullptr,
-                                                  true);
+        max_level = lvl;
     }
 
 
     void
-    info(level lvl, const std::string& arg)
+    set_duration(std::chrono::milliseconds dur)
     {
-        logger::printf("INFO: %s\n", arg.c_str());
+        wups::notify::info::set_duration(dur);
+        wups::notify::error::set_duration(dur);
+    }
 
-        if (static_cast<int>(lvl) > cfg::notify)
+
+    __attribute__(( __format__ (__printf__, 2, 3)))
+    void
+    error(level lvl, const char* fmt, ...)
+    {
+        {
+            std::va_list args;
+            va_start(args, fmt);
+            logger::vprintf(fmt, args);
+            va_end(args);
+        }
+
+        if (lvl > max_level)
             return;
 
-        std::string msg = "[" PACKAGE_NAME "] " + arg;
-        NotificationModule_AddInfoNotificationEx(msg.c_str(),
-                                                 cfg::msg_duration.count(),
-                                                 {255, 255, 255, 255},
-                                                 {32, 32, 160, 255},
-                                                 nullptr,
-                                                 nullptr,
-                                                 true);
+        std::va_list args;
+        va_start(args, fmt);
+        try {
+            wups::notify::error::vshow(fmt, args);
+        }
+        catch (std::exception& e) {
+            logger::printf("notification error: %s\n", e.what());
+        }
+        va_end(args);
+
     }
 
 
+    __attribute__(( __format__ (__printf__, 2, 3)))
     void
-    success(level lvl, const std::string& arg)
+    info(level lvl, const char* fmt, ...)
     {
-        logger::printf("SUCCESS: %s\n", arg.c_str());
+        {
+            std::va_list args;
+            va_start(args, fmt);
+            logger::vprintf(fmt, args);
+            va_end(args);
+        }
 
-        if (static_cast<int>(lvl) > cfg::notify)
+        if (lvl > max_level)
             return;
 
-        std::string msg = "[" PACKAGE_NAME "] " + arg;
-        NotificationModule_AddInfoNotificationEx(msg.c_str(),
-                                                 cfg::msg_duration.count(),
-                                                 {255, 255, 255, 255},
-                                                 {32, 160, 32, 255},
-                                                 nullptr,
-                                                 nullptr,
-                                                 true);
+        std::va_list args;
+        va_start(args, fmt);
+        try {
+            wups::notify::info::vshow(fmt, args);
+        }
+        catch (std::exception& e) {
+            logger::printf("notification error: %s\n", e.what());
+        }
+        va_end(args);
     }
 
 
-    guard::guard(bool init) :
-        must_finalize{init}
-    {
-        if (init)
-            initialize();
-    }
-
-
-    guard::~guard()
-    {
-        if (must_finalize)
-            finalize();
-    }
-
-
+    __attribute__(( __format__ (__printf__, 2, 3)))
     void
-    guard::release()
+    success(level lvl, const char* fmt, ...)
     {
-        must_finalize = false;
+        {
+            std::va_list args;
+            va_start(args, fmt);
+            logger::vprintf(fmt, args);
+            va_end(args);
+        }
+
+        if (lvl > max_level)
+            return;
+
+        std::va_list args;
+        va_start(args, fmt);
+        try {
+            wups::notify::info::vshow(wups::color{255, 255, 255},
+                                      wups::color{32, 160, 32},
+                                      fmt,
+                                      args);
+        }
+        catch (std::exception& e) {
+            logger::printf("notification error: %s\n", e.what());
+        }
+        va_end(args);
     }
 
-
-}
+} // namespace notify

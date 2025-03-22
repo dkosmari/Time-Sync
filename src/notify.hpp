@@ -9,11 +9,10 @@
 #ifndef NOTIFY_HPP
 #define NOTIFY_HPP
 
-#include <string>
+#include <chrono>
 
 
 namespace notify {
-
 
     enum class level : int {
         quiet = 0,
@@ -21,26 +20,24 @@ namespace notify {
         verbose = 2
     };
 
+
     void initialize();
 
     void finalize();
 
 
-    void error(level lvl, const std::string& arg);
+    void set_max_level(level lvl);
 
-    void info(level lvl, const std::string& arg);
+    void set_duration(std::chrono::milliseconds dur);
 
-    void success(level lvl, const std::string& arg);
+    __attribute__(( __format__ (__printf__, 2, 3)))
+    void error(level lvl, const char* fmt, ...);
 
+    __attribute__(( __format__ (__printf__, 2, 3)))
+    void info(level lvl, const char* fmt, ...);
 
-    // RAII type to ensure it's intialized and finalized
-    class guard {
-        bool must_finalize;
-    public:
-        guard(bool init = true);
-        ~guard();
-        void release();
-    };
+    __attribute__(( __format__ (__printf__, 2, 3)))
+    void success(level lvl, const char* fmt, ...);
 
 }
 
