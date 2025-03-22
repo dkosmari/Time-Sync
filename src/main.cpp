@@ -33,7 +33,7 @@ WUPS_USE_STORAGE(PACKAGE_TARNAME);
 
 INITIALIZE_PLUGIN()
 {
-    wups::logger::set_prefix(PACKAGE_NAME);
+    wups::logger::set_prefix(PACKAGE_TARNAME);
     wups::logger::guard guard;
     notify::initialize();
     cfg::init();

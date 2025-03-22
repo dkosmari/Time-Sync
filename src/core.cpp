@@ -331,8 +331,7 @@ namespace core {
             }
             catch (std::exception& e) {
                 if (!silent)
-                    notify::error(notify::level::verbose,
-                                  "Failed to update time zone: %s",
+                    notify::error("Failed to update time zone: %s",
                                   e.what());
                 // Note: not a fatal error, we just keep using the previous time zone.
             }
@@ -369,7 +368,7 @@ namespace core {
                 }
                 catch (std::exception& e) {
                     if (!silent)
-                        notify::error(notify::level::verbose, "%s", e.what());
+                        notify::error("%s", e.what());
                 }
         }
 
@@ -410,8 +409,7 @@ namespace core {
             }
             catch (std::exception& e) {
                 if (!silent)
-                    notify::error(notify::level::verbose,
-                                  "%s: %s",
+                    notify::error("%s: %s",
                                   to_string(address).data(),
                                   e.what());
             }
@@ -488,7 +486,7 @@ namespace core {
                         state = state_t::canceled;
                     }
                     catch (std::exception& e) {
-                        notify::error(notify::level::normal, "%s", e.what());
+                        notify::error("%s", e.what());
                         state = state_t::finished;
                     }
                 }

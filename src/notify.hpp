@@ -14,6 +14,7 @@
 
 namespace notify {
 
+    // Verbosity level for notifications.
     enum class level : int {
         quiet = 0,
         normal = 1,
@@ -21,24 +22,41 @@ namespace notify {
     };
 
 
-    void initialize();
+    void
+    initialize();
 
-    void finalize();
+    void
+    finalize();
 
 
-    void set_max_level(level lvl);
+    void
+    set_max_level(level lvl)
+        noexcept;
 
-    void set_duration(std::chrono::milliseconds dur);
+    void
+    set_duration(std::chrono::milliseconds dur)
+        noexcept;
+
+    __attribute__(( __format__ (__printf__, 1, 2)))
+    void
+    error(const char* fmt,
+          ...)
+        noexcept;
 
     __attribute__(( __format__ (__printf__, 2, 3)))
-    void error(level lvl, const char* fmt, ...);
+    void
+    info(level lvl,
+         const char* fmt,
+         ...)
+        noexcept;
 
     __attribute__(( __format__ (__printf__, 2, 3)))
-    void info(level lvl, const char* fmt, ...);
+    void
+    success(level lvl,
+            const char* fmt,
+            ...)
+        noexcept;
 
-    __attribute__(( __format__ (__printf__, 2, 3)))
-    void success(level lvl, const char* fmt, ...);
-
-}
+} // namespace notify
 
 #endif

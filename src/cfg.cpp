@@ -73,7 +73,7 @@ namespace cfg {
                   seconds, timeout, 5s, 1s, 10s);
 
     WUPSXX_OPTION("Tolerance",
-                  milliseconds, tolerance, 500ms, 0ms, 5s);
+                  milliseconds, tolerance, 1000ms, 0ms, 10s);
 
     WUPSXX_OPTION("Background threads",
                   int, threads, 4, 0, 4);
@@ -91,6 +91,7 @@ namespace cfg {
         &tz_service,
         &auto_tz,
         &timeout,
+        &tolerance,
         &threads,
         &server,
     };

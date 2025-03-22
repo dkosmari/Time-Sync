@@ -10,11 +10,11 @@ AC_INIT([Time Sync],
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([src/main.cpp])
+AC_CONFIG_SRCDIR([src/ntp.cpp])
 
 WIIU_WUPS_INIT
 
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 AC_PROG_CXX
 AC_PROG_RANLIB
@@ -26,12 +26,7 @@ AC_LANG([C++])
 WIIU_WUMS_CHECK_LIBCURLWRAPPER
 WIIU_WUMS_CHECK_LIBNOTIFICATIONS
 
-
-AM_EXTRA_RECURSIVE_TARGETS([run])
-
 AX_SUBDIRS_CONFIGURE([external/libwupsxx], [--enable-notify])
 
-AC_CONFIG_FILES([Makefile
-                 src/Makefile
-                 src/net/Makefile])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

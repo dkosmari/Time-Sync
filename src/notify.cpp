@@ -7,6 +7,7 @@
  */
 
 #include <cstdarg>
+#include <string>
 
 #include <wupsxx/logger.hpp>
 #include <wupsxx/notify.hpp>
@@ -17,6 +18,8 @@
 #include <config.h>
 #endif
 
+
+using namespace std::literals;
 
 namespace logger = wups::logger;
 
@@ -48,6 +51,7 @@ namespace notify {
 
     void
     set_max_level(level lvl)
+        noexcept
     {
         max_level = lvl;
     }
@@ -55,91 +59,104 @@ namespace notify {
 
     void
     set_duration(std::chrono::milliseconds dur)
+        noexcept
     {
         wups::notify::info::set_duration(dur);
         wups::notify::error::set_duration(dur);
     }
 
 
-    __attribute__(( __format__ (__printf__, 2, 3)))
+    __attribute__(( __format__ (__printf__, 1, 2)))
     void
-    error(level lvl, const char* fmt, ...)
+    error(const char* fmt,
+          ...)
+        noexcept
     {
-        {
-            std::va_list args;
-            va_start(args, fmt);
-            logger::vprintf(fmt, args);
-            va_end(args);
-        }
-
-        if (lvl > max_level)
-            return;
-
-        std::va_list args;
-        va_start(args, fmt);
+        std::va_list logger_args;
+        va_start(logger_args, fmt);
         try {
-            wups::notify::error::vshow(fmt, args);
+            std::string logger_fmt = "ERROR: "s + fmt + "\n"s;
+            logger::vprintf(logger_fmt.data(), logger_args);
+        }
+        catch (...) {}
+        va_end(logger_args);
+
+        // Note: errors are always shown, regardless of the max verbosity level.
+
+        std::va_list notify_args;
+        va_start(notify_args, fmt);
+        try {
+            wups::notify::error::vshow(fmt, notify_args);
         }
         catch (std::exception& e) {
             logger::printf("notification error: %s\n", e.what());
         }
-        va_end(args);
-
+        va_end(notify_args);
     }
 
 
     __attribute__(( __format__ (__printf__, 2, 3)))
     void
-    info(level lvl, const char* fmt, ...)
+    info(level lvl,
+         const char* fmt,
+         ...)
+        noexcept
     {
-        {
-            std::va_list args;
-            va_start(args, fmt);
-            logger::vprintf(fmt, args);
-            va_end(args);
+        std::va_list logger_args;
+        va_start(logger_args, fmt);
+        try {
+            std::string logger_fmt = "INFO: "s + fmt + "\n"s;
+            logger::vprintf(logger_fmt.data(), logger_args);
         }
+        catch (...) {}
+        va_end(logger_args);
 
         if (lvl > max_level)
             return;
 
-        std::va_list args;
-        va_start(args, fmt);
+        std::va_list notify_args;
+        va_start(notify_args, fmt);
         try {
-            wups::notify::info::vshow(fmt, args);
+            wups::notify::info::vshow(fmt, notify_args);
         }
         catch (std::exception& e) {
             logger::printf("notification error: %s\n", e.what());
         }
-        va_end(args);
+        va_end(notify_args);
     }
 
 
     __attribute__(( __format__ (__printf__, 2, 3)))
     void
-    success(level lvl, const char* fmt, ...)
+    success(level lvl,
+            const char* fmt,
+            ...)
+        noexcept
     {
-        {
-            std::va_list args;
-            va_start(args, fmt);
-            logger::vprintf(fmt, args);
-            va_end(args);
+        std::va_list logger_args;
+        va_start(logger_args, fmt);
+        try {
+            std::string logger_fmt = "SUCCESS: "s + fmt + "\n"s;
+            logger::vprintf(logger_fmt.data(), logger_args);
         }
+        catch (...) {}
+        va_end(logger_args);
 
         if (lvl > max_level)
             return;
 
-        std::va_list args;
-        va_start(args, fmt);
+        std::va_list notify_args;
+        va_start(notify_args, fmt);
         try {
             wups::notify::info::vshow(wups::color{255, 255, 255},
                                       wups::color{32, 160, 32},
                                       fmt,
-                                      args);
+                                      notify_args);
         }
         catch (std::exception& e) {
             logger::printf("notification error: %s\n", e.what());
         }
-        va_end(args);
+        va_end(notify_args);
     }
 
 } // namespace notify

@@ -5,7 +5,7 @@ on: [workflow_dispatch]
 
 jobs:
   build-plugin:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     name: Build plugin
     steps:
     - name: Checkout
@@ -24,14 +24,14 @@ jobs:
         options: --name plugin-container
         run: |
           ./bootstrap
-          ./configure --host=powerpc-eabi CXXFLAGS="-Os -ffunction-sections -fipa-pta"
+          ./configure --host=powerpc-eabi CXXFLAGS="-Os -ffunction-sections -fipa-pta -flto -Wno-odr" AR=powerpc-eabi-gcc-ar RANLIB=powerpc-eabi-gcc-ranlib
           make
 
     - name: Copy from container to host
       uses: tj-actions/docker-cp@v2
       with:
         container: plugin-container
-        source: /project/src/time-sync.wps
+        source: /project/time-sync.wps
         destination: time-sync.wps
 
     - name: Upload
