@@ -32,12 +32,14 @@ public:
 
     virtual
     void
-    get_display(char* buf, std::size_t size)
+    get_display(char* buf,
+                std::size_t size)
         const override;
 
     virtual
     void
-    get_focused_display(char* buf, std::size_t size)
+    get_focused_display(char* buf,
+                        std::size_t size)
         const override;
 
     virtual
