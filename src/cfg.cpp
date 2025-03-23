@@ -183,6 +183,7 @@ namespace cfg {
         logger::finalize(); // clean up the initialize() from menu_open()
 
         notify::set_max_level(static_cast<notify::level>(notify.value));
+        notify::set_duration(msg_duration.value);
 
         if (sync_on_changes.value && important_vars_changed()) {
             core::background::stop();
@@ -218,6 +219,7 @@ namespace cfg {
         for (auto& opt : all_options)
             opt->load();
         notify::set_max_level(static_cast<notify::level>(notify.value));
+        notify::set_duration(msg_duration.value);
     }
 
 
