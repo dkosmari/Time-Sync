@@ -73,7 +73,7 @@ namespace cfg {
                   seconds, timeout, 5s, 1s, 10s);
 
     WUPSXX_OPTION("Tolerance",
-                  milliseconds, tolerance, 1000ms, 0ms, 10s);
+                  milliseconds, tolerance, 1s, 0ms, 10s);
 
     WUPSXX_OPTION("Background threads",
                   int, threads, 4, 0, 4);
@@ -119,8 +119,8 @@ namespace cfg {
     bool
     important_vars_changed()
     {
-        return previous::auto_tz != auto_tz.value
-            || previous::tolerance != tolerance.value
+        return previous::auto_tz    != auto_tz.value
+            || previous::tolerance  != tolerance.value
             || previous::tz_service != tz_service.value
             || previous::utc_offset != utc_offset.value;
     }
@@ -182,7 +182,7 @@ namespace cfg {
         logger::guard guard; // keep logger active until the function ends
         logger::finalize(); // clean up the initialize() from menu_open()
 
-        notify::set_max_level(static_cast<notify::level>(notify.value));
+        notify::set_max_level(notify::level{notify.value});
         notify::set_duration(msg_duration.value);
 
         if (sync_on_changes.value && important_vars_changed()) {
@@ -199,6 +199,7 @@ namespace cfg {
 
     void
     init()
+        noexcept
     {
         try {
             wups::init(PACKAGE_NAME,
@@ -208,7 +209,7 @@ namespace cfg {
             migrate_old_config();
         }
         catch (std::exception& e) {
-            logger::printf("Init error: %s\n", e.what());
+            logger::printf("Error in cfg::init(): %s\n", e.what());
         }
     }
 
@@ -218,7 +219,7 @@ namespace cfg {
     {
         for (auto& opt : all_options)
             opt->load();
-        notify::set_max_level(static_cast<notify::level>(notify.value));
+        notify::set_max_level(notify::level{notify.value});
         notify::set_duration(msg_duration.value);
     }
 
@@ -231,7 +232,7 @@ namespace cfg {
             load();
         }
         catch (std::exception& e) {
-            logger::printf("Error reloading config: %s\n", e.what());
+            logger::printf("Error in cfg::reload(): %s\n", e.what());
         }
     }
 
@@ -245,7 +246,7 @@ namespace cfg {
             wups::save();
         }
         catch (std::exception& e) {
-            logger::printf("Error saving config: %s\n", e.what());
+            logger::printf("Error in cfg::save(): %s\n", e.what());
         }
     }
 
@@ -297,7 +298,7 @@ namespace cfg {
             wups::save();
         }
         catch (std::exception& e) {
-            logger::printf("Error storing utc_offset: %s\n", e.what());
+            logger::printf("Error in cfg::set_and_store_utc_offset(): %s\n", e.what());
         }
     }
 
