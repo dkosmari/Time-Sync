@@ -8,6 +8,8 @@ EXTRA_DIST = \
 
 SUBDIRS = $(subdirs) $(subdirs_extra)
 
+DIST_SUBDIRS = external/libwupsxx
+
 
 AM_CPPFLAGS = $(DEVKITPRO_CPPFLAGS)
 
