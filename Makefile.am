@@ -6,20 +6,12 @@ EXTRA_DIST = \
 	README.md
 
 
-SUBDIRS = $(subdirs) $(subdirs_extra)
+SUBDIRS = external/libwupsxx
 
 DIST_SUBDIRS = external/libwupsxx
 
 
-AM_CPPFLAGS = $(DEVKITPRO_CPPFLAGS)
-
-AM_CXXFLAGS = \
-	-Wall -Wextra -Werror \
-	$(DEVKITPRO_CFLAGS)
-
-AM_LDFLAGS = $(DEVKITPRO_LDFLAGS)
-
-LIBS = $(DEVKITPRO_LIBS)
+AM_CXXFLAGS = -Wall -Wextra -Werror
 
 
 noinst_LIBRARIES = src/net/libnet.a
@@ -56,11 +48,11 @@ time_sync_elf_SOURCES = \
 
 time_sync_elf_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	-I$(top_srcdir)/external/libwupsxx/include
+	-I$(srcdir)/external/libwupsxx/include
 
 time_sync_elf_LDADD = \
-	$(builddir)/src/net/libnet.a \
-	$(builddir)/external/libwupsxx/src/libwupsxx.a
+	src/net/libnet.a \
+	external/libwupsxx/src/libwupsxx.a
 
 
 
