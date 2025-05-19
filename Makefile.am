@@ -52,7 +52,9 @@ time_sync_elf_CPPFLAGS = \
 
 time_sync_elf_LDADD = \
 	src/net/libnet.a \
-	external/libwupsxx/src/libwupsxx.a
+	external/libwupsxx/src/libwupsxx.a \
+	-lcurlwrapper \
+	-lnotifications
 
 
 
