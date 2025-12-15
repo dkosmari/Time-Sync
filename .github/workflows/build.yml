@@ -35,7 +35,7 @@ jobs:
         destination: time-sync.wps
 
     - name: Upload
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: time-sync.wps
         path: time-sync.wps
