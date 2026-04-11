@@ -1,9 +1,28 @@
-# Compilation
-/build
-
-# Distribution
+*.a
 *.elf
+*.json
+*.la
+*.lo
+*.o
+*.o
+*.tar.gz
 *.wps
-
-# Virtual Studio Code
+*.wps
+*~
+.deps/
+.dirstamp
 /.vscode
+aclocal.m4
+aminclude.am
+autom4te.cache
+build*/
+compile_flags.txt
+config.h
+config.h.in
+config.log
+config.status
+configure
+libtool
+Makefile
+Makefile.in
+stamp-h1

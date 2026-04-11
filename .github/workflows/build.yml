@@ -1,7 +1,6 @@
 name: Build Binary
 
 on: [push, pull_request, workflow_dispatch]
-# on: [workflow_dispatch]
 
 jobs:
   build-plugin:
@@ -9,10 +8,10 @@ jobs:
     name: Build plugin
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 1
-        submodules: true
+        submodules: recursive
 
     - name: Setup Docker
       run: docker build --tag plugin-image .
@@ -24,7 +23,7 @@ jobs:
         options: --name plugin-container
         run: |
           ./bootstrap
-          ./configure --host=powerpc-eabi CXXFLAGS="-Os -ffunction-sections -fipa-pta -flto -Wno-odr" AR=powerpc-eabi-gcc-ar RANLIB=powerpc-eabi-gcc-ranlib
+          ./configure --host=powerpc-eabi CXXFLAGS="-Os -ffunction-sections -fdata-sections -fipa-pta"
           make
 
     - name: Copy from container to host
@@ -35,7 +34,7 @@ jobs:
         destination: time-sync.wps
 
     - name: Upload
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: time-sync.wps
         path: time-sync.wps

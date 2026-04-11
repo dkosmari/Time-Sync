@@ -133,9 +133,9 @@ namespace cfg {
 
         category cat{"Configuration"};
 
-        cat.add(make_item(sync_on_boot, "on", "off"));
+        cat.add(make_item(sync_on_boot));
 
-        cat.add(make_item(sync_on_changes, "on", "off"));
+        cat.add(make_item(sync_on_changes));
 
         cat.add(verbosity_item::create(notify));
 
@@ -145,11 +145,15 @@ namespace cfg {
 
         cat.add(time_zone_query_item::create(tz_service));
 
-        cat.add(make_item(auto_tz, "on", "off"));
+        cat.add(make_item(auto_tz));
 
         cat.add(make_item(timeout));
 
-        cat.add(make_item(tolerance, 500ms, 100ms));
+        cat.add(make_item(tolerance,
+                          {
+                              .fast_increment = 1000ms,
+                              .slow_increment = 100ms
+                          }));
 
         cat.add(make_item(threads));
 

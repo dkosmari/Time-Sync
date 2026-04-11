@@ -91,12 +91,6 @@ operation.
    - wut
    - wut-tools
 
- - The following libraries from Wii U Plugin System and Wii U Module System (need to be
-   installed manually from source):
-   - [Wii U Plugin System](https://github.com/wiiu-env/WiiUPluginSystem)
-   - [libcurlwrapper](https://github.com/wiiu-env/libcurlwrapper)
-   - [libnotifications](https://github.com/wiiu-env/libnotifications)
-
 If you're **building from a repository clone**, you will also need
 [Automake](https://www.gnu.org/software/automake/), available as a package from your
 distribution. This is **not necessary** when building the plugin from a release tarball.
@@ -104,10 +98,14 @@ distribution. This is **not necessary** when building the plugin from a release 
 
 ### Compilation steps
 
+If you cloned the repository with `git`, make sure to use the `--recurse-submodules`
+option. Alternatively, the `external/update-submodules.sh` script can update the
+submodules manually.
+
 If you downloaded a release tarball, you can skip step 0.
 
 0. `./bootstrap`
-1. `./configure --host=powerpc-eabi`
+1. `./configure --host=powerpc-eabi CXXFLAGS="-Os -ffunction-sections -fdata-sections -fipa-pta"`
 2. `make`
 
 If you don't have the environment variable `DEVKITPRO` pointing to your devkitPro
