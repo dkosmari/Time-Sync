@@ -31,6 +31,10 @@ is rebooted.**
 > Note: options can be reset back to their default value by pressing **X**.
 
  - **Synchronize on boot**: Synchronizes the clock on every boot. Default is **off**.
+ 
+ - **Delay synchronization**: Wait a few seconds until boot synchronization
+   starts. Increase this if the network is slow to initialize, and you get errors during
+   startup. Default is **5 s**.
 
  - **Synchronize after changing configuration**: Synchronizes the clock when closing the
    configuration menu, if any change was made. Default is **on**.
@@ -59,14 +63,11 @@ is rebooted.**
  - **Tolerance**: How many milliseconds of error will be tolerated until the clock is
    adjusted. Default is **1000 ms**.
 
- - **Background threads**: Maximum number of background threads to use for NTP
-   queries. Default is **4**, because the default server (`pool.ntp.org`) returns 4
-   different addresses, so all 4 servers will be queried at the same time.
-
  - **NTP servers**: Shows one or more NTP servers that will be contacted for
    synchronization. Multiple servers can be specified, separated by spaces. Default is
-   `pool.ntp.org`. **This option cannot be edited within the plugin, you must edit the
-   JSON configuration file manually to change it.**
+   `pool.ntp.org`.
+   >>> This option cannot be edited within the plugin, you must edit the JSON
+   >>> configuration file manually to change it.
 
 
 ### Preview screen

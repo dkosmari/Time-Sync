@@ -50,7 +50,7 @@ DEINITIALIZE_PLUGIN()
 ON_APPLICATION_START()
 {
     if (cfg::sync_on_boot.value)
-        core::background::run_once();
+        core::background::run_once(cfg::sync_on_boot_delay.value);
 }
 
 

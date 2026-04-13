@@ -23,7 +23,9 @@ AM_CPPFLAGS =					\
 	$(LIBNOTIFICATIONS_CPPFLAGS)		\
 	-I$(srcdir)/external/libwupsxx/include
 
-AM_CXXFLAGS = -Wall -Wextra -Werror
+AM_CXXFLAGS = \
+	-Wall -Wextra -Werror \
+	-pthread
 
 AM_LDFLAGS = $(WUPS_LDFLAGS)
 
@@ -75,8 +77,6 @@ time_sync_elf_SOURCES =			\
 	src/preview_screen.hpp		\
 	src/synchronize_item.cpp	\
 	src/synchronize_item.hpp	\
-	src/thread_pool.cpp		\
-	src/thread_pool.hpp		\
 	src/time_utils.cpp		\
 	src/time_utils.hpp		\
 	src/time_zone_offset_item.cpp	\
