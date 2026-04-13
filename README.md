@@ -66,8 +66,8 @@ is rebooted.**
  - **NTP servers**: Shows one or more NTP servers that will be contacted for
    synchronization. Multiple servers can be specified, separated by spaces. Default is
    `pool.ntp.org`.
-   >>> This option cannot be edited within the plugin, you must edit the JSON
-   >>> configuration file manually to change it.
+   > This option cannot be edited within the plugin, you must edit the JSON
+   > configuration file manually to change it.
 
 
 ### Preview screen
