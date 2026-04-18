@@ -1,9 +1,8 @@
 #!/bin/bash
 
-PLUGIN_NAME="time-sync"
-IMAGE="${PLUGIN_NAME}-image"
-CONTAINER="${PLUGIN_NAME}-container"
-
+PLUGIN=time-sync
+IMAGE=${PLUGIN}-image
+CONTAINER=${PLUGIN}-container
 
 cleanup()
 {
@@ -29,6 +28,6 @@ docker run $ARGS sh -c "./bootstrap && ./configure --host=powerpc-eabi CXXFLAGS=
 echo "Compilation finished."
 
 # Copy the wps file out.
-docker cp "$CONTAINER:/project/time-sync.wps" .
+docker cp "${CONTAINER}:/project/${PLUGIN}.wps" .
 
 cleanup 0
