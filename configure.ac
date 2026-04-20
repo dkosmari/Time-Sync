@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.71])
 AC_INIT([Time Sync],
-        [5.0+],
+        [5.1],
         [https://github.com/dkosmari/Time-Sync/issues],
         [time-sync],
         [https://github.com/dkosmari/Time-Sync])
