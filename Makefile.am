@@ -57,7 +57,6 @@ WPS_FILE := $(ELF_FILE:.elf=.wps)
 noinst_PROGRAMS = $(ELF_FILE)
 
 time_sync_elf_SOURCES =			\
-	src/async_queue.hpp		\
 	src/cfg.cpp			\
 	src/cfg.hpp			\
 	src/clock_item.cpp		\
