@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.71])
 AC_INIT([Time Sync],
-        [5.1],
+        [5.1+],
         [https://github.com/dkosmari/Time-Sync/issues],
         [time-sync],
         [https://github.com/dkosmari/Time-Sync])
@@ -30,7 +30,8 @@ WIIU_ENV_SETUP_WUPS([external/libwupsxx/external/WiiUPluginSystem])
 
 AX_SUBDIRS_CONFIGURE([external/libwupsxx],
                      [[--enable-notify],
-                      [--disable-shortcuts]])
+                      [--disable-shortcuts],
+                      [CXXFLAGS=$CXXFLAGS -pthread]])
 
 AC_CONFIG_FILES([Makefile
                  external/Makefile])
